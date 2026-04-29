@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pathwise — Skill Tree</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-canvas:        oklch(95.5% 0.008 76);
+      --bg-chrome:        oklch(99%   0.004 76);
+      --bg-panel:         oklch(98.5% 0.005 76);
+      --bg-node:          oklch(100%  0.003 76);
+      --bg-node-done:     oklch(96%   0.022 148);
+      --bg-node-locked:   oklch(93.5% 0.006 76);
+      --bg-goal:          oklch(17%   0.012 76);
+
+      --border:           oklch(87%   0.010 76);
+      --border-mid:       oklch(78%   0.012 76);
+      --border-accent:    oklch(58%   0.170 55);
+
+      --text-primary:     oklch(18%   0.010 76);
+      --text-secondary:   oklch(46%   0.010 76);
+      --text-muted:       oklch(64%   0.010 76);
+      --text-inverted:    oklch(96%   0.006 76);
+      --text-accent:      oklch(50%   0.160 55);
+
+      --accent:           oklch(58%   0.170 55);
+      --accent-hover:     oklch(52%   0.170 55);
+      --accent-subtle:    oklch(93%   0.038 76);
+
+      --edge-done:        oklch(72%   0.060 148);
+      --edge-active:      oklch(62%   0.140 55);
+      --edge-open:        oklch(76%   0.020 76);
+      --edge-locked:      oklch(84%   0.008 76);
+
+      --shadow-node:      0 1px 3px oklch(40% 0.01 76 / 0.10), 0 1px 2px oklch(40% 0.01 76 / 0.07);
+      --shadow-lift:      0 4px 14px oklch(40% 0.01 76 / 0.14), 0 2px 4px oklch(40% 0.01 76 / 0.08);
+      --shadow-panel:     -2px 0 20px oklch(40% 0.01 76 / 0.09);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Top bar ───────────────────────────────────────────── */
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      height: 48px;
+      background: var(--bg-chrome);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+      z-index: 200;
+    }
+
+    .logo {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .topbar-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .subject-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px 4px 8px;
+      border-radius: 99px;
+      background: var(--accent-subtle);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-accent);
+      white-space: nowrap;
+    }
+
+    .progress-ring {
+      flex-shrink: 0;
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--border-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background 120ms;
+      flex-shrink: 0;
+    }
+
+    .avatar:hover { background: var(--border); }
+
+    /* ── Canvas ────────────────────────────────────────────── */
+    .canvas-wrap {
+      position: fixed;
+      inset: 48px 0 0 0;
+      overflow: auto;
+      background: var(--bg-canvas);
+      cursor: default;
+    }
+
+    .canvas-inner {
+      position: relative;
+      width: 960px;
+      min-height: 1160px;
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    .edges-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    /* ── Nodes ─────────────────────────────────────────────── */
+    .node {
+      position: absolute;
+      width: 190px;
+      background: var(--bg-node);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 13px 11px;
+      cursor: pointer;
+      box-shadow: var(--shadow-node);
+      transition:
+        box-shadow 150ms ease-out,
+        transform  150ms ease-out,
+        border-color 120ms;
+      user-select: none;
+    }
+
+    .node:hover {
+      box-shadow: var(--shadow-lift);
+      transform: translateY(-1px);
+      border-color: var(--border-mid);
+    }
+
+    .node.completed {
+      background: var(--bg-node-done);
+      border-color: oklch(82% 0.04 148);
+    }
+
+    .node.locked {
+      background: var(--bg-node-locked);
+      cursor: default;
+    }
+
+    .node.locked:hover {
+      transform: none;
+      box-shadow: var(--shadow-node);
+      border-color: var(--border);
+    }
+
+    .node.current {
+      border-color: var(--border-accent);
+    }
+
+    .node.selected {
+      border-color: var(--accent);
+      box-shadow:
+        0 0 0 3px oklch(58% 0.17 55 / 0.13),
+        var(--shadow-lift);
+    }
+
+    .node.goal {
+      width: 218px;
+      background: var(--bg-goal);
+      border-color: transparent;
+      padding: 14px 16px 15px;
+      cursor: default;
+    }
+
+    .node.goal:hover {
+      transform: none;
+      box-shadow: var(--shadow-node);
+      border-color: transparent;
+    }
+
+    .node-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .node.completed .status-dot  { background: oklch(56% 0.12 148); }
+    .node.current   .status-dot  { background: var(--accent); }
+    .node.available .status-dot  { background: oklch(74% 0.025 76); }
+    .node.locked    .status-dot  { background: oklch(79% 0.010 76); }
+    .node.goal      .status-dot  { background: oklch(55% 0.050 76); }
+
+    .status-text {
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .node.completed .status-text { color: oklch(52% 0.10 148); }
+    .node.current   .status-text { color: var(--text-accent); }
+    .node.goal      .status-text { color: oklch(58% 0.04 76); }
+
+    .node-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .node.locked .node-name { color: var(--text-muted); }
+    .node.goal   .node-name {
+      color: var(--text-inverted);
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+
+    /* ── Detail panel ──────────────────────────────────────── */
+    .panel {
+      position: fixed;
+      inset: 48px 0 0 auto;
+      width: 296px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-panel);
+      transform: translateX(100%);
+      transition: transform 210ms cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 150;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel.open { transform: translateX(0); }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 0;
+      flex-shrink: 0;
+    }
+
+    .panel-close {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: background 100ms, color 100ms;
+      margin-left: auto;
+    }
+
+    .panel-close:hover {
+      background: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .panel-body {
+      padding: 12px 16px 24px;
+      flex: 1;
+    }
+
+    .panel-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .panel-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.25;
+      letter-spacing: -0.015em;
+      margin-bottom: 10px;
+    }
+
+    .panel-desc {
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+
+    .prereq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 20px;
+    }
+
+    .prereq-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 5px;
+      background: var(--bg-chrome);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .check-box {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1.5px solid var(--border-mid);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .check-box.done {
+      background: oklch(56% 0.12 148);
+      border-color: oklch(56% 0.12 148);
+    }
+
+    .btn-start {
+      width: 100%;
+      padding: 9px 16px;
+      border-radius: 6px;
+      background: var(--accent);
+      border: none;
+      color: oklch(99% 0.003 76);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms;
+      letter-spacing: -0.005em;
+    }
+
+    .btn-start:hover  { background: var(--accent-hover); }
+
+    .btn-start:disabled {
+      background: var(--bg-node-locked);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: default;
+    }
+
+    /* ── Mini-map ───────────────────────────────────────────── */
+    .minimap {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 138px;
+      height: 88px;
+      background: var(--bg-chrome);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      z-index: 190;
+      box-shadow: 0 2px 8px oklch(40% 0.01 76 / 0.10);
+    }
+
+    .minimap canvas { display: block; }
+
+    .minimap-label {
+      position: absolute;
+      bottom: 4px;
+      left: 6px;
+      font-size: 7.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .minimap-vp {
+      position: absolute;
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      background: oklch(58% 0.17 55 / 0.08);
+      pointer-events: none;
+      transition: left 60ms linear, top 60ms linear, width 60ms linear, height 60ms linear;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top bar ─────────────────────────────────────────── -->
+<header class="topbar">
+  <span class="logo">Pathwise</span>
+  <div class="topbar-sep"></div>
+  <span class="subject-name">Learning Rust</span>
+  <div class="topbar-right">
+    <div class="progress-pill">
+      <svg class="progress-ring" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <circle cx="6" cy="6" r="4.5"
+          stroke="currentColor" stroke-width="2"
+          stroke-dasharray="28.27"
+          stroke-dashoffset="18.85"
+          stroke-linecap="round"
+          transform="rotate(-90 6 6)"
+          opacity="0.35"/>
+        <circle cx="6" cy="6" r="4.5"
+          stroke="currentColor" stroke-width="2"
+          stroke-dasharray="28.27"
+          stroke-dashoffset="9.42"
+          stroke-linecap="round"
+          transform="rotate(-90 6 6)"/>
+      </svg>
+      3 of 9 complete
+    </div>
+    <div class="avatar" title="Profile">NH</div>
+  </div>
+</header>
+
+<!-- ── Canvas ──────────────────────────────────────────── -->
+<div class="canvas-wrap" id="canvasWrap">
+  <div class="canvas-inner" id="canvas">
+    <svg class="edges-svg" id="edgesSvg" aria-hidden="true">
+      <defs id="svgDefs"></defs>
+    </svg>
+    <!-- nodes injected by JS -->
+  </div>
+</div>
+
+<!-- ── Detail panel ────────────────────────────────────── -->
+<aside class="panel" id="panel" aria-label="Concept detail">
+  <div class="panel-header">
+    <button class="panel-close" id="panelClose" aria-label="Close panel">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <path d="M1.5 1.5L11.5 11.5M11.5 1.5L1.5 11.5"
+          stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<!-- ── Mini-map ────────────────────────────────────────── -->
+<div class="minimap" id="minimap" aria-hidden="true">
+  <canvas id="mmCanvas" width="138" height="88"></canvas>
+  <div class="minimap-vp" id="mmVp"></div>
+  <span class="minimap-label">Overview</span>
+</div>
+
+<script>
+/* ── Data ─────────────────────────────────────────────── */
+const NODE_W   = 190;
+const NODE_H   = 54;
+const GOAL_W   = 218;
+const GOAL_H   = 64;
+
+const nodes = [
+  {
+    id: 'variables', name: 'Variables & Types', status: 'completed',
+    x: 385, y: 48,
+    desc: 'Integers, floats, bools, chars, and how the compiler infers types without explicit annotation.',
+    prereqs: [],
+  },
+  {
+    id: 'control', name: 'Control Flow', status: 'completed',
+    x: 352, y: 156,
+    desc: 'if/else expressions, loop, while, and for. In Rust, everything is an expression that returns a value.',
+    prereqs: ['variables'],
+  },
+  {
+    id: 'functions', name: 'Functions & Closures', status: 'completed',
+    x: 390, y: 264,
+    desc: 'How functions return values, closure captures, and the Fn, FnMut, FnOnce trait family.',
+    prereqs: ['control'],
+  },
+  {
+    id: 'iterators', name: 'Iterators', status: 'available',
+    x: 620, y: 310,
+    desc: 'Lazy sequences and adaptors — map, filter, fold, collect. Zero-cost abstractions at the compiler level.',
+    prereqs: ['functions'],
+  },
+  {
+    id: 'ownership', name: 'Ownership Model', status: 'current',
+    x: 365, y: 372,
+    desc: 'Every value has exactly one owner. When ownership moves or the owner goes out of scope, the value is dropped automatically.',
+    prereqs: ['functions', 'iterators'],
+  },
+  {
+    id: 'borrowing', name: 'Borrowing & References', status: 'locked',
+    x: 378, y: 480,
+    desc: 'Shared &T references and exclusive &mut T references. The borrow checker enforces memory safety at compile time.',
+    prereqs: ['ownership'],
+  },
+  {
+    id: 'lifetimes', name: 'Lifetimes', status: 'locked',
+    x: 348, y: 588,
+    desc: 'Explicit lifetime annotations that tell the borrow checker how long references remain valid across function boundaries.',
+    prereqs: ['borrowing'],
+  },
+  {
+    id: 'traits', name: 'Traits & Generics', status: 'locked',
+    x: 380, y: 696,
+    desc: 'Shared behavior across types. Generic functions, trait bounds, associated types, and static dispatch.',
+    prereqs: ['lifetimes'],
+  },
+  {
+    id: 'errors', name: 'Error Handling', status: 'locked',
+    x: 345, y: 804,
+    desc: 'Result<T, E> and Option<T>. The ? operator, custom error types, and composing failures without exceptions.',
+    prereqs: ['traits'],
+  },
+  {
+    id: 'goal', name: 'Write production-grade Rust', status: 'goal',
+    x: 371, y: 948,
+    desc: 'Ship reliable, performant Rust with full command of the ownership and type system.',
+    prereqs: ['errors'],
+  },
+];
+
+const edges = [
+  { from: 'variables', to: 'control',    kind: 'done' },
+  { from: 'control',   to: 'functions',  kind: 'done' },
+  { from: 'functions', to: 'iterators',  kind: 'open' },
+  { from: 'functions', to: 'ownership',  kind: 'active' },
+  { from: 'iterators', to: 'ownership',  kind: 'open' },
+  { from: 'ownership', to: 'borrowing',  kind: 'locked' },
+  { from: 'borrowing', to: 'lifetimes',  kind: 'locked' },
+  { from: 'lifetimes', to: 'traits',     kind: 'locked' },
+  { from: 'traits',    to: 'errors',     kind: 'locked' },
+  { from: 'errors',    to: 'goal',       kind: 'locked' },
+];
+
+const STATUS_LABELS = {
+  completed: 'Completed',
+  current:   'In progress',
+  available: 'Available',
+  locked:    'Locked',
+  goal:      'Goal',
+};
+
+const EDGE_STROKE = {
+  done:   'oklch(72% 0.06 148)',
+  active: 'oklch(60% 0.15 55)',
+  open:   'oklch(74% 0.02 76)',
+  locked: 'oklch(84% 0.008 76)',
+};
+
+const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
+
+/* ── Geometry helpers ─────────────────────────────────── */
+function nodeW(n) { return n.status === 'goal' ? GOAL_W : NODE_W; }
+function nodeH(n) { return n.status === 'goal' ? GOAL_H : NODE_H; }
+function cx(n)    { return n.x + nodeW(n) / 2; }
+function bottom(n){ return { x: cx(n), y: n.y + nodeH(n) }; }
+function top(n)   { return { x: cx(n), y: n.y }; }
+
+/* ── Render nodes ─────────────────────────────────────── */
+const canvas = document.getElementById('canvas');
+
+nodes.forEach(n => {
+  const el = document.createElement('div');
+  el.className = `node ${n.status}`;
+  el.id = `n-${n.id}`;
+  el.style.cssText = `left:${n.x}px;top:${n.y}px;`;
+  if (n.status === 'goal') el.style.width = GOAL_W + 'px';
+
+  el.innerHTML = `
+    <div class="node-meta">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-text">${STATUS_LABELS[n.status]}</span>
+    </div>
+    <div class="node-name">${n.name}</div>
+  `;
+
+  if (n.status !== 'locked' && n.status !== 'goal') {
+    el.addEventListener('click', () => openPanel(n));
+  }
+
+  canvas.appendChild(el);
+});
+
+/* ── Render edges ─────────────────────────────────────── */
+const svg  = document.getElementById('edgesSvg');
+const defs = document.getElementById('svgDefs');
+
+edges.forEach((e, i) => {
+  const fn = nodeMap[e.from];
+  const tn = nodeMap[e.to];
+  const f  = bottom(fn);
+  const t  = top(tn);
+
+  const dx = t.x - f.x;
+  const dy = t.y - f.y;
+  const c1x = f.x + dx * 0.12;
+  const c1y = f.y + dy * 0.42;
+  const c2x = f.x + dx * 0.88;
+  const c2y = f.y + dy * 0.58;
+
+  const mid = `M${f.x},${f.y} C${c1x},${c1y} ${c2x},${c2y} ${t.x},${t.y}`;
+
+  const markerId = `arr${i}`;
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', markerId);
+  marker.setAttribute('markerWidth',  '7');
+  marker.setAttribute('markerHeight', '7');
+  marker.setAttribute('refX', '5');
+  marker.setAttribute('refY', '3.5');
+  marker.setAttribute('orient', 'auto');
+  const tip = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  tip.setAttribute('d', 'M1,1 L5.5,3.5 L1,6');
+  tip.setAttribute('fill', 'none');
+  tip.setAttribute('stroke', EDGE_STROKE[e.kind]);
+  tip.setAttribute('stroke-width', '1.2');
+  tip.setAttribute('stroke-linecap', 'round');
+  tip.setAttribute('stroke-linejoin', 'round');
+  marker.appendChild(tip);
+  defs.appendChild(marker);
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', mid);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', EDGE_STROKE[e.kind]);
+  path.setAttribute('stroke-width', e.kind === 'active' ? '1.5' : '1');
+  if (e.kind === 'locked') path.setAttribute('stroke-dasharray', '4 3.5');
+  path.setAttribute('marker-end', `url(#${markerId})`);
+  svg.appendChild(path);
+});
+
+/* ── Panel ────────────────────────────────────────────── */
+const panel     = document.getElementById('panel');
+const panelBody = document.getElementById('panelBody');
+const panelClose= document.getElementById('panelClose');
+let   activeNode = null;
+
+function checkDot(done) {
+  if (!done) return `<div class="check-box"></div>`;
+  return `<div class="check-box done">
+    <svg width="8" height="6" viewBox="0 0 8 6" fill="none" aria-hidden="true">
+      <path d="M1 3L3 5L7 1" stroke="white" stroke-width="1.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>`;
+}
+
+function dotColor(status) {
+  if (status === 'completed') return 'oklch(56% 0.12 148)';
+  if (status === 'current')   return 'oklch(58% 0.17 55)';
+  return 'oklch(74% 0.025 76)';
+}
+
+function openPanel(n) {
+  if (activeNode) document.getElementById(`n-${activeNode.id}`)?.classList.remove('selected');
+  activeNode = n;
+  document.getElementById(`n-${n.id}`).classList.add('selected');
+
+  const prereqs = n.prereqs.map(pid => {
+    const p = nodeMap[pid];
+    const done = p.status === 'completed';
+    return `<div class="prereq-item">
+      ${checkDot(done)}
+      <span>${p.name}</span>
+    </div>`;
+  }).join('');
+
+  const canAct = n.status === 'current' || n.status === 'available';
+  const btnText = n.status === 'current' ? 'Continue lesson' : 'Start lesson';
+
+  panelBody.innerHTML = `
+    <div class="panel-status">
+      <span style="width:5px;height:5px;border-radius:50%;background:${dotColor(n.status)};display:inline-block;flex-shrink:0;" aria-hidden="true"></span>
+      ${STATUS_LABELS[n.status]}
+    </div>
+    <div class="panel-title">${n.name}</div>
+    <p class="panel-desc">${n.desc}</p>
+    ${prereqs ? `<div class="section-label">Prerequisites</div><div class="prereq-list">${prereqs}</div>` : ''}
+    <button class="btn-start" ${canAct ? '' : 'disabled'}>${btnText}</button>
+  `;
+
+  panel.classList.add('open');
+}
+
+panelClose.addEventListener('click', closePanel);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePanel();
+});
+
+function closePanel() {
+  panel.classList.remove('open');
+  if (activeNode) {
+    document.getElementById(`n-${activeNode.id}`)?.classList.remove('selected');
+    activeNode = null;
+  }
+}
+
+/* ── Mini-map ─────────────────────────────────────────── */
+const mmCanvas = document.getElementById('mmCanvas');
+const mmCtx    = mmCanvas.getContext('2d');
+const mmVp     = document.getElementById('mmVp');
+const canvasWrap = document.getElementById('canvasWrap');
+const MM_W = 138, MM_H = 88;
+const SRC_W = 960, SRC_H = 1160;
+const SX = MM_W / SRC_W;
+const SY = MM_H / SRC_H;
+
+function drawMinimap() {
+  mmCtx.clearRect(0, 0, MM_W, MM_H);
+
+  // canvas bg
+  mmCtx.fillStyle = 'oklch(95.5% 0.008 76)';
+  mmCtx.fillRect(0, 0, MM_W, MM_H);
+
+  // edges
+  edges.forEach(e => {
+    const fn = nodeMap[e.from];
+    const tn = nodeMap[e.to];
+    const f  = bottom(fn);
+    const t  = top(tn);
+    mmCtx.beginPath();
+    mmCtx.moveTo(f.x * SX, f.y * SY);
+    mmCtx.lineTo(t.x * SX, t.y * SY);
+    mmCtx.strokeStyle = e.kind === 'done' ? 'oklch(72% 0.06 148)'
+                      : e.kind === 'active' ? 'oklch(60% 0.15 55)'
+                      : 'oklch(84% 0.008 76)';
+    mmCtx.lineWidth = 0.9;
+    mmCtx.stroke();
+  });
+
+  // nodes
+  nodes.forEach(n => {
+    const w = nodeW(n) * SX, h = nodeH(n) * SY;
+    const x = n.x * SX,      y = n.y * SY;
+    mmCtx.fillStyle = n.status === 'goal'      ? 'oklch(17% 0.012 76)'
+                    : n.status === 'completed' ? 'oklch(96% 0.022 148)'
+                    : n.status === 'current'   ? 'oklch(93% 0.038 76)'
+                    : n.status === 'available' ? 'oklch(100% 0.003 76)'
+                    :                            'oklch(93.5% 0.006 76)';
+    mmCtx.fillRect(x, y, w, h);
+    mmCtx.strokeStyle = n.status === 'current' ? 'oklch(58% 0.17 55)' : 'oklch(87% 0.01 76)';
+    mmCtx.lineWidth   = n.status === 'current' ? 1.2 : 0.5;
+    mmCtx.strokeRect(x, y, w, h);
+  });
+}
+
+function syncViewport() {
+  const sw = canvasWrap.scrollWidth  || SRC_W;
+  const sh = canvasWrap.scrollHeight || SRC_H;
+  const vw = canvasWrap.clientWidth;
+  const vh = canvasWrap.clientHeight;
+  const sl = canvasWrap.scrollLeft;
+  const st = canvasWrap.scrollTop;
+
+  const offsetX = Math.max(0, (canvasWrap.clientWidth - SRC_W) / 2);
+
+  const left   = ((sl) / sw) * MM_W;
+  const top    = (st  / sh) * MM_H;
+  const width  = Math.min((vw / sw) * MM_W, MM_W);
+  const height = Math.min((vh / sh) * MM_H, MM_H);
+
+  mmVp.style.left   = left   + 'px';
+  mmVp.style.top    = top    + 'px';
+  mmVp.style.width  = width  + 'px';
+  mmVp.style.height = height + 'px';
+}
+
+drawMinimap();
+syncViewport();
+
+canvasWrap.addEventListener('scroll', syncViewport, { passive: true });
+window.addEventListener('resize', syncViewport);
+
+/* ── Scroll to current node on load ──────────────────── */
+const currentNode = nodes.find(n => n.status === 'current');
+if (currentNode) {
+  requestAnimationFrame(() => {
+    const targetY = Math.max(0, currentNode.y - canvasWrap.clientHeight / 2 + NODE_H / 2);
+    canvasWrap.scrollTo({ top: targetY, behavior: 'instant' });
+    syncViewport();
+  });
+}
+</script>
+</body>
+</html>
