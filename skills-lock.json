@@ -6,6 +6,12 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/impeccable/SKILL.md",
       "computedHash": "441959d529b322bd316061e60445eed64554952561617dd5d2af22eac71b34f9"
+    },
+    "firecrawl": {
+      "source": "https://www.firecrawl.dev/agent-onboarding/SKILL.md",
+      "sourceType": "url",
+      "skillPath": ".agents/skills/firecrawl/SKILL.md",
+      "computedHash": "167fd60f5d434be1ad1b2ffb1222c1efae177752942b90b27b091783392c13fa"
     }
   }
 }

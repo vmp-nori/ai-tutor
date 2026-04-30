@@ -18,6 +18,7 @@ build/
 .env.production.local
 .mcp.json
 .codex/config.toml
+.firecrawl/
 
 # drizzle migrations (keep the directory, ignore generated files if preferred)
 # drizzle/
@@ -31,7 +32,7 @@ next-env.d.ts
 
 # claude code
 .claude/
-.agents/
+.codex
 
 # misc
 .DS_Store
