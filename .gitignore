@@ -32,6 +32,8 @@ next-env.d.ts
 
 # claude code
 .claude/
+!.claude/commands/
+!.claude/commands/**
 .codex
 
 # misc
