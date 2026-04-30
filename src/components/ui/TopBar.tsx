@@ -51,6 +51,31 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
 
       <div style={{ width: 1, height: 18, background: "#E6E5DF", flexShrink: 0 }} />
 
+      <a
+        href="/generate"
+        style={{
+          height: 30,
+          border: "1px solid #E6E5DF",
+          borderRadius: 6,
+          background: "#FFFFFF",
+          color: "#0E0F12",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          padding: "0 11px",
+          fontSize: 12,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+          textDecoration: "none",
+          flexShrink: 0,
+        }}
+      >
+        + New path
+      </a>
+
+      <div style={{ width: 1, height: 18, background: "#E6E5DF", flexShrink: 0 }} />
+
       <span style={{
         fontSize: 13,
         fontWeight: 500,

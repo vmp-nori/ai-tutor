@@ -32,6 +32,7 @@ interface SkillTreeCanvasProps {
   nodes: SkillNodeType[];
   edges: SkillEdgeType[];
   subject: string;
+  initialSchema?: string;
 }
 
 interface GraphState {
@@ -207,22 +208,28 @@ function graphFromSchema(value: unknown): GraphState {
   return { subject, nodes: [...nodes, goalNode], edges };
 }
 
-export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject }: SkillTreeCanvasProps) {
+function resolveInitialGraph(
+  initialSchema: string | undefined,
+  fallback: GraphState,
+): GraphState {
+  if (initialSchema) {
+    try { return graphFromSchema(JSON.parse(initialSchema)); } catch { /* fall through */ }
+  }
+  return fallback;
+}
+
+export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema }: SkillTreeCanvasProps) {
   const scrollRef  = useRef<HTMLDivElement>(null);
-  const [graph, setGraph] = useState<GraphState>({
-    nodes: initialNodes,
-    edges: initialEdges,
-    subject: initialSubject,
-  });
+  const [graph, setGraph] = useState<GraphState>(() =>
+    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject })
+  );
   const [selectedNode, setSelectedNode] = useState<SkillNodeType | null>(null);
   const [pressedNodeId, setPressedNodeId] = useState<string | null>(null);
   const [scrollEl, setScrollEl]         = useState<HTMLElement | null>(null);
   const [jsonInputOpen, setJsonInputOpen] = useState(false);
-  const [jsonDraft, setJsonDraft] = useState(() => graphToSchema({
-    nodes: initialNodes,
-    edges: initialEdges,
-    subject: initialSubject,
-  }));
+  const [jsonDraft, setJsonDraft] = useState(() => graphToSchema(
+    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject })
+  ));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });

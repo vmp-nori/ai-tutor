@@ -13,6 +13,7 @@ interface SkillTreeLoaderProps {
   nodes: SkillNode[];
   edges: SkillEdge[];
   subject: string;
+  initialSchema?: string;
 }
 
 export function SkillTreeLoader(props: SkillTreeLoaderProps) {
