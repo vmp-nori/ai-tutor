@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import type { SkillNode, SkillEdge } from "@/lib/types";
 import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
 
-// Wider aspect ratio to match horizontal canvas (2300 × 560 → ~4:1)
 const MM_W = 220;
 const MM_H = 68;
 
@@ -37,10 +36,9 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
     if (!ctx) return;
 
     ctx.clearRect(0, 0, MM_W, MM_H);
-    ctx.fillStyle = "oklch(96% 0.006 215)";
+    ctx.fillStyle = "#FCFCFA";
     ctx.fillRect(0, 0, MM_W, MM_H);
 
-    // Edges
     for (const e of edges) {
       const fn = nodeMap.get(e.fromNodeId);
       const tn = nodeMap.get(e.toNodeId);
@@ -54,30 +52,33 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
       ctx.moveTo(x1 * sx, y1 * sy);
       ctx.lineTo(x2 * sx, y2 * sy);
       ctx.strokeStyle =
-        kind === "done" ? "oklch(73% 0.055 154)" :
-        kind === "active" ? "oklch(54% 0.095 184)" :
-        "oklch(84% 0.007 215)";
-      ctx.lineWidth = 0.8;
+        kind === "done"   ? "#15803D" :
+        kind === "active" ? "#93C5FD" :
+        "#C9C7BD";
+      ctx.lineWidth = kind === "active" ? 1.2 : 0.8;
+      ctx.globalAlpha = kind === "active" ? 1 : 0.65;
       ctx.stroke();
+      ctx.globalAlpha = 1;
     }
 
-    // Nodes
     for (const n of nodes) {
       const isGoal = n.id === goalId;
       const w = (isGoal ? GOAL_W : NODE_W) * sx;
       const h = (isGoal ? GOAL_H : NODE_H) * sy;
 
       ctx.fillStyle =
-        isGoal ? "oklch(18.5% 0.018 230)" :
-        n.status === "completed" ? "oklch(94.7% 0.020 158)" :
-        n.status === "current" ? "oklch(93.2% 0.026 184)" :
-        n.status === "available" ? "oklch(99.3% 0.003 215)" :
-        "oklch(93.6% 0.005 215)";
+        isGoal            ? "#0E0F12" :
+        n.status === "completed" ? "#DCFCE7" :
+        n.status === "current"   ? "#EFF6FF" :
+        n.status === "available" ? "#FFFFFF" :
+        "#F6F6F2";
 
       ctx.fillRect(n.x * sx, n.y * sy, w, h);
 
-      ctx.strokeStyle = n.status === "current" ? "oklch(54% 0.095 184)" : "oklch(86.5% 0.008 215)";
-      ctx.lineWidth = n.status === "current" ? 1 : 0.4;
+      ctx.strokeStyle = n.status === "current" ? "#93C5FD" :
+        isGoal ? "#0E0F12" :
+        "#E6E5DF";
+      ctx.lineWidth = n.status === "current" ? 0.8 : 0.4;
       ctx.strokeRect(n.x * sx, n.y * sy, w, h);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,15 +112,15 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
     <div
       style={{
         position: "fixed",
-        top: 64,       // just below top bar with a gap
-        right: "calc(clamp(220px, 28vw, 360px) + 16px)",
+        bottom: 52,
+        left: 16,
         width: MM_W,
-        background: "var(--color-chrome)",
-        border: "1px solid var(--color-border)",
+        background: "#FFFFFF",
+        border: "1px solid #E6E5DF",
         borderRadius: 6,
         overflow: "hidden",
         zIndex: 190,
-        boxShadow: "0 2px 8px oklch(34% 0.018 230 / 0.10)",
+        boxShadow: "0 2px 8px rgba(20,15,10,0.08)",
       }}
       aria-hidden="true"
     >
@@ -128,9 +129,9 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
         ref={vpRef}
         style={{
           position: "absolute",
-          border: "1px solid var(--color-accent)",
+          border: "1px solid #93C5FD",
           borderRadius: 2,
-          background: "oklch(54% 0.095 184 / 0.09)",
+          background: "rgba(147,197,253,0.12)",
           pointerEvents: "none",
           transition: "left 60ms linear, top 60ms linear",
         }}
@@ -139,11 +140,11 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
         style={{
           padding: "3px 6px 4px",
           fontSize: 7.5,
-          fontWeight: 600,
+          fontWeight: 700,
           textTransform: "uppercase" as const,
-          letterSpacing: "0.06em",
-          color: "var(--color-text-muted)",
-          borderTop: "1px solid var(--color-border)",
+          letterSpacing: "0.10em",
+          color: "#8A8A82",
+          borderTop: "1px solid #E6E5DF",
         }}
       >
         Overview

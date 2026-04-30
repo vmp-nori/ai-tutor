@@ -1,40 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  /* Canvas and surfaces */
-  --color-canvas:       oklch(96%   0.006 215);
-  --color-chrome:       oklch(98.7% 0.004 215);
-  --color-panel:        oklch(98.1% 0.005 215);
-  --color-node:         oklch(99.3% 0.003 215);
-  --color-node-done:    oklch(94.7% 0.020 158);
-  --color-node-locked:  oklch(93.6% 0.005 215);
-  --color-goal:         oklch(18.5% 0.018 230);
+  /* Canvas and surfaces — Direction C: Editorial Light */
+  --color-canvas:       #FCFCFA;
+  --color-chrome:       #FFFFFF;
+  --color-panel:        #FFFFFF;
+  --color-node:         #FFFFFF;
+  --color-node-done:    #DCFCE7;
+  --color-node-locked:  #F6F6F2;
+  --color-goal:         #0E0F12;
 
   /* Borders */
-  --color-border:        oklch(86.5% 0.008 215);
-  --color-border-mid:    oklch(75.5% 0.012 215);
-  --color-border-accent: oklch(54%   0.095 184);
+  --color-border:        #E6E5DF;
+  --color-border-mid:    #C9C7BD;
+  --color-border-accent: rgba(147,197,253,0.58);
 
   /* Text */
-  --color-text-primary:   oklch(18% 0.012 230);
-  --color-text-secondary: oklch(44% 0.011 225);
-  --color-text-muted:     oklch(60% 0.010 220);
-  --color-text-inverted:  oklch(95% 0.006 215);
-  --color-text-accent:    oklch(42% 0.090 184);
+  --color-text-primary:   #0E0F12;
+  --color-text-secondary: #4D4E54;
+  --color-text-muted:     #8A8A82;
+  --color-text-inverted:  #FCFCFA;
+  --color-text-accent:    #2563EB;
 
   /* Accent and learning states */
-  --color-accent:         oklch(54% 0.095 184);
-  --color-accent-hover:   oklch(48% 0.100 184);
-  --color-accent-subtle:  oklch(93.2% 0.026 184);
-  --color-success:        oklch(55% 0.105 154);
-  --color-success-soft:   oklch(73% 0.055 154);
-  --color-success-subtle: oklch(94.7% 0.020 158);
-  --color-available:      oklch(69% 0.018 215);
-  --color-locked:         oklch(75.5% 0.008 215);
-  --color-shadow:         oklch(34% 0.018 230);
+  --color-accent:         #93C5FD;
+  --color-accent-hover:   #60A5FA;
+  --color-accent-subtle:  #DBEAFE;
+  --color-success:        #15803D;
+  --color-success-soft:   #DCFCE7;
+  --color-success-subtle: #F0FDF4;
+  --color-available:      #6B7280;
+  --color-locked:         #D1D5DB;
+  --color-shadow:         rgba(20,15,10,0.12);
 
   /* Font */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
 }
 
 html,
@@ -50,7 +51,6 @@ body {
   box-sizing: border-box;
 }
 
-/* Scrollbar, minimal */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -59,9 +59,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-mid);
+  background: #C9C7BD;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(66% 0.012 215);
+  background: #A8A49C;
 }

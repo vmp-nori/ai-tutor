@@ -4,18 +4,32 @@ import type { SkillNode } from "@/lib/types";
 import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
 
 const STROKE: Record<string, string> = {
-  done:   "var(--color-success-soft)",
-  active: "var(--color-accent)",
-  open:   "oklch(74% 0.018 215)",
-  locked: "oklch(84% 0.007 215)",
+  done:   "#15803D",
+  active: "#93C5FD",
+  open:   "#C9C7BD",
+  locked: "#E6E5DF",
+};
+
+const WIDTH: Record<string, number> = {
+  done:   1,
+  active: 1.6,
+  open:   1,
+  locked: 1,
+};
+
+const OPACITY: Record<string, number> = {
+  done:   0.70,
+  active: 1,
+  open:   0.70,
+  locked: 0.70,
 };
 
 interface SkillEdgeProps {
   fromNode: SkillNode;
   toNode: SkillNode;
   markerId: string;
+  glowFilterId?: string;
   toIsGoal?: boolean;
-  /** Callback ref — SkillTreeCanvas stores the path element for imperative animation */
   setPathRef?: (el: SVGPathElement | null) => void;
 }
 
@@ -57,8 +71,9 @@ export function SkillEdge({
         d={d}
         fill="none"
         stroke={stroke}
-        strokeWidth={kind === "active" ? 1.5 : 1}
-        strokeDasharray={kind === "locked" ? "4 3.5" : undefined}
+        strokeWidth={WIDTH[kind]}
+        strokeDasharray={kind === "locked" ? "3 3" : undefined}
+        opacity={OPACITY[kind]}
         markerEnd={`url(#${markerId})`}
       />
     </>
