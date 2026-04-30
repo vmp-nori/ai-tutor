@@ -12,6 +12,50 @@
       "sourceType": "url",
       "skillPath": ".agents/skills/firecrawl/SKILL.md",
       "computedHash": "167fd60f5d434be1ad1b2ffb1222c1efae177752942b90b27b091783392c13fa"
+    },
+    "backend-patterns": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "skillPath": ".agents/skills/backend-patterns/SKILL.md",
+      "computedHash": "952e95fd7e8d0b17f13835dde8067d7dd2abd019e6e17821d5ebf913113c589e"
+    },
+    "coding-standards": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "skillPath": ".agents/skills/coding-standards/SKILL.md",
+      "computedHash": "9407b2ba396656a09026fac8cf4caa73de789bf303fcc2cd20f83a0c3c087812"
+    },
+    "continuous-learning-v2": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "skillPath": ".agents/skills/continuous-learning-v2/SKILL.md",
+      "computedHash": "7629ed1a18ce078b57f22f407115a41a7f404aee73de17667ec5571b0001a8e4"
+    },
+    "cpp-coding-standards": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "skillPath": ".agents/skills/cpp-coding-standards/SKILL.md",
+      "computedHash": "70919980c635f66db649b7eb1e426fb2098754ed6c9db22f1a7eee0935227d35"
+    },
+    "frontend-patterns": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "skillPath": ".agents/skills/frontend-patterns/SKILL.md",
+      "computedHash": "dd04a1c02503036ee7f4d649c9b7b75d2e6954a94d6f464faedfa992701d1978"
+    },
+    "java-coding-standards": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "skillPath": ".agents/skills/java-coding-standards/SKILL.md",
+      "computedHash": "687d56b0001f4588227e80e048d9d5605269f3bd7a31f6ced79b04b7379255e7"
+    }
+  },
+  "commands": {
+    "update-docs": {
+      "source": "ecc-universal@1.10.0",
+      "sourceType": "npm",
+      "commandPath": ".agents/commands/update-docs.md",
+      "computedHash": "09d8332a9e11a94b84462f7918471e1db5264312619d687496ad3ff8e8226631"
     }
   }
 }
