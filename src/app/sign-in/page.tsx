@@ -10,6 +10,15 @@ function callbackUrl() {
   return new URLSearchParams(window.location.search).get("callbackUrl") || "/dashboard";
 }
 
+function initialError() {
+  if (typeof window === "undefined") return null;
+  const error = new URLSearchParams(window.location.search).get("error");
+  if (error === "confirmation_failed") {
+    return "Email confirmation failed. Please try signing up again.";
+  }
+  return null;
+}
+
 const supabaseConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -19,7 +28,7 @@ export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
