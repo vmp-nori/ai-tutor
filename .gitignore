@@ -20,9 +20,6 @@ build/
 .codex/config.toml
 .firecrawl/
 
-# drizzle migrations (keep the directory, ignore generated files if preferred)
-# drizzle/
-
 # vercel
 .vercel
 

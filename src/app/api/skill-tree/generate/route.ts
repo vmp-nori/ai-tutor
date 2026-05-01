@@ -1,71 +1,232 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  BedrockRuntimeClient,
+  ConverseStreamCommand,
+  type ConverseStreamResponse,
+} from "@aws-sdk/client-bedrock-runtime";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
-const SYSTEM_PROMPT = `You are a "Knowledge Graph Architect." Your goal is to decompose any complex goal into a deterministic linear sequence of atomic "stepping stones" organized into colored zones.
+export const runtime = "nodejs";
 
-LOGIC RULES:
-1. ATOMICITY: Every node must be a single, granular concept. No "sub_topics" arrays; expand every detail into its own unique Node object.
-2. STRICT LINEARITY: The path must be one continuous line.
-   - The first node has "prerequisite_ids": [].
-   - Every subsequent node has exactly ONE entry in "prerequisite_ids" matching the previous node ID.
-3. ZONE LOGIC: Group sequential nodes into "zones" with a shared label and "zone_color" hex code.
-4. COORDINATES: Increment "x" by 20 for every node (0, 20, 40...) and keep "y" and "z" at 0.
-5. TEACHING CONTEXT: For every node, provide a "teaching_brief". This must instruct a future Teaching Agent on how to explain this topic ONLY within the context of the user's specific end goal. Explicitly state what theoretical fluff to AVOID and what specific applications to FOCUS on.`;
+interface GenerateRequest {
+  goal?: unknown;
+  subject?: unknown;
+}
+
+const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6";
+const DEFAULT_REGION = "us-east-1";
+const MAX_GOAL_LENGTH = 800;
+const MAX_SUBJECT_LENGTH = 140;
+const JSON_SKELETON = `{
+  "subject": "Concise inferred subject label",
+  "goal": "The user's exact end goal, cleaned up for readability",
+  "nodes": [
+    {
+      "id": "lowercase_snake_case_id",
+      "name": "Atomic concept name",
+      "description": "One sentence explaining what the learner must understand",
+      "teaching_brief": "Goal-specific guidance for a future teaching agent",
+      "difficulty_level": 1,
+      "is_checkpoint": false,
+      "zone": "Sequential zone name",
+      "zone_color": "#3B82F6",
+      "prerequisite_ids": [],
+      "coordinates": { "x": 0, "y": 0, "z": 0 }
+    }
+  ]
+}`;
+
+const SYSTEM_PROMPT = `You are a Knowledge Graph Architect for Pathwise.
+
+Given a learner's end goal, decompose the domain into a deterministic learning graph for the Pathwise website. Return only valid JSON matching the requested schema.
+
+Rules:
+- The graph must be a directed acyclic graph of atomic prerequisite concepts.
+- The path must be linear or nearly linear: each node can have at most one prerequisite_id.
+- Include 8 to 18 nodes grouped into 3 to 6 sequential zones.
+- Every prerequisite_id must refer to an earlier node id.
+- Use stable lowercase snake_case ids.
+- difficulty_level must be an integer from 1 to 10.
+- Coordinates.x must increase by about 20 for each learning layer. Coordinates.y and coordinates.z should be 0 unless a tiny visual offset is necessary.
+- The final user goal is represented by the top-level goal string, not as a node.
+- For every node, include a teaching_brief that tells a future teaching agent what to focus on for this exact goal and what theory to avoid.
+- Keep names and descriptions concise.
+- Fill every required key in this skeleton for every response:
+${JSON_SKELETON}
+- Do not include markdown, code fences, comments, or text outside the JSON object.`;
+
+const responseJsonSchema = {
+  type: "object",
+  properties: {
+    subject: { type: "string" },
+    goal: { type: "string" },
+    nodes: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          name: { type: "string" },
+          description: { type: "string" },
+          teaching_brief: { type: "string" },
+          difficulty_level: { type: "integer", minimum: 1, maximum: 10 },
+          is_checkpoint: { type: "boolean" },
+          zone: { type: "string" },
+          zone_color: { type: "string" },
+          prerequisite_ids: {
+            type: "array",
+            items: { type: "string" },
+            maxItems: 1,
+          },
+          coordinates: {
+            type: "object",
+            properties: {
+              x: { type: "number" },
+              y: { type: "number" },
+              z: { type: "number" },
+            },
+            required: ["x", "y", "z"],
+          },
+        },
+        required: [
+          "id",
+          "name",
+          "description",
+          "teaching_brief",
+          "difficulty_level",
+          "is_checkpoint",
+          "zone",
+          "zone_color",
+          "prerequisite_ids",
+          "coordinates",
+        ],
+      },
+    },
+  },
+  required: ["subject", "goal", "nodes"],
+};
+
+function trimString(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, maxLength);
+}
+
+function buildUserPrompt(goal: string, subject: string) {
+  const subjectLine = subject ? `Suggested subject label: ${subject}` : "Infer a concise subject label.";
+  return `${subjectLine}
+End goal: ${goal}
+
+Return a complete Pathwise skill tree JSON object for this end goal.`;
+}
+
+function getBedrockClient() {
+  return new BedrockRuntimeClient({
+    region: process.env.AWS_BEDROCK_REGION?.trim() || process.env.AWS_REGION?.trim() || DEFAULT_REGION,
+  });
+}
+
+function buildBedrockCommand(goal: string, subject: string) {
+  const modelId = process.env.BEDROCK_MODEL_ID?.trim() || DEFAULT_MODEL;
+
+  return new ConverseStreamCommand({
+    modelId,
+    system: [{ text: SYSTEM_PROMPT }],
+    messages: [
+      {
+        role: "user",
+        content: [{ text: buildUserPrompt(goal, subject) }],
+      },
+    ],
+    inferenceConfig: {
+      maxTokens: 8192,
+      temperature: 0.35,
+    },
+    outputConfig: {
+      textFormat: {
+        type: "json_schema",
+        structure: {
+          jsonSchema: {
+            name: "pathwise_skill_tree",
+            description: "Pathwise skill tree JSON for a learner's end goal.",
+            schema: JSON.stringify(responseJsonSchema),
+          },
+        },
+      },
+    },
+  });
+}
+
+function bedrockTextStream(stream: NonNullable<ConverseStreamResponse["stream"]>) {
+  const encoder = new TextEncoder();
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const event of stream) {
+          const text = event.contentBlockDelta?.delta?.text;
+          if (text) {
+            controller.enqueue(encoder.encode(text));
+          }
+        }
+
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { subject, goal } = (await req.json()) as { subject: string; goal: string };
-
-    if (!subject || !goal) {
+    if (!hasSupabaseConfig()) {
       return NextResponse.json(
-        { error: "subject and goal are required" },
+        { error: "Supabase is not configured" },
+        { status: 503 },
+      );
+    }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = (await req.json()) as GenerateRequest;
+    const goal = trimString(body.goal, MAX_GOAL_LENGTH);
+    const subject = trimString(body.subject, MAX_SUBJECT_LENGTH);
+
+    if (!goal) {
+      return NextResponse.json(
+        { error: "goal is required" },
         { status: 400 },
       );
     }
 
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) {
+    const bedrockResponse = await getBedrockClient().send(buildBedrockCommand(goal, subject), {
+      abortSignal: AbortSignal.timeout(45_000),
+    });
+
+    if (!bedrockResponse.stream) {
       return NextResponse.json(
-        { error: "API key not configured" },
-        { status: 500 },
+        { error: "Bedrock generation stream did not start" },
+        { status: 502 },
       );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: SYSTEM_PROMPT,
-      generationConfig: {
-        responseMimeType: "application/json",
-        maxOutputTokens: 8192,
-        temperature: 0.4,
+    return new Response(bedrockTextStream(bedrockResponse.stream), {
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
       },
     });
-
-    const result = await Promise.race([
-      model.generateContent(`Subject: ${subject}\nGoal: ${goal}`),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Request timed out")), 45_000),
-      ),
-    ]);
-
-    const schemaText = result.response.text();
-
-    // Validate JSON is parseable before returning
-    JSON.parse(schemaText);
-
-    return NextResponse.json({ schema: schemaText });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    if (message === "Request timed out") {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "TimeoutError") {
       return NextResponse.json({ error: "Request timed out" }, { status: 504 });
     }
-    if (message.includes("API key") || message.includes("permission")) {
-      return NextResponse.json({ error: "Gemini API error: " + message }, { status: 502 });
-    }
-    if (message.includes("JSON")) {
-      return NextResponse.json({ error: "Model returned invalid JSON" }, { status: 422 });
-    }
+
+    console.error("Skill tree generation failed", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

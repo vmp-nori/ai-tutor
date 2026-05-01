@@ -36,7 +36,7 @@ Sync documentation with the codebase, generating from source-of-truth files.
 ```markdown
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string | `postgres://user:pass@host:5432/db` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL | `https://project.supabase.co` |
 | `LOG_LEVEL` | No | Logging verbosity (default: info) | `debug`, `info`, `warn`, `error` |
 ```
 

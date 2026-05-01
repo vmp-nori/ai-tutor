@@ -7,9 +7,10 @@ This repository contains a Next.js app named `pathwise`.
 - `src/app/` contains App Router routes and page-level UI, including the dashboard.
 - `src/components/` contains reusable UI and graph components.
 - `src/lib/` contains shared types and utilities.
-- `src/db/` contains database-related code for Drizzle/Postgres.
+- `src/lib/supabase/` contains Supabase browser/server client helpers.
+- `supabase/migrations/` contains SQL migrations applied to the Supabase project.
 - `.agents/` contains repo-shared agent skills, commands, and MCP templates. Treat it as agent-facing project metadata.
-- Root config files include `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `drizzle.config.ts`, and `postcss.config.mjs`.
+- Root config files include `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, and `postcss.config.mjs`.
 
 There is no dedicated `tests/` directory yet. Add tests near the code they cover or introduce a clear `src/**/__tests__/` convention when a test runner is added.
 
@@ -21,10 +22,6 @@ Use npm scripts from `package.json`:
 - `npm run build` creates a production build and catches TypeScript/build regressions.
 - `npm run start` serves the production build.
 - `npm run lint` runs the configured Next/ESLint lint command.
-- `npm run db:generate` generates Drizzle migrations.
-- `npm run db:migrate` applies Drizzle migrations.
-- `npm run db:push` pushes schema changes directly.
-- `npm run db:studio` opens Drizzle Studio.
 
 ## Coding Style & Naming Conventions
 

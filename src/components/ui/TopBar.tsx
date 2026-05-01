@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
 interface TopBarProps {
   subject: string;
   completedCount: number;
@@ -9,6 +12,14 @@ interface TopBarProps {
 
 export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }: TopBarProps) {
   const pct = totalCount > 0 ? completedCount / totalCount : 0;
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  }
 
   return (
     <header
@@ -140,25 +151,24 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
         )}
 
         {/* User avatar — dark circle */}
-        <div
+          <button
+          type="button"
+          onClick={handleSignOut}
           style={{
-            width: 30,
             height: 30,
-            borderRadius: "50%",
+            border: "none",
+            borderRadius: 6,
             background: "#0E0F12",
             color: "#FCFCFA",
             fontSize: 12,
             fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
+            padding: "0 11px",
             cursor: "pointer",
+            whiteSpace: "nowrap",
           }}
-          title="Profile"
         >
-          U
-        </div>
+          Sign out
+        </button>
       </div>
     </header>
   );

@@ -1,5 +1,9 @@
 import type { SkillNode, SkillEdge } from "@/lib/types";
 import { SkillTreeLoader } from "@/components/skill-tree/SkillTreeLoader";
+import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 const TREE_ID = "machine-learning-engineering-llm-mastery";
 const X_START = 96;
@@ -283,7 +287,17 @@ const EDGES: SkillEdge[] = [
   })),
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  if (!hasSupabaseConfig()) {
+    redirect("/sign-in?callbackUrl=/dashboard");
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/sign-in?callbackUrl=/dashboard");
+  }
+
   return (
     <SkillTreeLoader
       nodes={NODES}

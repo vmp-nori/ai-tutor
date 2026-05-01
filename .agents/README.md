@@ -30,4 +30,6 @@ MEM0_API_KEY=m0-...
 FIRECRAWL_API_KEY=fc-...
 ```
 
+Supabase MCP uses the hosted OAuth endpoint. Set `SUPABASE_PROJECT_REF` when you want the project-safe template to scope access to a single Supabase project. The local `.mcp.json` entry uses read-only mode by default.
+
 For local work, copy the example into the MCP config location your harness expects and replace the placeholders with environment-variable references or injected secrets supported by that harness.
