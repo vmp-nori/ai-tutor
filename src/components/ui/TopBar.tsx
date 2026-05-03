@@ -3,15 +3,24 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+export interface LearningPathNavItem {
+  id: string;
+  subject: string;
+  href?: string;
+}
+
 interface TopBarProps {
   subject: string;
   completedCount: number;
   totalCount: number;
   onOpenJsonInput?: () => void;
+  learningPaths?: LearningPathNavItem[];
 }
 
-export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }: TopBarProps) {
+export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, learningPaths = [] }: TopBarProps) {
   const pct = totalCount > 0 ? completedCount / totalCount : 0;
+  const showProgress = totalCount > 0;
+  const hasLearningPaths = learningPaths.length > 0;
   const router = useRouter();
 
   async function handleSignOut() {
@@ -27,8 +36,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
         position: "fixed",
         inset: "0 0 auto 0",
         height: 48,
-        background: "#FFFFFF",
-        borderBottom: "1px solid #E6E5DF",
+        background: "var(--color-chrome)",
+        borderBottom: "1px solid var(--color-border)",
         display: "flex",
         alignItems: "center",
         padding: "0 24px",
@@ -42,34 +51,34 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
           width: 22,
           height: 22,
           borderRadius: 6,
-          background: "#0E0F12",
+          background: "var(--color-goal)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
         }}>
-          <div style={{ width: 8, height: 8, background: "#FCFCFA", borderRadius: "50%" }} />
+          <div style={{ width: 8, height: 8, background: "var(--color-text-inverted)", borderRadius: "50%" }} />
         </div>
         <span style={{
           fontSize: 14.5,
           fontWeight: 700,
-          color: "#0E0F12",
-          letterSpacing: "-0.02em",
+          color: "var(--color-text-primary)",
+          letterSpacing: 0,
         }}>
           Pathwise
         </span>
       </div>
 
-      <div style={{ width: 1, height: 18, background: "#E6E5DF", flexShrink: 0 }} />
+      <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
 
       <a
         href="/generate"
         style={{
           height: 30,
-          border: "1px solid #E6E5DF",
+          border: "1px solid var(--color-border)",
           borderRadius: 6,
-          background: "#FFFFFF",
-          color: "#0E0F12",
+          background: "var(--color-node)",
+          color: "var(--color-text-primary)",
           cursor: "pointer",
           display: "inline-flex",
           alignItems: "center",
@@ -85,42 +94,87 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
         + New path
       </a>
 
-      <div style={{ width: 1, height: 18, background: "#E6E5DF", flexShrink: 0 }} />
-
-      <span style={{
-        fontSize: 13,
-        fontWeight: 500,
-        color: "#4D4E54",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}>
-        {subject}
-      </span>
+      <nav
+        aria-label="Learning paths"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          flex: "1 1 auto",
+          minWidth: 0,
+          overflowX: "auto",
+          overflowY: "hidden",
+          scrollbarWidth: "none",
+        }}
+      >
+        {hasLearningPaths ? (
+          learningPaths.map((path) => (
+            <div
+              key={path.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                minWidth: 0,
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
+              <a href={path.href ?? `/dashboard?treeId=${encodeURIComponent(path.id)}`} style={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: "var(--color-text-secondary)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: 220,
+                textDecoration: "none",
+              }}>
+                {path.subject}
+              </a>
+            </div>
+          ))
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
+            <span style={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--color-text-secondary)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}>
+              {subject}
+            </span>
+          </div>
+        )}
+      </nav>
 
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
-        {/* Progress: "X of N complete" + bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "#8A8A82", fontVariantNumeric: "tabular-nums" }}>
-            <span style={{ color: "#0E0F12", fontWeight: 600 }}>{completedCount}</span>
-            {" of "}{totalCount} complete
-          </span>
-          <div style={{
-            width: 90,
-            height: 4,
-            background: "#E6E5DF",
-            borderRadius: 999,
-            overflow: "hidden",
-          }}>
+        {showProgress && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontVariantNumeric: "tabular-nums" }}>
+              <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>{completedCount}</span>
+              {" of "}{totalCount} complete
+            </span>
             <div style={{
-              width: `${Math.max(totalCount > 0 ? 2 : 0, pct * 100)}%`,
-              height: "100%",
-              background: "#93C5FD",
+              width: 90,
+              height: 4,
+              background: "var(--color-border)",
               borderRadius: 999,
-              transition: "width 400ms ease",
-            }} />
+              overflow: "hidden",
+            }}>
+              <div style={{
+                width: `${Math.max(2, pct * 100)}%`,
+                height: "100%",
+                background: "var(--color-accent)",
+                borderRadius: 999,
+                transition: "width 400ms ease",
+              }} />
+            </div>
           </div>
-        </div>
+        )}
 
         {onOpenJsonInput && (
           <button
@@ -128,10 +182,10 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
             onClick={onOpenJsonInput}
             style={{
               height: 30,
-              border: "1px solid #E6E5DF",
+              border: "1px solid var(--color-border)",
               borderRadius: 6,
-              background: "#FFFFFF",
-              color: "#0E0F12",
+              background: "var(--color-node)",
+              color: "var(--color-text-primary)",
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
@@ -158,8 +212,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput }:
             height: 30,
             border: "none",
             borderRadius: 6,
-            background: "#0E0F12",
-            color: "#FCFCFA",
+            background: "var(--color-button-primary)",
+            color: "var(--color-button-primary-text)",
             fontSize: 12,
             fontWeight: 700,
             padding: "0 11px",

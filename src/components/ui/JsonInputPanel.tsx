@@ -27,7 +27,7 @@ export function JsonInputPanel({
         background: "var(--color-panel)",
         border: "1px solid var(--color-border-mid)",
         borderRadius: 8,
-        boxShadow: "0 14px 40px rgba(20,15,10,0.12), 0 2px 8px rgba(20,15,10,0.06)",
+        boxShadow: "var(--shadow-popover)",
         zIndex: 260,
         overflow: "hidden",
       }}
@@ -81,9 +81,9 @@ export function JsonInputPanel({
             width: "100%",
             height: 300,
             resize: "vertical",
-            border: `1px solid ${error ? "rgba(220,38,38,0.40)" : "var(--color-border-mid)"}`,
+            border: `1px solid ${error ? "var(--color-danger-border)" : "var(--color-border-mid)"}`,
             borderRadius: 6,
-            background: "#FCFCFA",
+            background: "var(--color-canvas)",
             color: "var(--color-text-primary)",
             padding: 10,
             fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
@@ -97,9 +97,9 @@ export function JsonInputPanel({
           <div
             role="alert"
             style={{
-              color: "#DC2626",
-              background: "rgba(220,38,38,0.05)",
-              border: "1px solid rgba(220,38,38,0.20)",
+              color: "var(--color-danger)",
+              background: "var(--color-danger-soft)",
+              border: "1px solid var(--color-danger-border)",
               borderRadius: 6,
               padding: "8px 9px",
               marginTop: 8,
@@ -137,7 +137,7 @@ export function JsonInputPanel({
               border: "none",
               borderRadius: 6,
               background: "var(--color-accent)",
-              color: "#FFFFFF",
+              color: "var(--color-text-on-accent)",
               cursor: "pointer",
               padding: "0 12px",
               fontSize: 12,

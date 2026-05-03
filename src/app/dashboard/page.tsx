@@ -287,7 +287,112 @@ const EDGES: SkillEdge[] = [
   })),
 ];
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams?: Promise<{ treeId?: string }>;
+}
+
+interface StoredTree {
+  id: string;
+  subject: string;
+  goal: string;
+}
+
+interface StoredNode {
+  id: string;
+  tree_id: string;
+  name: string;
+  description: string;
+  position_x: number;
+  position_y: number;
+  difficulty_level: number | null;
+  is_checkpoint: boolean | null;
+  zone: string | null;
+  zone_color: string | null;
+}
+
+interface StoredEdge {
+  tree_id: string;
+  from_node_id: string;
+  to_node_id: string;
+}
+
+interface StoredProgress {
+  node_id: string;
+  status: SkillNode["status"];
+}
+
+function buildStoredGraph(
+  tree: StoredTree,
+  storedNodes: StoredNode[],
+  storedEdges: StoredEdge[],
+  progress: StoredProgress[],
+) {
+  const statusByNodeId = new Map(progress.map((item) => [item.node_id, item.status]));
+  const coordinateColumns = Array.from(
+    new Set(storedNodes.map((node) => node.position_x)),
+  ).sort((a, b) => a - b);
+  const xByCoordinate = new Map(
+    coordinateColumns.map((coordinate, index) => [coordinate, X_START + index * X_GAP]),
+  );
+
+  const nodes: SkillNode[] = storedNodes.map((node, index) => ({
+    id: node.id,
+    treeId: tree.id,
+    name: node.name,
+    description: node.description,
+    status: statusByNodeId.get(node.id) ?? (index === 0 ? "current" : "available"),
+    x: xByCoordinate.get(node.position_x) ?? X_START + index * X_GAP,
+    y: Y_BASE - node.position_y * 8,
+    prereqs: storedEdges
+      .filter((edge) => edge.to_node_id === node.id)
+      .map((edge) => edge.from_node_id),
+    difficultyLevel: node.difficulty_level ?? undefined,
+    isCheckpoint: node.is_checkpoint ?? undefined,
+    zone: node.zone ?? undefined,
+    zoneColor: node.zone_color ?? undefined,
+  }));
+
+  const sourceIds = new Set(storedEdges.map((edge) => edge.from_node_id));
+  const terminalNodeIds = nodes
+    .filter((node) => !sourceIds.has(node.id))
+    .map((node) => node.id);
+  const goalNode: SkillNode = {
+    id: `${tree.id}_goal`,
+    treeId: tree.id,
+    name: tree.subject,
+    description: tree.goal,
+    status: "available",
+    x: Math.max(...nodes.map((node) => node.x)) + X_GAP,
+    y: Y_BASE,
+    prereqs: terminalNodeIds,
+    isCheckpoint: true,
+    zone: "End goal",
+    zoneColor: "#3B82F6",
+  };
+
+  const edges: SkillEdge[] = [
+    ...storedEdges.map((edge) => ({
+      id: `edge_${edge.from_node_id}_${edge.to_node_id}`,
+      treeId: tree.id,
+      fromNodeId: edge.from_node_id,
+      toNodeId: edge.to_node_id,
+    })),
+    ...terminalNodeIds.map((fromNodeId) => ({
+      id: `edge_${fromNodeId}_${goalNode.id}`,
+      treeId: tree.id,
+      fromNodeId,
+      toNodeId: goalNode.id,
+    })),
+  ];
+
+  return {
+    nodes: [...nodes, goalNode],
+    edges,
+    subject: tree.subject,
+  };
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   if (!hasSupabaseConfig()) {
     redirect("/sign-in?callbackUrl=/dashboard");
   }
@@ -298,11 +403,77 @@ export default async function DashboardPage() {
     redirect("/sign-in?callbackUrl=/dashboard");
   }
 
+  const { data: userLearningPaths } = await supabase
+    .from("skill_trees")
+    .select("id, subject")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  const params = await searchParams;
+  const requestedTreeId = params?.treeId;
+  const selectedTreeId = requestedTreeId ?? userLearningPaths?.[0]?.id;
+  const learningPaths =
+    userLearningPaths && userLearningPaths.length > 0
+      ? userLearningPaths
+      : [{ id: TREE_ID, subject: DEFAULT_GRAPH.subject, href: "/dashboard" }];
+
+  if (selectedTreeId) {
+    const selectedTree = userLearningPaths?.find((path) => path.id === selectedTreeId);
+
+    if (selectedTree) {
+      const [
+        { data: tree },
+        { data: storedNodes },
+        { data: storedEdges },
+        { data: progress },
+      ] = await Promise.all([
+        supabase
+          .from("skill_trees")
+          .select("id, subject, goal")
+          .eq("id", selectedTree.id)
+          .eq("user_id", user.id)
+          .single(),
+        supabase
+          .from("skill_nodes")
+          .select("id, tree_id, name, description, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+          .eq("tree_id", selectedTree.id)
+          .order("position_x", { ascending: true }),
+        supabase
+          .from("skill_edges")
+          .select("tree_id, from_node_id, to_node_id")
+          .eq("tree_id", selectedTree.id),
+        supabase
+          .from("user_node_progress")
+          .select("node_id, status")
+          .eq("user_id", user.id),
+      ]);
+
+      if (tree && storedNodes && storedNodes.length > 0) {
+        const graph = buildStoredGraph(
+          tree as StoredTree,
+          storedNodes as StoredNode[],
+          (storedEdges ?? []) as StoredEdge[],
+          (progress ?? []) as StoredProgress[],
+        );
+
+        return (
+          <SkillTreeLoader
+            nodes={graph.nodes}
+            edges={graph.edges}
+            subject={graph.subject}
+            learningPaths={learningPaths}
+          />
+        );
+      }
+    }
+  }
+
   return (
     <SkillTreeLoader
       nodes={NODES}
       edges={EDGES}
       subject={DEFAULT_GRAPH.subject}
+      learningPaths={learningPaths}
     />
   );
 }

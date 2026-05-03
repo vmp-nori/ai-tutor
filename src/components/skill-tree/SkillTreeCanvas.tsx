@@ -7,7 +7,7 @@ import { SkillNode } from "./SkillNode";
 import { SkillEdge } from "./SkillEdge";
 import { JsonInputPanel } from "@/components/ui/JsonInputPanel";
 import { MiniMap } from "@/components/ui/MiniMap";
-import { TopBar } from "@/components/ui/TopBar";
+import { TopBar, type LearningPathNavItem } from "@/components/ui/TopBar";
 
 const CANVAS_W = 3000;
 const CANVAS_H = 820;
@@ -33,6 +33,7 @@ interface SkillTreeCanvasProps {
   edges: SkillEdgeType[];
   subject: string;
   initialSchema?: string;
+  learningPaths?: LearningPathNavItem[];
 }
 
 interface GraphState {
@@ -218,7 +219,7 @@ function resolveInitialGraph(
   return fallback;
 }
 
-export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema }: SkillTreeCanvasProps) {
+export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema, learningPaths }: SkillTreeCanvasProps) {
   const scrollRef  = useRef<HTMLDivElement>(null);
   const [graph, setGraph] = useState<GraphState>(() =>
     resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject })
@@ -481,7 +482,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
     if (el) {
       el.style.cursor    = "grabbing";
       el.style.zIndex    = "20";
-      el.style.boxShadow = "0 8px 28px rgba(20,15,10,0.14), 0 0 0 2px rgba(147,197,253,0.34)";
+      el.style.boxShadow = "var(--shadow-drag)";
       el.style.transition = "none";
     }
 
@@ -614,6 +615,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
         completedCount={completedCount}
         totalCount={regularNodes.length}
         onOpenJsonInput={handleOpenJsonInput}
+        learningPaths={learningPaths}
       />
 
       {/* Chapter rail — Swiss-grid editorial style */}
@@ -626,8 +628,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
             left: 0,
             right: 0,
             height: CHAPTER_RAIL_H,
-            background: "#FCFCFA",
-            borderBottom: "1px solid #E6E5DF",
+            background: "var(--color-canvas)",
+            borderBottom: "1px solid var(--color-border)",
             zIndex: 100,
             overflow: "hidden",
           }}
@@ -656,7 +658,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   height: CHAPTER_RAIL_H,
                   padding: "16px 18px",
                   overflow: "hidden",
-                  borderLeft: i > 0 ? "1px solid #E6E5DF" : "none",
+                  borderLeft: i > 0 ? "1px solid var(--color-border)" : "none",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
@@ -664,8 +666,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   <span style={{
                     fontSize: numSize,
                     fontWeight: 700,
-                    letterSpacing: "-0.04em",
-                    color: hasCurrentNode ? "#2563EB" : "#B8B8AE",
+                    letterSpacing: 0,
+                    color: hasCurrentNode ? "var(--color-text-accent)" : "var(--color-text-subtle)",
                     lineHeight: 0.85,
                     fontVariantNumeric: "tabular-nums",
                     flexShrink: 0,
@@ -678,7 +680,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                       fontWeight: 700,
                       letterSpacing: "0.16em",
                       textTransform: "uppercase" as const,
-                      color: "#8A8A82",
+                      color: "var(--color-text-muted)",
                       marginBottom: 3,
                     }}>
                       Chapter
@@ -687,8 +689,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                       fontSize: nameSize,
                       fontWeight: 650,
                       lineHeight: 1.15,
-                      letterSpacing: "-0.01em",
-                      color: "#0E0F12",
+                      letterSpacing: 0,
+                      color: "var(--color-text-primary)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -696,7 +698,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                       {zone.name}
                     </div>
                     {zoneTotal > 0 && (
-                      <div style={{ fontSize: 11, color: "#8A8A82", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
+                      <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                         {zoneDone}/{zoneTotal} concepts
                       </div>
                     )}
@@ -710,7 +712,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                     bottom: -1,
                     height: 2,
                     width: "100%",
-                    background: "#93C5FD",
+                    background: "var(--color-accent)",
                   }} />
                 )}
               </div>
@@ -736,7 +738,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
           position: "fixed",
           inset: `${CANVAS_TOP}px 0 0 0`,
           overflow: "auto",
-          background: "#FCFCFA",
+          background: "var(--color-canvas)",
           overscrollBehavior: "contain",
         }}
       >
@@ -771,9 +773,9 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   top: zone.y,
                   width: zone.width,
                   height: zone.height,
-                  borderLeft: `1px solid color-mix(in srgb, ${zone.color} 20%, #E6E5DF)`,
-                  borderRight: `1px solid color-mix(in srgb, ${zone.color} 15%, #E6E5DF)`,
-                  background: `color-mix(in srgb, ${zone.color} 5%, #FCFCFA)`,
+                  borderLeft: `1px solid color-mix(in srgb, ${zone.color} 20%, var(--color-border))`,
+                  borderRight: `1px solid color-mix(in srgb, ${zone.color} 15%, var(--color-border))`,
+                  background: `color-mix(in srgb, ${zone.color} 5%, var(--color-canvas))`,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -783,7 +785,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                     position: "absolute",
                     right: 18,
                     bottom: 18,
-                    color: "#0E0F12",
+                    color: "var(--color-text-primary)",
                     fontSize: 46,
                     fontWeight: 800,
                     letterSpacing: 0,
@@ -880,12 +882,12 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
           left: 16,
           display: "inline-flex",
           height: 32,
-          background: "#FFFFFF",
-          border: "1px solid #E6E5DF",
+          background: "var(--color-panel)",
+          border: "1px solid var(--color-border)",
           borderRadius: 7,
           overflow: "hidden",
           zIndex: 190,
-          boxShadow: "0 1px 4px rgba(20,15,10,0.06)",
+          boxShadow: "var(--shadow-control)",
         }}
         aria-label="Graph zoom controls"
       >
@@ -919,8 +921,8 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
   const isCurrent = node.status === "current";
   const isDone = node.status === "completed";
 
-  const dotColor = isCurrent ? "#93C5FD" : isDone ? "#15803D" : "#8A8A82";
-  const statusLabelColor = isCurrent ? "#2563EB" : isDone ? "#15803D" : "#8A8A82";
+  const dotColor = isCurrent ? "var(--color-accent)" : isDone ? "var(--color-success)" : "var(--color-text-muted)";
+  const statusLabelColor = isCurrent ? "var(--color-text-accent)" : isDone ? "var(--color-success)" : "var(--color-text-muted)";
   const canStart = node.status === "current" || node.status === "available";
 
   return (
@@ -931,12 +933,12 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
         left,
         top,
         width: 320,
-        background: "#FFFFFF",
-        border: "1px solid #C9C7BD",
+        background: "var(--color-panel)",
+        border: "1px solid var(--color-border-mid)",
         borderRadius: 12,
         padding: 16,
         zIndex: 25,
-        boxShadow: "0 18px 44px rgba(20,15,10,0.12), 0 2px 6px rgba(20,15,10,0.04)",
+        boxShadow: "var(--shadow-floating)",
         pointerEvents: "auto",
       }}
     >
@@ -947,11 +949,11 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
         top: 22,
         width: 12,
         height: 12,
-        background: "#FFFFFF",
-        borderLeft: flip ? "none" : "1px solid #C9C7BD",
-        borderRight: flip ? "1px solid #C9C7BD" : "none",
-        borderBottom: flip ? "none" : "1px solid #C9C7BD",
-        borderTop: flip ? "1px solid #C9C7BD" : "none",
+        background: "var(--color-panel)",
+        borderLeft: flip ? "none" : "1px solid var(--color-border-mid)",
+        borderRight: flip ? "1px solid var(--color-border-mid)" : "none",
+        borderBottom: flip ? "none" : "1px solid var(--color-border-mid)",
+        borderTop: flip ? "1px solid var(--color-border-mid)" : "none",
         transform: "rotate(45deg)",
       }} />
 
@@ -980,7 +982,7 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#8A8A82",
+            color: "var(--color-text-muted)",
             padding: 0,
           }}
         >
@@ -994,9 +996,9 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
         margin: "8px 0 10px",
         fontSize: 19,
         fontWeight: 700,
-        letterSpacing: "-0.015em",
+        letterSpacing: 0,
         lineHeight: 1.2,
-        color: "#0E0F12",
+        color: "var(--color-text-primary)",
       }}>
         {node.name}
       </h3>
@@ -1006,7 +1008,7 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
           margin: "0 0 14px",
           fontSize: 12.5,
           lineHeight: 1.55,
-          color: "#4D4E54",
+          color: "var(--color-text-secondary)",
         }}>
           {node.description}
         </p>
@@ -1020,28 +1022,28 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
         columnGap: 14,
         fontSize: 11.5,
         padding: "12px 0",
-        borderTop: "1px solid #E6E5DF",
-        borderBottom: "1px solid #E6E5DF",
+        borderTop: "1px solid var(--color-border)",
+        borderBottom: "1px solid var(--color-border)",
         marginBottom: 14,
       }}>
         {typeof node.difficultyLevel === "number" && (
           <>
-            <span style={{ color: "#8A8A82", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Difficulty</span>
-            <span style={{ color: "#0E0F12", fontWeight: 600 }}>L{node.difficultyLevel} / 10</span>
+            <span style={{ color: "var(--color-text-muted)", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Difficulty</span>
+            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>L{node.difficultyLevel} / 10</span>
           </>
         )}
         {node.prereqs.length > 0 && (
           <>
-            <span style={{ color: "#8A8A82", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Depends on</span>
-            <span style={{ color: "#0E0F12", fontWeight: 600 }}>
+            <span style={{ color: "var(--color-text-muted)", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Depends on</span>
+            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>
               {node.prereqs.length} concept{node.prereqs.length === 1 ? "" : "s"}
             </span>
           </>
         )}
         {node.zone && (
           <>
-            <span style={{ color: "#8A8A82", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Chapter</span>
-            <span style={{ color: "#0E0F12", fontWeight: 600 }}>{node.zone}</span>
+            <span style={{ color: "var(--color-text-muted)", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Chapter</span>
+            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>{node.zone}</span>
           </>
         )}
       </div>
@@ -1053,13 +1055,13 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
             const p = nodeMap.get(pid);
             if (!p) return null;
             return (
-              <div key={pid} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: "#4D4E54" }}>
+              <div key={pid} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: "var(--color-text-secondary)" }}>
                 <div style={{
                   width: 12,
                   height: 12,
                   borderRadius: 3,
-                  border: p.status === "completed" ? "none" : "1px solid #C9C7BD",
-                  background: p.status === "completed" ? "#15803D" : "transparent",
+                  border: p.status === "completed" ? "none" : "1px solid var(--color-border-mid)",
+                  background: p.status === "completed" ? "var(--color-success)" : "transparent",
                   flexShrink: 0,
                   display: "flex",
                   alignItems: "center",
@@ -1067,7 +1069,7 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
                 }}>
                   {p.status === "completed" && (
                     <svg width="7" height="5" viewBox="0 0 7 5" fill="none">
-                      <path d="M1 2.5L2.5 4L6 1" stroke="#FFFFFF" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M1 2.5L2.5 4L6 1" stroke="var(--color-text-inverted)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </div>
@@ -1086,12 +1088,12 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
           height: 36,
           borderRadius: 8,
           border: "none",
-          background: canStart ? "#93C5FD" : "#F6F6F2",
-          color: canStart ? "#0E0F12" : "#B8B8AE",
+          background: canStart ? "var(--color-accent)" : "var(--color-node-locked)",
+          color: canStart ? "var(--color-text-on-accent)" : "var(--color-text-subtle)",
           fontWeight: 700,
           fontSize: 12.5,
           cursor: canStart ? "pointer" : "default",
-          letterSpacing: "-0.005em",
+          letterSpacing: 0,
         }}
       >
         {node.status === "current" ? "Continue lesson" : "Open lesson"}
@@ -1105,9 +1107,9 @@ function zoomBtnStyle(disabled: boolean): React.CSSProperties {
     width: 36,
     height: 32,
     border: "none",
-    borderRight: "1px solid #E6E5DF",
+    borderRight: "1px solid var(--color-border)",
     background: "transparent",
-    color: disabled ? "#C9C7BD" : "#4D4E54",
+    color: disabled ? "var(--color-text-subtle)" : "var(--color-text-secondary)",
     cursor: disabled ? "default" : "pointer",
     display: "inline-flex",
     alignItems: "center",

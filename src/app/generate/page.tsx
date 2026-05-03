@@ -15,5 +15,11 @@ export default async function GeneratePage() {
     redirect("/sign-in?callbackUrl=/generate");
   }
 
-  return <GeneratePageClient />;
+  const { data: learningPaths } = await supabase
+    .from("skill_trees")
+    .select("id, subject")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  return <GeneratePageClient learningPaths={learningPaths ?? []} />;
 }

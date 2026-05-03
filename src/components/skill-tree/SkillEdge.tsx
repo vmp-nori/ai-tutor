@@ -4,10 +4,10 @@ import type { SkillNode } from "@/lib/types";
 import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
 
 const STROKE: Record<string, string> = {
-  done:   "#15803D",
-  active: "#93C5FD",
-  open:   "#C9C7BD",
-  locked: "#E6E5DF",
+  done:   "var(--color-success)",
+  active: "var(--color-accent)",
+  open:   "var(--color-border-mid)",
+  locked: "var(--color-border)",
 };
 
 const WIDTH: Record<string, number> = {

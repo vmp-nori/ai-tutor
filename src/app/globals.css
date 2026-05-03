@@ -1,41 +1,123 @@
 @import "tailwindcss";
 
 @theme {
-  /* Canvas and surfaces — Direction C: Editorial Light */
-  --color-canvas:       #FCFCFA;
-  --color-chrome:       #FFFFFF;
-  --color-panel:        #FFFFFF;
-  --color-node:         #FFFFFF;
-  --color-node-done:    #DCFCE7;
-  --color-node-locked:  #F6F6F2;
-  --color-goal:         #0E0F12;
+  /* Canvas and surfaces */
+  --color-canvas:       oklch(98.8% 0.004 100);
+  --color-chrome:       oklch(99.4% 0.003 100);
+  --color-panel:        oklch(99.1% 0.003 100);
+  --color-node:         oklch(99.4% 0.003 100);
+  --color-node-current: oklch(97.2% 0.022 249);
+  --color-node-done:    oklch(95.5% 0.044 150);
+  --color-node-locked:  oklch(96.5% 0.005 100);
+  --color-goal:         oklch(18.4% 0.006 255);
 
   /* Borders */
-  --color-border:        #E6E5DF;
-  --color-border-mid:    #C9C7BD;
-  --color-border-accent: rgba(147,197,253,0.58);
+  --color-border:        oklch(90.6% 0.008 100);
+  --color-border-mid:    oklch(80.9% 0.012 100);
+  --color-border-accent: oklch(78.4% 0.097 249 / 0.58);
 
   /* Text */
-  --color-text-primary:   #0E0F12;
-  --color-text-secondary: #4D4E54;
-  --color-text-muted:     #8A8A82;
-  --color-text-inverted:  #FCFCFA;
-  --color-text-accent:    #2563EB;
+  --color-text-primary:   oklch(18.4% 0.006 255);
+  --color-text-secondary: oklch(39.6% 0.010 255);
+  --color-text-muted:     oklch(61.2% 0.010 100);
+  --color-text-subtle:    oklch(74.2% 0.011 100);
+  --color-text-inverted:  oklch(98.8% 0.004 100);
+  --color-text-accent:    oklch(50.5% 0.181 258);
 
   /* Accent and learning states */
-  --color-accent:         #93C5FD;
-  --color-accent-hover:   #60A5FA;
-  --color-accent-subtle:  #DBEAFE;
-  --color-success:        #15803D;
-  --color-success-soft:   #DCFCE7;
-  --color-success-subtle: #F0FDF4;
-  --color-available:      #6B7280;
-  --color-locked:         #D1D5DB;
-  --color-shadow:         rgba(20,15,10,0.12);
+  --color-accent:         oklch(78.4% 0.097 249);
+  --color-accent-hover:   oklch(70.7% 0.139 252);
+  --color-accent-subtle:  oklch(92.6% 0.034 249);
+  --color-success:        oklch(49.1% 0.122 150);
+  --color-success-soft:   oklch(95.5% 0.044 150);
+  --color-success-subtle: oklch(98.1% 0.020 150);
+  --color-success-border: oklch(87.1% 0.078 150);
+  --color-available:      oklch(52.2% 0.018 255);
+  --color-locked:         oklch(84.7% 0.009 255);
+  --color-danger:         oklch(57.7% 0.209 25);
+  --color-danger-soft:    oklch(96.3% 0.020 25);
+  --color-danger-border:  oklch(86.1% 0.071 25);
+  --color-warning-soft:   oklch(96.2% 0.033 96);
+  --color-focus-ring:     oklch(18.4% 0.006 255 / 0.06);
+  --color-spinner-track:  oklch(98.8% 0.004 100 / 0.35);
+  --color-shadow:         oklch(20% 0.020 75 / 0.12);
 
   /* Font */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --shadow-card: 0 2px 12px oklch(20% 0.020 75 / 0.07);
+  --shadow-control: 0 1px 4px oklch(20% 0.020 75 / 0.06);
+  --shadow-node: 0 1px 2px oklch(20% 0.020 75 / 0.04);
+  --shadow-node-active: 0 1px 3px oklch(78.4% 0.097 249 / 0.34), 0 4px 12px oklch(78.4% 0.097 249 / 0.13);
+  --shadow-node-selected: 0 0 0 3px oklch(78.4% 0.097 249 / 0.22), 0 4px 18px oklch(20% 0.020 75 / 0.08);
+  --shadow-goal: 0 6px 20px oklch(20% 0.020 75 / 0.12);
+  --shadow-drag: 0 8px 28px oklch(20% 0.020 75 / 0.14), 0 0 0 2px oklch(78.4% 0.097 249 / 0.34);
+  --shadow-floating: 0 18px 44px oklch(20% 0.020 75 / 0.12), 0 2px 6px oklch(20% 0.020 75 / 0.04);
+  --shadow-popover: 0 14px 40px oklch(20% 0.020 75 / 0.12), 0 2px 8px oklch(20% 0.020 75 / 0.06);
+  --color-button-primary: var(--color-goal);
+  --color-button-primary-hover: oklch(27.5% 0.008 255);
+  --color-button-primary-text: var(--color-text-inverted);
+  --color-text-on-accent: var(--color-text-primary);
+  --color-scrollbar-thumb: var(--color-border-mid);
+  --color-scrollbar-thumb-hover: oklch(70.5% 0.013 100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-canvas:       oklch(15.4% 0.014 255);
+    --color-chrome:       oklch(18.7% 0.013 255);
+    --color-panel:        oklch(20.5% 0.014 255);
+    --color-node:         oklch(22.8% 0.015 255);
+    --color-node-current: oklch(25.4% 0.040 249);
+    --color-node-done:    oklch(24.8% 0.044 150);
+    --color-node-locked:  oklch(18.1% 0.012 255);
+    --color-goal:         oklch(86.8% 0.055 232);
+    --color-border:        oklch(29.7% 0.015 255);
+    --color-border-mid:    oklch(38.5% 0.017 255);
+    --color-border-accent: oklch(73.4% 0.106 249 / 0.64);
+    --color-text-primary:   oklch(92.6% 0.007 255);
+    --color-text-secondary: oklch(77.2% 0.011 255);
+    --color-text-muted:     oklch(62.6% 0.013 255);
+    --color-text-subtle:    oklch(47.3% 0.015 255);
+    --color-text-inverted:  oklch(16.3% 0.014 255);
+    --color-text-accent:    oklch(78.8% 0.095 249);
+    --color-accent:         oklch(76.3% 0.105 249);
+    --color-accent-hover:   oklch(82.0% 0.084 249);
+    --color-accent-subtle:  oklch(26.6% 0.037 249);
+    --color-success:        oklch(72.7% 0.119 151);
+    --color-success-soft:   oklch(24.8% 0.044 150);
+    --color-success-subtle: oklch(21.3% 0.031 150);
+    --color-success-border: oklch(39.4% 0.070 150);
+    --color-available:      oklch(63.4% 0.016 255);
+    --color-locked:         oklch(35.7% 0.014 255);
+    --color-danger:         oklch(72.3% 0.164 25);
+    --color-danger-soft:    oklch(23.9% 0.040 25);
+    --color-danger-border:  oklch(43.2% 0.088 25);
+    --color-warning-soft:   oklch(24.8% 0.038 96);
+    --color-focus-ring:     oklch(78.8% 0.095 249 / 0.14);
+    --color-spinner-track:  oklch(16.3% 0.014 255 / 0.35);
+    --color-shadow:         oklch(7% 0.010 255 / 0.42);
+    --shadow-card: 0 2px 16px oklch(7% 0.010 255 / 0.35);
+    --shadow-control: 0 1px 8px oklch(7% 0.010 255 / 0.28);
+    --shadow-node: 0 1px 2px oklch(7% 0.010 255 / 0.28);
+    --shadow-node-active: 0 1px 3px oklch(76.3% 0.105 249 / 0.18), 0 4px 12px oklch(7% 0.010 255 / 0.34);
+    --shadow-node-selected: 0 0 0 3px oklch(76.3% 0.105 249 / 0.22), 0 4px 18px oklch(7% 0.010 255 / 0.38);
+    --shadow-goal: 0 6px 20px oklch(7% 0.010 255 / 0.32);
+    --shadow-drag: 0 8px 28px oklch(7% 0.010 255 / 0.48), 0 0 0 2px oklch(76.3% 0.105 249 / 0.36);
+    --shadow-floating: 0 18px 44px oklch(7% 0.010 255 / 0.50), 0 2px 6px oklch(7% 0.010 255 / 0.35);
+    --shadow-popover: 0 14px 40px oklch(7% 0.010 255 / 0.52), 0 2px 8px oklch(7% 0.010 255 / 0.38);
+    --color-button-primary: var(--color-goal);
+    --color-button-primary-hover: oklch(78.2% 0.069 232);
+    --color-button-primary-text: var(--color-text-inverted);
+    --color-text-on-accent: var(--color-text-inverted);
+    --color-scrollbar-thumb: oklch(35.7% 0.014 255);
+    --color-scrollbar-thumb-hover: oklch(45.5% 0.017 255);
+  }
 }
 
 html,
@@ -55,13 +137,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #C9C7BD;
+  background: var(--color-scrollbar-thumb);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #A8A49C;
+  background: var(--color-scrollbar-thumb-hover);
 }

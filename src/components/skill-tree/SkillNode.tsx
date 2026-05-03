@@ -35,38 +35,38 @@ export function SkillNode({
   const isDone = node.status === "completed";
 
   const background = isGoal
-    ? "#0E0F12"
+    ? "var(--color-goal)"
     : isCurrent
-    ? "#EFF6FF"
+    ? "var(--color-node-current)"
     : isDone
-    ? "#DCFCE7"
-    : "#FFFFFF";
+    ? "var(--color-node-done)"
+    : "var(--color-node)";
 
   const border = isGoal
     ? "none"
     : isSelected
-    ? "1px solid #93C5FD"
+    ? "1px solid var(--color-accent)"
     : isCurrent
-    ? "1px solid #93C5FD"
+    ? "1px solid var(--color-accent)"
     : isDone
-    ? "1px solid #BBF7D0"
-    : "1px solid #E6E5DF";
+    ? "1px solid var(--color-success-border)"
+    : "1px solid var(--color-border)";
 
   const boxShadow = isGoal
-    ? "0 6px 20px rgba(20,15,10,0.12)"
+    ? "var(--shadow-goal)"
     : isSelected
-    ? "0 0 0 3px rgba(147,197,253,0.22), 0 4px 18px rgba(20,15,10,0.08)"
+    ? "var(--shadow-node-selected)"
     : isCurrent
-    ? "0 1px 3px rgba(147,197,253,0.34), 0 4px 12px rgba(147,197,253,0.13)"
-    : "0 1px 2px rgba(20,15,10,0.04)";
+    ? "var(--shadow-node-active)"
+    : "var(--shadow-node)";
 
   const dotColor = isCurrent
-    ? "#93C5FD"
+    ? "var(--color-accent)"
     : isDone
-    ? "#15803D"
+    ? "var(--color-success)"
     : node.status === "available"
-    ? "#8A8A82"
-    : "#D1D5DB";
+    ? "var(--color-available)"
+    : "var(--color-locked)";
 
   return (
     <div
@@ -100,18 +100,18 @@ export function SkillNode({
             fontWeight: 800,
             letterSpacing: "0.16em",
             textTransform: "uppercase" as const,
-            color: "#93C5FD",
+            color: "var(--color-text-accent)",
             marginBottom: 6,
           }}>
-            <span style={{ width: 14, height: 1, background: "#93C5FD", display: "inline-block" }} />
+            <span style={{ width: 14, height: 1, background: "var(--color-accent)", display: "inline-block" }} />
             End Goal
           </div>
           <div style={{
             fontSize: 14.5,
             fontWeight: 700,
-            color: "#FCFCFA",
+            color: "var(--color-text-inverted)",
             lineHeight: 1.2,
-            letterSpacing: "-0.01em",
+            letterSpacing: 0,
           }}>
             {node.name}
           </div>
@@ -131,7 +131,7 @@ export function SkillNode({
               fontWeight: 700,
               letterSpacing: "0.12em",
               textTransform: "uppercase" as const,
-              color: isCurrent ? "#2563EB" : isDone ? "#15803D" : "#8A8A82",
+              color: isCurrent ? "var(--color-text-accent)" : isDone ? "var(--color-success)" : "var(--color-text-muted)",
             }}>
               {STATUS_LABELS[node.status]}
             </span>
@@ -140,8 +140,8 @@ export function SkillNode({
                 fontSize: 9,
                 fontWeight: 700,
                 letterSpacing: "0.10em",
-                color: "#2563EB",
-                border: "1px solid rgba(147,197,253,0.58)",
+                color: "var(--color-text-accent)",
+                border: "1px solid var(--color-border-accent)",
                 borderRadius: 3,
                 padding: "1px 5px",
                 textTransform: "uppercase" as const,
@@ -153,7 +153,7 @@ export function SkillNode({
             {typeof node.difficultyLevel === "number" && (
               <span style={{
                 fontSize: 10.5,
-                color: "#8A8A82",
+                color: "var(--color-text-muted)",
                 fontVariantNumeric: "tabular-nums",
                 fontWeight: 500,
               }}>
@@ -164,9 +164,9 @@ export function SkillNode({
           <div style={{
             fontSize: 14,
             fontWeight: 600,
-            color: node.status === "locked" ? "#B8B8AE" : "#0E0F12",
+            color: node.status === "locked" ? "var(--color-text-subtle)" : "var(--color-text-primary)",
             lineHeight: 1.25,
-            letterSpacing: "-0.005em",
+            letterSpacing: 0,
           }}>
             {node.name}
           </div>

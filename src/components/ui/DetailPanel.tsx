@@ -27,7 +27,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
         width: 296,
         background: "var(--color-panel)",
         borderLeft: "1px solid var(--color-border)",
-        boxShadow: "-2px 0 20px oklch(34% 0.018 230 / 0.09)",
+        boxShadow: "var(--shadow-card)",
         transform: node ? "translateX(0)" : "translateX(100%)",
         transition: "transform 210ms cubic-bezier(0.16, 1, 0.3, 1)",
         zIndex: 150,
@@ -80,7 +80,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
               color: node.status === "current"
                 ? "var(--color-text-accent)"
                 : node.status === "completed"
-                ? "oklch(43% 0.090 154)"
+                ? "var(--color-success)"
                 : "var(--color-text-muted)",
               marginBottom: 6,
             }}
@@ -109,7 +109,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
               fontWeight: 600,
               color: "var(--color-text-primary)",
               lineHeight: 1.25,
-              letterSpacing: "-0.015em",
+              letterSpacing: 0,
               marginBottom: 10,
             }}
           >
@@ -178,7 +178,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
                           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
                             <path
                               d="M1 3L3 5L7 1"
-                              stroke="oklch(96% 0.006 215)"
+                              stroke="var(--color-text-inverted)"
                               strokeWidth="1.5"
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -210,7 +210,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
                   : "1px solid var(--color-border)",
               color:
                 node.status === "current" || node.status === "available"
-                  ? "oklch(98% 0.004 215)"
+                  ? "var(--color-text-on-accent)"
                   : "var(--color-text-muted)",
               fontSize: 13,
               fontWeight: 600,
@@ -218,7 +218,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
                 node.status === "current" || node.status === "available"
                   ? "pointer"
                   : "default",
-              letterSpacing: "-0.005em",
+              letterSpacing: 0,
             }}
           >
             {node.status === "current" ? "Continue lesson" : "Start lesson"}

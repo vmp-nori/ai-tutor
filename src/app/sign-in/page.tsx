@@ -118,7 +118,7 @@ function AuthLogo() {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#FCFCFA",
+  background: "var(--color-canvas)",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -132,7 +132,7 @@ const logoStyle: React.CSSProperties = {
   gap: 10,
   marginBottom: 36,
   textDecoration: "none",
-  color: "#0E0F12",
+  color: "var(--color-text-primary)",
   fontSize: 14.5,
   fontWeight: 700,
 };
@@ -141,7 +141,7 @@ const markStyle: React.CSSProperties = {
   width: 22,
   height: 22,
   borderRadius: 6,
-  background: "#0E0F12",
+  background: "var(--color-goal)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -150,31 +150,31 @@ const markStyle: React.CSSProperties = {
 const dotStyle: React.CSSProperties = {
   width: 8,
   height: 8,
-  background: "#FCFCFA",
+  background: "var(--color-text-inverted)",
   borderRadius: "50%",
 };
 
 const panelStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: 420,
-  background: "#FFFFFF",
-  border: "1px solid #E6E5DF",
+  background: "var(--color-panel)",
+  border: "1px solid var(--color-border)",
   borderRadius: 8,
   padding: "28px 26px",
-  boxShadow: "0 2px 12px rgba(20,15,10,0.07)",
+  boxShadow: "var(--shadow-card)",
 };
 
 const titleStyle: React.CSSProperties = {
   margin: "0 0 6px",
   fontSize: 20,
   fontWeight: 700,
-  color: "#0E0F12",
+  color: "var(--color-text-primary)",
 };
 
 const copyStyle: React.CSSProperties = {
   margin: "0 0 24px",
   fontSize: 13,
-  color: "#8A8A82",
+  color: "var(--color-text-muted)",
   lineHeight: 1.5,
 };
 
@@ -190,33 +190,33 @@ const labelStyle: React.CSSProperties = {
   gap: 6,
   fontSize: 12,
   fontWeight: 600,
-  color: "#4D4E54",
+  color: "var(--color-text-secondary)",
 };
 
 const inputStyle: React.CSSProperties = {
   height: 38,
-  border: "1px solid #E6E5DF",
+  border: "1px solid var(--color-border)",
   borderRadius: 7,
   padding: "0 12px",
   fontSize: 13,
-  color: "#0E0F12",
-  background: "#FFFFFF",
+  color: "var(--color-text-primary)",
+  background: "var(--color-node)",
 };
 
 const errorStyle: React.CSSProperties = {
-  background: "#FEF2F2",
-  border: "1px solid #FECACA",
+  background: "var(--color-danger-soft)",
+  border: "1px solid var(--color-danger-border)",
   borderRadius: 7,
   padding: "10px 12px",
   fontSize: 12.5,
-  color: "#DC2626",
+  color: "var(--color-danger)",
   lineHeight: 1.5,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   height: 42,
-  background: "#0E0F12",
-  color: "#FFFFFF",
+  background: "var(--color-button-primary)",
+  color: "var(--color-button-primary-text)",
   border: "none",
   borderRadius: 7,
   fontSize: 13.5,
@@ -227,12 +227,12 @@ const primaryButtonStyle: React.CSSProperties = {
 const footerTextStyle: React.CSSProperties = {
   margin: "18px 0 0",
   fontSize: 12.5,
-  color: "#8A8A82",
+  color: "var(--color-text-muted)",
   textAlign: "center",
 };
 
 const linkStyle: React.CSSProperties = {
-  color: "#2563EB",
+  color: "var(--color-text-accent)",
   fontWeight: 700,
   textDecoration: "none",
 };

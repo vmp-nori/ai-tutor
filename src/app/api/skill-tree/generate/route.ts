@@ -57,6 +57,7 @@ ${JSON_SKELETON}
 
 const responseJsonSchema = {
   type: "object",
+  additionalProperties: false,
   properties: {
     subject: { type: "string" },
     goal: { type: "string" },
@@ -64,22 +65,23 @@ const responseJsonSchema = {
       type: "array",
       items: {
         type: "object",
+        additionalProperties: false,
         properties: {
           id: { type: "string" },
           name: { type: "string" },
           description: { type: "string" },
           teaching_brief: { type: "string" },
-          difficulty_level: { type: "integer", minimum: 1, maximum: 10 },
+          difficulty_level: { type: "integer" },
           is_checkpoint: { type: "boolean" },
           zone: { type: "string" },
           zone_color: { type: "string" },
           prerequisite_ids: {
             type: "array",
             items: { type: "string" },
-            maxItems: 1,
           },
           coordinates: {
             type: "object",
+            additionalProperties: false,
             properties: {
               x: { type: "number" },
               y: { type: "number" },
@@ -105,6 +107,12 @@ const responseJsonSchema = {
   },
   required: ["subject", "goal", "nodes"],
 };
+
+function isAwsServiceError(error: unknown): error is Error & {
+  $metadata?: { httpStatusCode?: number };
+} {
+  return error instanceof Error && "$metadata" in error;
+}
 
 function trimString(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
@@ -224,6 +232,15 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof DOMException && error.name === "TimeoutError") {
       return NextResponse.json({ error: "Request timed out" }, { status: 504 });
+    }
+
+    if (isAwsServiceError(error)) {
+      console.error("Bedrock skill tree generation failed", error);
+      const status = error.$metadata?.httpStatusCode;
+      return NextResponse.json(
+        { error: error.message || "Generation service rejected the request" },
+        { status: status && status >= 400 && status < 500 ? 502 : 503 },
+      );
     }
 
     console.error("Skill tree generation failed", error);

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SkillTreeLoader } from "@/components/skill-tree/SkillTreeLoader";
+import { TopBar, type LearningPathNavItem } from "@/components/ui/TopBar";
 
 function tryParseSubject(schema: string): string | null {
   try {
@@ -17,10 +18,10 @@ function Spinner() {
     <span
       style={{
         display: "inline-block",
-        width: 14,
-        height: 14,
-        border: "2px solid rgba(255,255,255,0.35)",
-        borderTopColor: "#ffffff",
+        width: 13,
+        height: 13,
+        border: "2px solid var(--color-spinner-track)",
+        borderTopColor: "var(--color-button-primary-text)",
         borderRadius: "50%",
         animation: "spin 0.7s linear infinite",
         flexShrink: 0,
@@ -30,10 +31,15 @@ function Spinner() {
   );
 }
 
-export function GeneratePageClient() {
+interface GeneratePageClientProps {
+  learningPaths?: LearningPathNavItem[];
+}
+
+export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientProps) {
   const [goal, setGoal] = useState("");
   const [schema, setSchema] = useState<string | null>(null);
   const [schemaDraft, setSchemaDraft] = useState("");
+  const [navPaths, setNavPaths] = useState(learningPaths);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +78,22 @@ export function GeneratePageClient() {
 
       nextSchema += decoder.decode();
       JSON.parse(nextSchema);
+      const saveRes = await fetch("/api/skill-tree/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schema: nextSchema }),
+      });
+
+      if (!saveRes.ok) {
+        const data = (await saveRes.json()) as { error?: string };
+        throw new Error(data.error ?? "Generated path could not be saved");
+      }
+
+      const savedPath = (await saveRes.json()) as LearningPathNavItem;
+      setNavPaths((current) => [
+        savedPath,
+        ...current.filter((path) => path.id !== savedPath.id),
+      ]);
       setSchema(nextSchema);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -87,6 +109,7 @@ export function GeneratePageClient() {
         edges={[]}
         subject={tryParseSubject(schema) ?? "Generated Learning Path"}
         initialSchema={schema}
+        learningPaths={navPaths}
       />
     );
   }
@@ -95,112 +118,135 @@ export function GeneratePageClient() {
     <>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        .gen-input:focus { outline: none; border-color: #93C5FD !important; box-shadow: 0 0 0 3px rgba(147,197,253,0.25); }
-        .gen-btn:hover:not(:disabled) { background: #1D4ED8 !important; }
+        .gen-goal-input:focus { outline: none; }
+        .gen-goal-bar:focus-within { border-color: var(--color-border-mid) !important; box-shadow: 0 0 0 4px var(--color-focus-ring); }
+        .gen-btn:hover:not(:disabled) { background: var(--color-button-primary-hover) !important; }
         .gen-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        @media (max-width: 680px) {
+          .gen-title { font-size: 34px !important; }
+          .gen-goal-bar { flex-direction: column !important; align-items: stretch !important; padding: 10px !important; border-radius: 14px !important; }
+          .gen-goal-input { text-align: center !important; min-height: 46px !important; }
+          .gen-btn { width: 100% !important; }
+        }
       `}</style>
 
       <div style={{
         minHeight: "100vh",
-        background: "#FCFCFA",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "24px 16px",
-        fontFamily: '"Inter", system-ui, sans-serif',
+        background: "var(--color-canvas)",
+        fontFamily: "var(--font-sans)",
       }}>
-        <a
-          href="/dashboard"
+        <TopBar
+          subject="Generate a learning path"
+          completedCount={0}
+          totalCount={0}
+          learningPaths={navPaths}
+        />
+
+        <main
+          className="gen-hero"
           style={{
+            minHeight: "100vh",
             display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 40,
-            textDecoration: "none",
-          }}
-        >
-          <div style={{
-            width: 22,
-            height: 22,
-            borderRadius: 6,
-            background: "#0E0F12",
-            display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <div style={{ width: 8, height: 8, background: "#FCFCFA", borderRadius: "50%" }} />
-          </div>
-          <span style={{ fontSize: 14.5, fontWeight: 700, color: "#0E0F12", letterSpacing: "-0.02em" }}>
-            Pathwise
-          </span>
-        </a>
-
-        <div style={{
-          width: "100%",
-          maxWidth: 480,
-          background: "#FFFFFF",
-          border: "1px solid #E6E5DF",
-          borderRadius: 12,
-          padding: "32px 28px",
-          boxShadow: "0 2px 12px rgba(20,15,10,0.07)",
-        }}>
-          <h1 style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: "#0E0F12",
-            letterSpacing: "-0.025em",
-            margin: "0 0 6px",
-          }}>
-            Generate a learning path
+            padding: "96px 16px 72px",
+          }}
+        >
+          <h1
+            className="gen-title"
+            style={{
+              maxWidth: 720,
+              margin: "0 0 34px",
+              color: "var(--color-text-primary)",
+              fontSize: 46,
+              lineHeight: 1.12,
+              fontWeight: 760,
+              letterSpacing: 0,
+              textAlign: "center",
+            }}
+          >
+            what would you like to learn today
           </h1>
-          <p style={{ fontSize: 13, color: "#8A8A82", margin: "0 0 28px", lineHeight: 1.5 }}>
-            Describe the outcome you want and Pathwise will map the concepts that lead there.
-          </p>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label htmlFor="goal" style={{ fontSize: 12, fontWeight: 600, color: "#4D4E54" }}>
+          <form onSubmit={handleSubmit} style={{ width: "min(100%, 620px)", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div
+              className="gen-goal-bar"
+              style={{
+                width: "100%",
+                minHeight: 58,
+                background: "var(--color-chrome)",
+                border: "1px solid transparent",
+                borderRadius: 13,
+                padding: "8px 8px 8px 20px",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                transition: "border-color 150ms, box-shadow 150ms",
+              }}
+            >
+              <label htmlFor="goal" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
                 End goal
               </label>
-              <textarea
+              <input
                 id="goal"
-                className="gen-input"
+                className="gen-goal-input"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="e.g. Deploy a production LLM fine-tuning pipeline on AWS"
+                placeholder="Enter your end goal"
                 disabled={loading}
                 required
-                rows={4}
                 style={{
-                  border: "1px solid #E6E5DF",
-                  borderRadius: 7,
-                  padding: "10px 12px",
-                  fontSize: 13,
-                  color: "#0E0F12",
-                  background: "#FFFFFF",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 15,
+                  color: "var(--color-text-primary)",
+                  background: "transparent",
                   width: "100%",
-                  boxSizing: "border-box",
-                  resize: "vertical",
-                  lineHeight: 1.5,
-                  fontFamily: "inherit",
-                  transition: "border-color 150ms, box-shadow 150ms",
+                  minWidth: 0,
+                  fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
                 }}
               />
+              <button
+                type="submit"
+                className="gen-btn"
+                disabled={loading}
+                aria-busy={loading}
+                style={{
+                  minWidth: 116,
+                  height: 42,
+                  background: "var(--color-button-primary)",
+                  color: "var(--color-button-primary-text)",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 650,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  transition: "background 150ms",
+                  flexShrink: 0,
+                }}
+              >
+                {loading && <Spinner />}
+                {loading ? "Mapping" : "Generate"}
+              </button>
             </div>
 
             {error && (
               <div
                 role="alert"
                 style={{
-                  background: "#FEF2F2",
-                  border: "1px solid #FECACA",
+                  background: "var(--color-danger-soft)",
+                  border: "1px solid var(--color-danger-border)",
                   borderRadius: 7,
                   padding: "10px 12px",
                   fontSize: 12.5,
-                  color: "#DC2626",
+                  color: "var(--color-danger)",
                   lineHeight: 1.5,
+                  width: "100%",
                 }}
               >
                 {error}
@@ -208,61 +254,22 @@ export function GeneratePageClient() {
             )}
 
             {(loading || schemaDraft) && (
-              <textarea
-                value={schemaDraft}
-                readOnly
-                spellCheck={false}
-                aria-label="Generated graph JSON stream"
-                placeholder="Streaming generated graph JSON..."
+              <p
+                aria-live="polite"
                 style={{
-                  width: "100%",
-                  minHeight: 132,
-                  border: "1px solid #E6E5DF",
-                  borderRadius: 7,
-                  padding: "10px 12px",
-                  fontSize: 11,
-                  color: "#4D4E54",
-                  background: "#FCFCFA",
-                  boxSizing: "border-box",
-                  resize: "vertical",
-                  lineHeight: 1.45,
-                  fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
+                  margin: 0,
+                  minHeight: 20,
+                  color: "var(--color-text-muted)",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  textAlign: "center",
                 }}
-              />
+              >
+                {loading ? "Mapping concepts and prerequisites..." : "Learning path ready."}
+              </p>
             )}
-
-            <button
-              type="submit"
-              className="gen-btn"
-              disabled={loading}
-              aria-busy={loading}
-              style={{
-                height: 44,
-                background: "#2563EB",
-                color: "#FFFFFF",
-                border: "none",
-                borderRadius: 8,
-                fontSize: 13.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                width: "100%",
-                transition: "background 150ms",
-                marginTop: 2,
-              }}
-            >
-              {loading && <Spinner />}
-              {loading ? "Generating..." : "Generate path"}
-            </button>
           </form>
-        </div>
-
-        <p style={{ marginTop: 20, fontSize: 12, color: "#C9C7BD" }}>
-          Powered by Gemini. Streams graph JSON as it is generated.
-        </p>
+        </main>
       </div>
     </>
   );
