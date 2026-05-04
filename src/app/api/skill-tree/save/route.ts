@@ -18,6 +18,29 @@ interface SaveRequest {
   schema?: unknown;
 }
 
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+interface NodeInsert {
+  id: string;
+  tree_id: string;
+  name: string;
+  description: string;
+  teaching_brief: string;
+  difficulty_level: number;
+  is_checkpoint: boolean;
+  zone: string;
+  zone_color: string;
+  position_x: number;
+  position_y: number;
+  position_z: number;
+}
+
+interface EdgeInsert {
+  tree_id: string;
+  from_node_id: string;
+  to_node_id: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -65,6 +88,76 @@ function prerequisiteIds(value: unknown) {
     : [];
 }
 
+function isMissingSchemaCacheFunctionError(message: string) {
+  return (
+    message.includes("Could not find the function public.create_skill_tree_with_graph") &&
+    message.includes("schema cache")
+  );
+}
+
+async function saveSkillTreeWithDirectInserts({
+  supabase,
+  treeId,
+  userId,
+  subject,
+  goal,
+  nodeInserts,
+  edgeInserts,
+}: {
+  supabase: SupabaseClient;
+  treeId: string;
+  userId: string;
+  subject: string;
+  goal: string;
+  nodeInserts: NodeInsert[];
+  edgeInserts: EdgeInsert[];
+}) {
+  const treeSummary = {
+    id: treeId,
+    subject,
+    href: `/dashboard?treeId=${treeId}`,
+  };
+
+  const treeInsert = await supabase
+    .from("skill_trees")
+    .insert({ id: treeId, user_id: userId, subject, goal });
+
+  if (treeInsert.error) return { data: null, error: treeInsert.error };
+
+  const nodesInsert = await supabase.from("skill_nodes").insert(nodeInserts);
+  if (nodesInsert.error) {
+    await supabase.from("skill_trees").delete().eq("id", treeId);
+    return { data: null, error: nodesInsert.error };
+  }
+
+  if (edgeInserts.length > 0) {
+    const edgesInsert = await supabase.from("skill_edges").insert(edgeInserts);
+    if (edgesInsert.error) {
+      await supabase.from("skill_trees").delete().eq("id", treeId);
+      return { data: null, error: edgesInsert.error };
+    }
+  }
+
+  const firstCurrentNodeId = [...nodeInserts].sort((left, right) => {
+    if (left.position_x !== right.position_x) return left.position_x - right.position_x;
+    return left.id.localeCompare(right.id);
+  })[0]?.id;
+
+  const progressInserts = nodeInserts.map((node) => ({
+    user_id: userId,
+    node_id: node.id,
+    status: node.id === firstCurrentNodeId ? "current" : "available",
+  }));
+
+  const progressInsert = await supabase.from("user_node_progress").insert(progressInserts);
+  if (progressInsert.error) {
+    await supabase.from("skill_trees").delete().eq("id", treeId);
+    return { data: null, error: progressInsert.error };
+  }
+
+  return { data: treeSummary, error: null };
+}
+
 export async function POST(req: NextRequest) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
@@ -106,7 +199,7 @@ export async function POST(req: NextRequest) {
     nodeIdMap.set(localId, `${treeId}_${localId}`);
   });
 
-  const nodeInserts = rawNodes.map((node, index) => {
+  const nodeInserts: NodeInsert[] = rawNodes.map((node, index) => {
     const localId = localIds[index];
     return {
       id: nodeIdMap.get(localId)!,
@@ -124,7 +217,7 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  const edgeInserts = rawNodes.flatMap((node, index) => {
+  const edgeInserts: EdgeInsert[] = rawNodes.flatMap((node, index) => {
     const toLocalId = localIds[index];
     const toNodeId = nodeIdMap.get(toLocalId);
     if (!toNodeId) return [];
@@ -151,7 +244,25 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!isMissingSchemaCacheFunctionError(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const fallback = await saveSkillTreeWithDirectInserts({
+      supabase,
+      treeId,
+      userId: user.id,
+      subject,
+      goal,
+      nodeInserts,
+      edgeInserts,
+    });
+
+    if (fallback.error) {
+      return NextResponse.json({ error: fallback.error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(fallback.data);
   }
 
   return NextResponse.json(data);

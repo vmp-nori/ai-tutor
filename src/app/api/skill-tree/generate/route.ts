@@ -13,7 +13,7 @@ interface GenerateRequest {
   subject?: unknown;
 }
 
-const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6";
+const DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001";
 const DEFAULT_REGION = "us-east-1";
 const MAX_GOAL_LENGTH = 800;
 const MAX_SUBJECT_LENGTH = 140;

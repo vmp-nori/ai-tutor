@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SkillNode, SkillEdge } from "@/lib/types";
 import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
+import { THEME_EVENT } from "@/components/ui/ThemeSwitcher";
 
 const MM_W = 220;
 const MM_H = 68;
@@ -41,7 +42,11 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handleThemeChange = () => setThemeRevision((revision) => revision + 1);
     media.addEventListener("change", handleThemeChange);
-    return () => media.removeEventListener("change", handleThemeChange);
+    window.addEventListener(THEME_EVENT, handleThemeChange);
+    return () => {
+      media.removeEventListener("change", handleThemeChange);
+      window.removeEventListener(THEME_EVENT, handleThemeChange);
+    };
   }, []);
 
   useEffect(() => {

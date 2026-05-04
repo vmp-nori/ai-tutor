@@ -4,6 +4,24 @@
 
 product
 
+## Landing Page Register
+
+brand
+
+## Product Name & Tagline
+
+**Pathwise** — "Don't know where to start? Start here."
+
+## Landing Page Purpose
+
+Convert cold organic/social traffic into waitlist signups. The emotional job: make visitors feel the gap they didn't know they had — they have a skill they want to learn and no real map to get there — and then immediately offer the solution. The pitch is not "look what AI can do"; it is "you've been stuck at step zero and here's the exit."
+
+## Landing Page Emotional Arc
+
+1. Recognition: the visitor sees their own problem named precisely.
+2. Credibility: the product looks serious enough to trust with that problem.
+3. Action: one clear step, no commitment required (waitlist).
+
 ## Users
 
 Anyone who wants to learn a complex skill or doesn't know how to structure their path toward a high-level goal — self-taught developers, career changers, students, autodidacts. Their context: they have an end goal in mind but lack a clear map to get there. The primary job is navigating from where they are to where they want to be, one atomic concept at a time.

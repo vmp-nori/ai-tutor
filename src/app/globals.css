@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 @theme {
+  /* Font */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+}
+
+:root {
+  color-scheme: light;
+
   /* Canvas and surfaces */
   --color-canvas:       oklch(98.8% 0.004 100);
   --color-chrome:       oklch(99.4% 0.003 100);
@@ -42,13 +50,6 @@
   --color-spinner-track:  oklch(98.8% 0.004 100 / 0.35);
   --color-shadow:         oklch(20% 0.020 75 / 0.12);
 
-  /* Font */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
-}
-
-:root {
-  color-scheme: light;
   --shadow-card: 0 2px 12px oklch(20% 0.020 75 / 0.07);
   --shadow-control: 0 1px 4px oklch(20% 0.020 75 / 0.06);
   --shadow-node: 0 1px 2px oklch(20% 0.020 75 / 0.04);
@@ -67,7 +68,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --color-canvas:       oklch(15.4% 0.014 255);
     --color-chrome:       oklch(18.7% 0.013 255);
@@ -118,6 +119,58 @@
     --color-scrollbar-thumb: oklch(35.7% 0.014 255);
     --color-scrollbar-thumb-hover: oklch(45.5% 0.017 255);
   }
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-canvas:       oklch(15.4% 0.014 255);
+    --color-chrome:       oklch(18.7% 0.013 255);
+    --color-panel:        oklch(20.5% 0.014 255);
+    --color-node:         oklch(22.8% 0.015 255);
+    --color-node-current: oklch(25.4% 0.040 249);
+    --color-node-done:    oklch(24.8% 0.044 150);
+    --color-node-locked:  oklch(18.1% 0.012 255);
+    --color-goal:         oklch(86.8% 0.055 232);
+    --color-border:        oklch(29.7% 0.015 255);
+    --color-border-mid:    oklch(38.5% 0.017 255);
+    --color-border-accent: oklch(73.4% 0.106 249 / 0.64);
+    --color-text-primary:   oklch(92.6% 0.007 255);
+    --color-text-secondary: oklch(77.2% 0.011 255);
+    --color-text-muted:     oklch(62.6% 0.013 255);
+    --color-text-subtle:    oklch(47.3% 0.015 255);
+    --color-text-inverted:  oklch(16.3% 0.014 255);
+    --color-text-accent:    oklch(78.8% 0.095 249);
+    --color-accent:         oklch(76.3% 0.105 249);
+    --color-accent-hover:   oklch(82.0% 0.084 249);
+    --color-accent-subtle:  oklch(26.6% 0.037 249);
+    --color-success:        oklch(72.7% 0.119 151);
+    --color-success-soft:   oklch(24.8% 0.044 150);
+    --color-success-subtle: oklch(21.3% 0.031 150);
+    --color-success-border: oklch(39.4% 0.070 150);
+    --color-available:      oklch(63.4% 0.016 255);
+    --color-locked:         oklch(35.7% 0.014 255);
+    --color-danger:         oklch(72.3% 0.164 25);
+    --color-danger-soft:    oklch(23.9% 0.040 25);
+    --color-danger-border:  oklch(43.2% 0.088 25);
+    --color-warning-soft:   oklch(24.8% 0.038 96);
+    --color-focus-ring:     oklch(78.8% 0.095 249 / 0.14);
+    --color-spinner-track:  oklch(16.3% 0.014 255 / 0.35);
+    --color-shadow:         oklch(7% 0.010 255 / 0.42);
+    --shadow-card: 0 2px 16px oklch(7% 0.010 255 / 0.35);
+    --shadow-control: 0 1px 8px oklch(7% 0.010 255 / 0.28);
+    --shadow-node: 0 1px 2px oklch(7% 0.010 255 / 0.28);
+    --shadow-node-active: 0 1px 3px oklch(76.3% 0.105 249 / 0.18), 0 4px 12px oklch(7% 0.010 255 / 0.34);
+    --shadow-node-selected: 0 0 0 3px oklch(76.3% 0.105 249 / 0.22), 0 4px 18px oklch(7% 0.010 255 / 0.38);
+    --shadow-goal: 0 6px 20px oklch(7% 0.010 255 / 0.32);
+    --shadow-drag: 0 8px 28px oklch(7% 0.010 255 / 0.48), 0 0 0 2px oklch(76.3% 0.105 249 / 0.36);
+    --shadow-floating: 0 18px 44px oklch(7% 0.010 255 / 0.50), 0 2px 6px oklch(7% 0.010 255 / 0.35);
+    --shadow-popover: 0 14px 40px oklch(7% 0.010 255 / 0.52), 0 2px 8px oklch(7% 0.010 255 / 0.38);
+    --color-button-primary: var(--color-goal);
+    --color-button-primary-hover: oklch(78.2% 0.069 232);
+    --color-button-primary-text: var(--color-text-inverted);
+    --color-text-on-accent: var(--color-text-inverted);
+    --color-scrollbar-thumb: oklch(35.7% 0.014 255);
+    --color-scrollbar-thumb-hover: oklch(45.5% 0.017 255);
 }
 
 html,

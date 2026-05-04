@@ -5,14 +5,18 @@
 This repository contains a Next.js app named `pathwise`.
 
 - `src/app/` contains App Router routes and page-level UI:
-  - `page.tsx` — landing/home
+  - `page.tsx` — landing/home (waitlist form)
   - `dashboard/page.tsx` — authenticated user dashboard
-  - `generate/page.tsx` — skill tree generation flow
+  - `generate/page.tsx` + `GeneratePageClient.tsx` — skill tree generation flow. After a path is generated and saved, the client renders `SkillTreeLoader` in-place. The TopBar "+ New path" button calls an `onNewPath` callback (threaded through `SkillTreeLoader` → `SkillTreeCanvas` → `TopBar`) that resets local state back to the generate form, avoiding a stale same-URL navigation.
   - `sign-in/page.tsx`, `sign-up/page.tsx` — Supabase auth pages
-- `src/components/` contains reusable UI and graph components.
+  - `api/skill-tree/generate/route.ts` — streams a Bedrock `ConverseStream` response as plain text; model is controlled by `BEDROCK_MODEL_ID` (defaults to `us.anthropic.claude-haiku-4-5-20251001`).
+  - `api/skill-tree/save/route.ts` — validates and persists a generated schema via the `create_skill_tree_with_graph` Postgres RPC.
+  - `api/waitlist/route.ts` — records waitlist signups.
+- `src/components/skill-tree/` contains `SkillTreeCanvas` (main graph renderer), `SkillTreeLoader` (dynamic-import wrapper), `SkillNode`, and `SkillEdge`.
+- `src/components/ui/TopBar.tsx` — accepts optional `onNewPath` callback; renders a `<button>` instead of `<a href="/generate">` when provided, so in-page state resets work correctly.
 - `src/lib/` contains shared types and utilities.
 - `src/lib/supabase/` contains Supabase browser/server client helpers.
-- `supabase/migrations/` contains SQL migrations applied to the Supabase project.
+- `supabase/migrations/` contains SQL migrations applied to the Supabase project. Migration `0003` adds `teaching_brief`, `zone`, `zone_color`, `difficulty_level`, `is_checkpoint`, and `position_z` columns to `skill_nodes`, and defines the `create_skill_tree_with_graph` RPC. Run any unapplied migrations via the Supabase dashboard SQL editor if `supabase db push` is unavailable.
 - `.agents/` contains repo-shared agent skills, commands, and MCP templates. Treat it as agent-facing project metadata.
 - Root config files include `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, and `postcss.config.mjs`.
 
@@ -51,13 +55,16 @@ Copy `.env.example` to `.env.local` for local development.
 |----------|----------|-------------|---------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL | — |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon public key | — |
+| `SUPABASE_PROJECT_REF` | Yes | Supabase project ref for project-scoped MCP access | — |
+| `SUPABASE_ACCESS_TOKEN` | No | Optional Supabase access token for non-OAuth MCP clients | — |
 | `AWS_BEDROCK_REGION` | Yes | AWS region for Bedrock | `us-east-1` |
 | `AWS_BEARER_TOKEN_BEDROCK` | One of* | Amazon Bedrock API key (preferred) | — |
 | `AWS_ACCESS_KEY_ID` | One of* | IAM access key (alternative to bearer token) | — |
 | `AWS_SECRET_ACCESS_KEY` | One of* | IAM secret key (alternative to bearer token) | — |
-| `BEDROCK_MODEL_ID` | No | Bedrock model ID for skill tree generation | `us.anthropic.claude-sonnet-4-6` |
+| `BEDROCK_MODEL_ID` | No | Bedrock model ID for skill tree generation | `us.anthropic.claude-haiku-4-5-20251001` |
 | `MEM0_API_KEY` | No | Mem0 API key | — |
 | `FIRECRAWL_API_KEY` | No | Firecrawl API key | — |
+| `GITHUB_PAT_TOKEN` | No | GitHub personal access token for Codex GitHub MCP | — |
 | `NEXT_PUBLIC_APP_URL` | No | App base URL | `http://localhost:3000` |
 
 \* Provide either `AWS_BEARER_TOKEN_BEDROCK` **or** the `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` pair.

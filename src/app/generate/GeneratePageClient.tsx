@@ -110,6 +110,12 @@ export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientPro
         subject={tryParseSubject(schema) ?? "Generated Learning Path"}
         initialSchema={schema}
         learningPaths={navPaths}
+        onNewPath={() => {
+          setSchema(null);
+          setGoal("");
+          setSchemaDraft("");
+          setError(null);
+        }}
       />
     );
   }

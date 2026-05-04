@@ -34,6 +34,7 @@ interface SkillTreeCanvasProps {
   subject: string;
   initialSchema?: string;
   learningPaths?: LearningPathNavItem[];
+  onNewPath?: () => void;
 }
 
 interface GraphState {
@@ -219,7 +220,7 @@ function resolveInitialGraph(
   return fallback;
 }
 
-export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema, learningPaths }: SkillTreeCanvasProps) {
+export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema, learningPaths, onNewPath }: SkillTreeCanvasProps) {
   const scrollRef  = useRef<HTMLDivElement>(null);
   const [graph, setGraph] = useState<GraphState>(() =>
     resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject })
@@ -615,6 +616,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
         completedCount={completedCount}
         totalCount={regularNodes.length}
         onOpenJsonInput={handleOpenJsonInput}
+        onNewPath={onNewPath}
         learningPaths={learningPaths}
       />
 

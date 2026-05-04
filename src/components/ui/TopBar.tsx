@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
 export interface LearningPathNavItem {
   id: string;
@@ -14,10 +15,11 @@ interface TopBarProps {
   completedCount: number;
   totalCount: number;
   onOpenJsonInput?: () => void;
+  onNewPath?: () => void;
   learningPaths?: LearningPathNavItem[];
 }
 
-export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, learningPaths = [] }: TopBarProps) {
+export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, onNewPath, learningPaths = [] }: TopBarProps) {
   const pct = totalCount > 0 ? completedCount / totalCount : 0;
   const showProgress = totalCount > 0;
   const hasLearningPaths = learningPaths.length > 0;
@@ -45,8 +47,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, l
         zIndex: 200,
       }}
     >
-      {/* Logo — dark square with white dot */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Logo */}
+      <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
         <div style={{
           width: 22,
           height: 22,
@@ -67,32 +69,57 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, l
         }}>
           Pathwise
         </span>
-      </div>
+      </a>
 
       <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
 
-      <a
-        href="/generate"
-        style={{
-          height: 30,
-          border: "1px solid var(--color-border)",
-          borderRadius: 6,
-          background: "var(--color-node)",
-          color: "var(--color-text-primary)",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          padding: "0 11px",
-          fontSize: 12,
-          fontWeight: 600,
-          whiteSpace: "nowrap",
-          textDecoration: "none",
-          flexShrink: 0,
-        }}
-      >
-        + New path
-      </a>
+      {onNewPath ? (
+        <button
+          type="button"
+          onClick={onNewPath}
+          style={{
+            height: 30,
+            border: "1px solid var(--color-border)",
+            borderRadius: 6,
+            background: "var(--color-node)",
+            color: "var(--color-text-primary)",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "0 11px",
+            fontSize: 12,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          + New path
+        </button>
+      ) : (
+        <a
+          href="/generate"
+          style={{
+            height: 30,
+            border: "1px solid var(--color-border)",
+            borderRadius: 6,
+            background: "var(--color-node)",
+            color: "var(--color-text-primary)",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "0 11px",
+            fontSize: 12,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            textDecoration: "none",
+            flexShrink: 0,
+          }}
+        >
+          + New path
+        </a>
+      )}
 
       <nav
         aria-label="Learning paths"
@@ -203,6 +230,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, l
             JSON
           </button>
         )}
+
+        <ThemeSwitcher />
 
         {/* User avatar — dark circle */}
           <button

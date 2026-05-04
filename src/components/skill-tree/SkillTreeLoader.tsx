@@ -16,6 +16,7 @@ interface SkillTreeLoaderProps {
   subject: string;
   initialSchema?: string;
   learningPaths?: LearningPathNavItem[];
+  onNewPath?: () => void;
 }
 
 export function SkillTreeLoader(props: SkillTreeLoaderProps) {
