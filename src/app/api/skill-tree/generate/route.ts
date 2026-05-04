@@ -3,6 +3,8 @@ import {
   ConverseStreamCommand,
   type ConverseStreamResponse,
 } from "@aws-sdk/client-bedrock-runtime";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
@@ -13,90 +15,121 @@ interface GenerateRequest {
   subject?: unknown;
 }
 
-const DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001";
+const DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
 const DEFAULT_REGION = "us-east-1";
 const MAX_GOAL_LENGTH = 800;
 const MAX_SUBJECT_LENGTH = 140;
-const JSON_SKELETON = `{
-  "subject": "Concise inferred subject label",
-  "goal": "The user's exact end goal, cleaned up for readability",
-  "nodes": [
-    {
-      "id": "lowercase_snake_case_id",
-      "name": "Atomic concept name",
-      "description": "One sentence explaining what the learner must understand",
-      "teaching_brief": "Goal-specific guidance for a future teaching agent",
-      "difficulty_level": 1,
-      "is_checkpoint": false,
-      "zone": "Sequential zone name",
-      "zone_color": "#3B82F6",
-      "prerequisite_ids": [],
-      "coordinates": { "x": 0, "y": 0, "z": 0 }
-    }
-  ]
-}`;
-
-const SYSTEM_PROMPT = `You are a Knowledge Graph Architect for Pathwise.
-
-Given a learner's end goal, decompose the domain into a deterministic learning graph for the Pathwise website. Return only valid JSON matching the requested schema.
-
-Rules:
-- The graph must be a directed acyclic graph of atomic prerequisite concepts.
-- The path must be linear or nearly linear: each node can have at most one prerequisite_id.
-- Include 8 to 18 nodes grouped into 3 to 6 sequential zones.
-- Every prerequisite_id must refer to an earlier node id.
-- Use stable lowercase snake_case ids.
-- difficulty_level must be an integer from 1 to 10.
-- Coordinates.x must increase by about 20 for each learning layer. Coordinates.y and coordinates.z should be 0 unless a tiny visual offset is necessary.
-- The final user goal is represented by the top-level goal string, not as a node.
-- For every node, include a teaching_brief that tells a future teaching agent what to focus on for this exact goal and what theory to avoid.
-- Keep names and descriptions concise.
-- Fill every required key in this skeleton for every response:
-${JSON_SKELETON}
-- Do not include markdown, code fences, comments, or text outside the JSON object.`;
+const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "skill-tree-system-prompt.txt");
 
 const responseJsonSchema = {
   type: "object",
+  description: "A compact Pathwise learning graph for one learner goal.",
   additionalProperties: false,
   properties: {
-    subject: { type: "string" },
-    goal: { type: "string" },
+    subject: {
+      type: "string",
+      description: "A concise subject label inferred from the learner's goal.",
+    },
+    goal: {
+      type: "string",
+      description: "The learner's final goal, cleaned up for readability without changing intent.",
+    },
     nodes: {
       type: "array",
+      description: "Atomic prerequisite concepts ordered from foundation to final goal readiness.",
       items: {
         type: "object",
+        description: "One teachable prerequisite concept in the learning graph.",
         additionalProperties: false,
         properties: {
-          id: { type: "string" },
-          name: { type: "string" },
-          description: { type: "string" },
-          teaching_brief: { type: "string" },
-          difficulty_level: { type: "integer" },
-          is_checkpoint: { type: "boolean" },
-          zone: { type: "string" },
-          zone_color: { type: "string" },
+          id: {
+            type: "string",
+            description: "Stable lowercase snake_case concept id.",
+          },
+          name: {
+            type: "string",
+            description: "Short human-readable concept name.",
+          },
+          description: {
+            type: "string",
+            description: "One sentence explaining what the learner must understand.",
+          },
+          teaching: {
+            type: "object",
+            description: "Instructions for a later teaching agent to teach this concept in context.",
+            additionalProperties: false,
+            properties: {
+              objective: {
+                type: "string",
+                description: "The concrete capability the learner should gain from this lesson.",
+              },
+              goal_context: {
+                type: "string",
+                description: "Why this concept matters for the learner's final goal.",
+              },
+              focus_points: {
+                type: "array",
+                description: "Specific lesson priorities to cover.",
+                items: { type: "string" },
+              },
+              avoid: {
+                type: "array",
+                description: "Detours, over-advanced details, or irrelevant theories to skip.",
+                items: { type: "string" },
+              },
+              interactive_hint: {
+                type: "string",
+                description: "A useful interactive visual idea, or an empty string when none is useful.",
+              },
+            },
+            required: [
+              "objective",
+              "goal_context",
+              "focus_points",
+              "avoid",
+              "interactive_hint",
+            ],
+          },
+          difficulty_level: {
+            type: "integer",
+            description: "Relative concept difficulty from 1 to 10.",
+          },
+          zone: {
+            type: "string",
+            description: "Sequential chapter name for this concept.",
+          },
+          zone_color: {
+            type: "string",
+            description: "Hex color assigned to this node's zone.",
+          },
           prerequisite_ids: {
             type: "array",
+            description: "Zero or one earlier node id that must be learned before this concept.",
             items: { type: "string" },
           },
           coordinates: {
             type: "object",
+            description: "Graph layout coordinates for rendering the learning path.",
             additionalProperties: false,
             properties: {
-              x: { type: "number" },
-              y: { type: "number" },
-              z: { type: "number" },
+              x: {
+                type: "number",
+                description: "Horizontal learning layer. Increase by about 20 each layer.",
+              },
+              y: {
+                type: "number",
+                description: "Small vertical offset for readability. Usually 0.",
+              },
             },
-            required: ["x", "y", "z"],
+            required: ["x", "y"],
           },
         },
         required: [
           "id",
           "name",
           "description",
-          "teaching_brief",
+          "teaching",
           "difficulty_level",
-          "is_checkpoint",
           "zone",
           "zone_color",
           "prerequisite_ids",
@@ -127,18 +160,35 @@ End goal: ${goal}
 Return a complete Pathwise skill tree JSON object for this end goal.`;
 }
 
-function getBedrockClient() {
-  return new BedrockRuntimeClient({
-    region: process.env.AWS_BEDROCK_REGION?.trim() || process.env.AWS_REGION?.trim() || DEFAULT_REGION,
-  });
+async function readSystemPrompt() {
+  const prompt = (await readFile(SYSTEM_PROMPT_PATH, "utf8")).trim();
+  if (!prompt) {
+    throw new Error("Skill tree system prompt file is empty");
+  }
+
+  return prompt;
 }
 
-function buildBedrockCommand(goal: string, subject: string) {
+function getBedrockClient() {
+  const region = process.env.AWS_BEDROCK_REGION?.trim() || process.env.AWS_REGION?.trim() || DEFAULT_REGION;
+  const bearerToken = process.env.AWS_BEARER_TOKEN_BEDROCK?.trim();
+
+  if (bearerToken) {
+    return new BedrockRuntimeClient({
+      region,
+      token: { token: bearerToken },
+    });
+  }
+
+  return new BedrockRuntimeClient({ region });
+}
+
+function buildBedrockCommand(goal: string, subject: string, systemPrompt: string) {
   const modelId = process.env.BEDROCK_MODEL_ID?.trim() || DEFAULT_MODEL;
 
   return new ConverseStreamCommand({
     modelId,
-    system: [{ text: SYSTEM_PROMPT }],
+    system: [{ text: systemPrompt }],
     messages: [
       {
         role: "user",
@@ -211,7 +261,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const bedrockResponse = await getBedrockClient().send(buildBedrockCommand(goal, subject), {
+    const systemPrompt = await readSystemPrompt();
+    const bedrockResponse = await getBedrockClient().send(buildBedrockCommand(goal, subject, systemPrompt), {
       abortSignal: AbortSignal.timeout(45_000),
     });
 

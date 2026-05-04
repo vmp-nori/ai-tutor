@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { ReactiveGridBackground } from "@/components/ui/ReactiveGridBackground";
 
 function useReveal() {
   const ref = useRef<HTMLElement>(null);
@@ -185,6 +186,8 @@ export default function LandingPage() {
     <>
       <style>{`
         .lp-root {
+          position: relative;
+          isolation: isolate;
           min-height: 100vh;
           background: oklch(98.8% 0.004 100);
           color: oklch(18.4% 0.006 255);
@@ -192,6 +195,13 @@ export default function LandingPage() {
           font-family: "Inter", -apple-system, system-ui, sans-serif;
           font-kerning: normal;
           font-optical-sizing: auto;
+        }
+        .lp-root > :not(.lp-grid-bg) {
+          position: relative;
+          z-index: 1;
+        }
+        .lp-grid-bg {
+          z-index: 0;
         }
 
         /* Nav */
@@ -205,7 +215,7 @@ export default function LandingPage() {
           height: 56px;
           display: flex;
           align-items: center;
-          background: oklch(98.8% 0.004 100 / 0.88);
+          background: oklch(98.8% 0.004 100 / 0.82);
           backdrop-filter: blur(12px);
           border-bottom: 1px solid oklch(90.6% 0.008 100);
         }
@@ -418,6 +428,7 @@ export default function LandingPage() {
         /* How it works */
         .lp-how {
           border-top: 1px solid oklch(90.6% 0.008 100);
+          background: oklch(98.8% 0.004 100 / 0.86);
           padding: clamp(80px, 12vh, 140px) clamp(24px, 7vw, 96px);
         }
         .lp-how-label {
@@ -557,6 +568,8 @@ export default function LandingPage() {
       `}</style>
 
       <div className="lp-root">
+        <ReactiveGridBackground className="lp-grid-bg" />
+
         {/* Nav */}
         <nav className="lp-nav">
           <a href="/" className="lp-wordmark">Pathwise</a>

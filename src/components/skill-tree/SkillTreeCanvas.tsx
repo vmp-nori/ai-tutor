@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
-import type { NodeStatus, SkillNode as SkillNodeType, SkillEdge as SkillEdgeType } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import type { NodeStatus, SkillNode as SkillNodeType, SkillEdge as SkillEdgeType, TeachingPlan } from "@/lib/types";
 import { edgePoints, adaptiveBezierPath } from "@/lib/utils";
 import { SkillNode } from "./SkillNode";
 import { SkillEdge } from "./SkillEdge";
 import { JsonInputPanel } from "@/components/ui/JsonInputPanel";
 import { MiniMap } from "@/components/ui/MiniMap";
+import { ReactiveGridBackground } from "@/components/ui/ReactiveGridBackground";
 import { TopBar, type LearningPathNavItem } from "@/components/ui/TopBar";
 
 const CANVAS_W = 3000;
@@ -33,8 +35,10 @@ interface SkillTreeCanvasProps {
   edges: SkillEdgeType[];
   subject: string;
   initialSchema?: string;
+  schemaTreeId?: string;
   learningPaths?: LearningPathNavItem[];
   onNewPath?: () => void;
+  onDeletePath?: (id: string) => void;
 }
 
 interface GraphState {
@@ -57,6 +61,40 @@ function toStringArray(value: unknown) {
 
 function toString(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function normalizeTeachingPlan(value: unknown): TeachingPlan | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const objective = toString(value.objective, "");
+  const goalContext = toString(value.goal_context ?? value.goalContext, "");
+  const focusPoints = toStringArray(value.focus_points ?? value.focusPoints);
+  const avoid = toStringArray(value.avoid);
+  const interactiveHint = toString(value.interactive_hint ?? value.interactiveHint, "");
+
+  if (!objective && !goalContext && focusPoints.length === 0 && avoid.length === 0 && !interactiveHint) {
+    return undefined;
+  }
+
+  return {
+    objective,
+    goalContext,
+    focusPoints,
+    avoid,
+    ...(interactiveHint ? { interactiveHint } : {}),
+  };
+}
+
+function teachingPlanToSchema(plan: TeachingPlan | undefined) {
+  if (!plan) return undefined;
+
+  return {
+    objective: plan.objective,
+    goal_context: plan.goalContext,
+    focus_points: plan.focusPoints,
+    avoid: plan.avoid,
+    interactive_hint: plan.interactiveHint ?? "",
+  };
 }
 
 function normalizeZoneColor(value: unknown, index: number) {
@@ -101,6 +139,8 @@ function graphToSchema(graph: GraphState) {
       id: node.id,
       name: node.name,
       description: node.description,
+      teaching_brief: node.teachingBrief ?? "",
+      teaching: teachingPlanToSchema(node.teachingPlan),
       difficulty_level: node.difficultyLevel ?? 1,
       is_checkpoint: node.isCheckpoint ?? false,
       zone: node.zone ?? "Core",
@@ -111,7 +151,7 @@ function graphToSchema(graph: GraphState) {
   }, null, 2);
 }
 
-function graphFromSchema(value: unknown): GraphState {
+function graphFromSchema(value: unknown, schemaTreeId?: string): GraphState {
   if (!isRecord(value)) throw new Error("JSON must be an object with subject, goal, and nodes.");
   if (!Array.isArray(value.nodes) || value.nodes.length === 0) {
     throw new Error("JSON must include a non-empty nodes array.");
@@ -133,6 +173,8 @@ function graphFromSchema(value: unknown): GraphState {
       zone: toString(node.zone, "Core"),
       zoneColor: normalizeZoneColor(node.zone_color ?? node.zoneColor, index),
       prereqs: toStringArray(node.prerequisite_ids ?? node.prereqs),
+      teachingBrief: toString(node.teaching_brief ?? node.teachingBrief, ""),
+      teachingPlan: normalizeTeachingPlan(node.teaching ?? node.teachingPlan),
       subTopics: toStringArray(node.sub_topics ?? node.subTopics),
       coordX: toNumber(coords.x, index * 25),
       coordY: toNumber(coords.y, 0),
@@ -142,20 +184,28 @@ function graphFromSchema(value: unknown): GraphState {
 
   const ids = new Set(records.map((node) => node.id));
   if (ids.size !== records.length) throw new Error("Every node id must be unique.");
+  const treeId = schemaTreeId ?? "input-json";
+  const renderedIdByLocalId = new Map(
+    records.map((node) => [node.id, schemaTreeId ? `${schemaTreeId}_${node.id}` : node.id]),
+  );
 
   const uniqueColumns = Array.from(new Set(records.map((node) => node.coordX))).sort((a, b) => a - b);
   const xByColumn = new Map(uniqueColumns.map((coordX, index) => [coordX, 96 + index * IMPORT_COLUMN_GAP]));
   const hasAnyStatus = records.some((node) => typeof node.status === "string");
 
   const nodes: SkillNodeType[] = records.map((node, index) => ({
-    id: node.id,
-    treeId: "input-json",
+    id: renderedIdByLocalId.get(node.id)!,
+    treeId,
     name: node.name,
     description: node.description,
     status: normalizeStatus(node.status, hasAnyStatus, index),
     x: xByColumn.get(node.coordX) ?? 96 + index * IMPORT_COLUMN_GAP,
     y: Math.max(112, Math.min(600, Math.round(356 - node.coordY * 8))),
-    prereqs: node.prereqs.filter((id) => ids.has(id)),
+    prereqs: node.prereqs
+      .filter((id) => ids.has(id))
+      .map((id) => renderedIdByLocalId.get(id) ?? id),
+    teachingBrief: node.teachingBrief,
+    teachingPlan: node.teachingPlan,
     difficultyLevel: node.difficultyLevel,
     subTopics: node.subTopics,
     isCheckpoint: node.isCheckpoint,
@@ -168,7 +218,7 @@ function graphFromSchema(value: unknown): GraphState {
     node.prereqs.forEach((fromNodeId) => {
       edges.push({
         id: `edge_${fromNodeId}_${node.id}`,
-        treeId: "input-json",
+        treeId,
         fromNodeId,
         toNodeId: node.id,
       });
@@ -184,8 +234,8 @@ function graphFromSchema(value: unknown): GraphState {
     ? value.subject.trim()
     : "Imported Learning Path";
   const goalNode: SkillNodeType = {
-    id: "goal",
-    treeId: "input-json",
+    id: schemaTreeId ? `${schemaTreeId}_goal` : "goal",
+    treeId,
     name: subject,
     description: goalText,
     status: "available",
@@ -200,10 +250,10 @@ function graphFromSchema(value: unknown): GraphState {
 
   terminalIds.forEach((fromNodeId) => {
     edges.push({
-      id: `edge_${fromNodeId}_goal`,
-      treeId: "input-json",
+      id: `edge_${fromNodeId}_${goalNode.id}`,
+      treeId,
       fromNodeId,
-      toNodeId: "goal",
+      toNodeId: goalNode.id,
     });
   });
 
@@ -213,24 +263,26 @@ function graphFromSchema(value: unknown): GraphState {
 function resolveInitialGraph(
   initialSchema: string | undefined,
   fallback: GraphState,
+  schemaTreeId?: string,
 ): GraphState {
   if (initialSchema) {
-    try { return graphFromSchema(JSON.parse(initialSchema)); } catch { /* fall through */ }
+    try { return graphFromSchema(JSON.parse(initialSchema), schemaTreeId); } catch { /* fall through */ }
   }
   return fallback;
 }
 
-export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema, learningPaths, onNewPath }: SkillTreeCanvasProps) {
+export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema, schemaTreeId, learningPaths, onNewPath, onDeletePath }: SkillTreeCanvasProps) {
+  const router = useRouter();
   const scrollRef  = useRef<HTMLDivElement>(null);
   const [graph, setGraph] = useState<GraphState>(() =>
-    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject })
+    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject }, schemaTreeId)
   );
   const [selectedNode, setSelectedNode] = useState<SkillNodeType | null>(null);
   const [pressedNodeId, setPressedNodeId] = useState<string | null>(null);
   const [scrollEl, setScrollEl]         = useState<HTMLElement | null>(null);
   const [jsonInputOpen, setJsonInputOpen] = useState(false);
   const [jsonDraft, setJsonDraft] = useState(() => graphToSchema(
-    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject })
+    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject }, schemaTreeId)
   ));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -317,6 +369,13 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
     setPressedNodeId(null);
     setSelectedNode(null);
   }, [nodes]);
+
+  const handleDeletePath = useCallback(async (id: string) => {
+    if (!confirm("Delete this learning path? This cannot be undone.")) return;
+    await fetch(`/api/skill-tree/${encodeURIComponent(id)}`, { method: "DELETE" });
+    router.push("/dashboard");
+    router.refresh();
+  }, [router]);
 
   const handleOpenJsonInput = useCallback(() => {
     setJsonDraft(graphToSchema(graph));
@@ -611,12 +670,15 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
 
   return (
     <>
+      <ReactiveGridBackground className="z-0" />
+
       <TopBar
         subject={subject}
         completedCount={completedCount}
         totalCount={regularNodes.length}
         onOpenJsonInput={handleOpenJsonInput}
         onNewPath={onNewPath}
+        onDeletePath={onDeletePath ?? handleDeletePath}
         learningPaths={learningPaths}
       />
 
@@ -630,7 +692,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
             left: 0,
             right: 0,
             height: CHAPTER_RAIL_H,
-            background: "var(--color-canvas)",
+            background: "color-mix(in srgb, var(--color-canvas) 88%, transparent)",
+            backdropFilter: "blur(10px)",
             borderBottom: "1px solid var(--color-border)",
             zIndex: 100,
             overflow: "hidden",
@@ -658,12 +721,12 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   willChange: "transform",
                   top: 0,
                   height: CHAPTER_RAIL_H,
-                  padding: "16px 18px",
+                  padding: "14px 18px",
                   overflow: "hidden",
                   borderLeft: i > 0 ? "1px solid var(--color-border)" : "none",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
                   {/* Oversize chapter numeral */}
                   <span style={{
                     fontSize: numSize,
@@ -740,7 +803,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
           position: "fixed",
           inset: `${CANVAS_TOP}px 0 0 0`,
           overflow: "auto",
-          background: "var(--color-canvas)",
+          background: "transparent",
           overscrollBehavior: "contain",
         }}
       >
@@ -765,7 +828,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
             }}
           >
             {/* Zone backgrounds */}
-            {zoneRegions.map((zone) => (
+            {zoneRegions.map((zone, i) => (
               <div
                 key={zone.name}
                 aria-hidden="true"
@@ -775,9 +838,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   top: zone.y,
                   width: zone.width,
                   height: zone.height,
-                  borderLeft: `1px solid color-mix(in srgb, ${zone.color} 20%, var(--color-border))`,
-                  borderRight: `1px solid color-mix(in srgb, ${zone.color} 15%, var(--color-border))`,
-                  background: `color-mix(in srgb, ${zone.color} 5%, var(--color-canvas))`,
+                  borderLeft: i > 0 ? `1px solid color-mix(in srgb, ${zone.color} 22%, var(--color-border))` : "none",
+                  background: `color-mix(in srgb, ${zone.color} 9%, transparent)`,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -791,7 +853,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                     fontSize: 46,
                     fontWeight: 800,
                     letterSpacing: 0,
-                    opacity: 0.03,
+                    opacity: 0.04,
                     textTransform: "uppercase",
                     whiteSpace: "nowrap",
                   }}
@@ -925,7 +987,11 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
 
   const dotColor = isCurrent ? "var(--color-accent)" : isDone ? "var(--color-success)" : "var(--color-text-muted)";
   const statusLabelColor = isCurrent ? "var(--color-text-accent)" : isDone ? "var(--color-success)" : "var(--color-text-muted)";
-  const canStart = node.status === "current" || node.status === "available";
+  const canStart = node.status !== "locked";
+  const ctaLabel = isDone ? "Review lesson" : isCurrent ? "Continue lesson" : "Open lesson";
+  const lessonHref = canStart && node.treeId !== "input-json"
+    ? `/learn/${encodeURIComponent(node.treeId)}/${encodeURIComponent(node.id)}`
+    : null;
 
   return (
     <div
@@ -1083,23 +1149,47 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
       )}
 
       {/* CTA */}
-      <button
-        disabled={!canStart}
-        style={{
-          width: "100%",
-          height: 36,
-          borderRadius: 8,
-          border: "none",
-          background: canStart ? "var(--color-accent)" : "var(--color-node-locked)",
-          color: canStart ? "var(--color-text-on-accent)" : "var(--color-text-subtle)",
-          fontWeight: 700,
-          fontSize: 12.5,
-          cursor: canStart ? "pointer" : "default",
-          letterSpacing: 0,
-        }}
-      >
-        {node.status === "current" ? "Continue lesson" : "Open lesson"}
-      </button>
+      {lessonHref ? (
+        <a
+          href={lessonHref}
+          style={{
+            width: "100%",
+            height: 36,
+            borderRadius: 8,
+            border: "none",
+            background: "var(--color-accent)",
+            color: "var(--color-text-on-accent)",
+            fontWeight: 700,
+            fontSize: 12.5,
+            cursor: "pointer",
+            letterSpacing: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textDecoration: "none",
+          }}
+        >
+          {ctaLabel}
+        </a>
+      ) : (
+        <button
+          disabled
+          style={{
+            width: "100%",
+            height: 36,
+            borderRadius: 8,
+            border: "none",
+            background: "var(--color-node-locked)",
+            color: "var(--color-text-subtle)",
+            fontWeight: 700,
+            fontSize: 12.5,
+            cursor: "default",
+            letterSpacing: 0,
+          }}
+        >
+          Open lesson
+        </button>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
@@ -16,14 +17,16 @@ interface TopBarProps {
   totalCount: number;
   onOpenJsonInput?: () => void;
   onNewPath?: () => void;
+  onDeletePath?: (id: string) => void;
   learningPaths?: LearningPathNavItem[];
 }
 
-export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, onNewPath, learningPaths = [] }: TopBarProps) {
+export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, onNewPath, onDeletePath, learningPaths = [] }: TopBarProps) {
   const pct = totalCount > 0 ? completedCount / totalCount : 0;
   const showProgress = totalCount > 0;
   const hasLearningPaths = learningPaths.length > 0;
   const router = useRouter();
+  const [hoveredPathId, setHoveredPathId] = useState<string | null>(null);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -138,6 +141,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           learningPaths.map((path) => (
             <div
               key={path.id}
+              onMouseEnter={() => setHoveredPathId(path.id)}
+              onMouseLeave={() => setHoveredPathId(null)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -159,6 +164,36 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
               }}>
                 {path.subject}
               </a>
+              {onDeletePath && (
+                <button
+                  type="button"
+                  aria-label={`Delete "${path.subject}"`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onDeletePath(path.id);
+                  }}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    border: "none",
+                    borderRadius: 4,
+                    background: hoveredPathId === path.id ? "var(--color-border)" : "transparent",
+                    color: "var(--color-text-muted)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    opacity: hoveredPathId === path.id ? 1 : 0,
+                    transition: "opacity 120ms ease, background 120ms ease",
+                    padding: 0,
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+              )}
             </div>
           ))
         ) : (

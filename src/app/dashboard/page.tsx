@@ -1,4 +1,4 @@
-import type { SkillNode, SkillEdge } from "@/lib/types";
+import type { SkillNode, SkillEdge, TeachingPlan } from "@/lib/types";
 import { SkillTreeLoader } from "@/components/skill-tree/SkillTreeLoader";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -236,7 +236,7 @@ const xByCoordinate = new Map(
 
 const COURSE_NODES: SkillNode[] = DEFAULT_GRAPH.nodes.map((node, index) => ({
   id: node.id,
-  treeId: TREE_ID,
+  treeId: "input-json",
   name: node.name,
   description: node.description,
   status: index === 0 ? "current" : "available",
@@ -255,7 +255,7 @@ const terminalNodeIds = COURSE_NODES.filter((node) => {
 
 const GOAL_NODE: SkillNode = {
   id: "goal",
-  treeId: TREE_ID,
+  treeId: "input-json",
   name: DEFAULT_GRAPH.subject,
   description: DEFAULT_GRAPH.goal,
   status: "available",
@@ -274,14 +274,14 @@ const EDGES: SkillEdge[] = [
   ...COURSE_NODES.flatMap((node) =>
     node.prereqs.map((fromNodeId) => ({
       id: `edge_${fromNodeId}_${node.id}`,
-      treeId: TREE_ID,
+      treeId: "input-json",
       fromNodeId,
       toNodeId: node.id,
     })),
   ),
   ...terminalNodeIds.map((fromNodeId) => ({
     id: `edge_${fromNodeId}_goal`,
-    treeId: TREE_ID,
+    treeId: "input-json",
     fromNodeId,
     toNodeId: "goal",
   })),
@@ -302,6 +302,8 @@ interface StoredNode {
   tree_id: string;
   name: string;
   description: string;
+  teaching_brief?: string | null;
+  teaching_plan?: unknown;
   position_x: number;
   position_y: number;
   difficulty_level?: number | null;
@@ -327,11 +329,58 @@ function isMissingSkillNodesMetadataError(message: string) {
     message.includes("Could not find the 'is_checkpoint' column of 'skill_nodes'") ||
     message.includes("Could not find the 'zone' column of 'skill_nodes'") ||
     message.includes("Could not find the 'zone_color' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'teaching_brief' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
     message.includes("column skill_nodes.difficulty_level does not exist") ||
     message.includes("column skill_nodes.is_checkpoint does not exist") ||
     message.includes("column skill_nodes.zone does not exist") ||
-    message.includes("column skill_nodes.zone_color does not exist")
+    message.includes("column skill_nodes.zone_color does not exist") ||
+    message.includes("column skill_nodes.teaching_brief does not exist") ||
+    message.includes("column skill_nodes.teaching_plan does not exist")
   );
+}
+
+function isMissingTeachingPlanError(message: string) {
+  return (
+    message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
+    message.includes("column skill_nodes.teaching_plan does not exist")
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+}
+
+function teachingPlan(value: unknown): TeachingPlan | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const objective = stringValue(value.objective);
+  const goalContext = stringValue(value.goalContext ?? value.goal_context);
+  const focusPoints = stringArray(value.focusPoints ?? value.focus_points);
+  const avoid = stringArray(value.avoid);
+  const interactiveHint = stringValue(value.interactiveHint ?? value.interactive_hint);
+
+  if (!objective && !goalContext && focusPoints.length === 0 && avoid.length === 0 && !interactiveHint) {
+    return undefined;
+  }
+
+  return {
+    objective,
+    goalContext,
+    focusPoints,
+    avoid,
+    ...(interactiveHint ? { interactiveHint } : {}),
+  };
 }
 
 async function fetchStoredNodes(
@@ -340,7 +389,7 @@ async function fetchStoredNodes(
 ) {
   const richResult = await supabase
     .from("skill_nodes")
-    .select("id, tree_id, name, description, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+    .select("id, tree_id, name, description, teaching_brief, teaching_plan, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
     .eq("tree_id", treeId)
     .order("position_x", { ascending: true });
 
@@ -348,11 +397,58 @@ async function fetchStoredNodes(
     return richResult;
   }
 
+  if (isMissingTeachingPlanError(richResult.error.message)) {
+    const legacyTeachingResult = await supabase
+      .from("skill_nodes")
+      .select("id, tree_id, name, description, teaching_brief, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+      .eq("tree_id", treeId)
+      .order("position_x", { ascending: true });
+
+    if (!legacyTeachingResult.error || !isMissingSkillNodesMetadataError(legacyTeachingResult.error.message)) {
+      return legacyTeachingResult;
+    }
+  }
+
   return supabase
     .from("skill_nodes")
     .select("id, tree_id, name, description, position_x, position_y")
     .eq("tree_id", treeId)
     .order("position_x", { ascending: true });
+}
+
+function buildSchemaJson(
+  tree: StoredTree,
+  storedNodes: StoredNode[],
+  storedEdges: StoredEdge[],
+  progress: StoredProgress[],
+): string {
+  const statusById = new Map(progress.map((p) => [p.node_id, p.status]));
+  const prereqsByNode = new Map<string, string[]>();
+  for (const edge of storedEdges) {
+    const list = prereqsByNode.get(edge.to_node_id) ?? [];
+    list.push(edge.from_node_id);
+    prereqsByNode.set(edge.to_node_id, list);
+  }
+
+  const prefix = `${tree.id}_`;
+  const strip = (id: string) => (id.startsWith(prefix) ? id.slice(prefix.length) : id);
+
+  const nodes = storedNodes.map((node, index) => ({
+    id: strip(node.id),
+    name: node.name,
+    description: node.description,
+    teaching_brief: node.teaching_brief ?? "",
+    teaching: node.teaching_plan ?? null,
+    difficulty_level: node.difficulty_level ?? 1,
+    is_checkpoint: node.is_checkpoint ?? false,
+    zone: node.zone ?? "Core",
+    zone_color: node.zone_color ?? "#6EF1E0",
+    prerequisite_ids: (prereqsByNode.get(node.id) ?? []).map(strip),
+    coordinates: { x: node.position_x, y: node.position_y },
+    status: statusById.get(node.id) ?? (index === 0 ? "current" : "available"),
+  }));
+
+  return JSON.stringify({ subject: tree.subject, goal: tree.goal, nodes });
 }
 
 function buildStoredGraph(
@@ -380,6 +476,8 @@ function buildStoredGraph(
     prereqs: storedEdges
       .filter((edge) => edge.to_node_id === node.id)
       .map((edge) => edge.from_node_id),
+    teachingBrief: node.teaching_brief ?? undefined,
+    teachingPlan: teachingPlan(node.teaching_plan),
     difficultyLevel: node.difficulty_level ?? undefined,
     isCheckpoint: node.is_checkpoint ?? undefined,
     zone: node.zone ?? undefined,
@@ -443,13 +541,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
+  if (!userLearningPaths || userLearningPaths.length === 0) {
+    redirect("/generate");
+  }
+
   const params = await searchParams;
   const requestedTreeId = params?.treeId;
-  const selectedTreeId = requestedTreeId ?? userLearningPaths?.[0]?.id;
-  const learningPaths =
-    userLearningPaths && userLearningPaths.length > 0
-      ? userLearningPaths
-      : [{ id: TREE_ID, subject: DEFAULT_GRAPH.subject, href: "/dashboard" }];
+  const selectedTreeId = requestedTreeId ?? userLearningPaths[0]?.id;
+  const learningPaths = userLearningPaths;
 
   if (selectedTreeId) {
     const selectedTree = userLearningPaths?.find((path) => path.id === selectedTreeId);
@@ -479,18 +578,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       ]);
 
       if (tree && storedNodes && storedNodes.length > 0) {
-        const graph = buildStoredGraph(
-          tree as StoredTree,
-          storedNodes as StoredNode[],
-          (storedEdges ?? []) as StoredEdge[],
-          (progress ?? []) as StoredProgress[],
-        );
+        const typedTree = tree as StoredTree;
+        const typedNodes = storedNodes as StoredNode[];
+        const typedEdges = (storedEdges ?? []) as StoredEdge[];
+        const typedProgress = (progress ?? []) as StoredProgress[];
+
+        const graph = buildStoredGraph(typedTree, typedNodes, typedEdges, typedProgress);
+        const schema = buildSchemaJson(typedTree, typedNodes, typedEdges, typedProgress);
 
         return (
           <SkillTreeLoader
             nodes={graph.nodes}
             edges={graph.edges}
             subject={graph.subject}
+            initialSchema={schema}
+            schemaTreeId={typedTree.id}
             learningPaths={learningPaths}
           />
         );

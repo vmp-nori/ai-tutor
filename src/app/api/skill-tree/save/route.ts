@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
+import type { TeachingPlan } from "@/lib/types";
 
 interface GeneratedNode {
   id?: unknown;
   name?: unknown;
   description?: unknown;
   teaching_brief?: unknown;
+  teaching?: unknown;
   difficulty_level?: unknown;
   is_checkpoint?: unknown;
   zone?: unknown;
@@ -26,6 +28,7 @@ interface NodeInsert {
   name: string;
   description: string;
   teaching_brief: string;
+  teaching_plan: TeachingPlan | null;
   difficulty_level: number;
   is_checkpoint: boolean;
   zone: string;
@@ -39,6 +42,8 @@ type LegacyNodeInsert = Pick<
   NodeInsert,
   "id" | "tree_id" | "name" | "description" | "position_x" | "position_y"
 >;
+
+type NodeInsertWithoutTeachingPlan = Omit<NodeInsert, "teaching_plan">;
 
 interface EdgeInsert {
   tree_id: string;
@@ -93,6 +98,55 @@ function prerequisiteIds(value: unknown) {
     : [];
 }
 
+function cleanStringArray(value: unknown, maxItems: number, maxLength: number) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim().slice(0, maxLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+function cleanTeachingPlan(value: unknown, fallbackBrief: string, fallbackDescription: string): TeachingPlan | null {
+  if (!isRecord(value)) {
+    return fallbackBrief
+      ? {
+          objective: fallbackDescription || fallbackBrief,
+          goalContext: fallbackBrief,
+          focusPoints: [fallbackDescription || fallbackBrief],
+          avoid: [],
+        }
+      : null;
+  }
+
+  const objective = cleanString(value.objective, fallbackDescription || fallbackBrief, 500);
+  const goalContext = cleanString(value.goal_context ?? value.goalContext, fallbackBrief, 700);
+  const focusPoints = cleanStringArray(value.focus_points ?? value.focusPoints, 6, 220);
+  const avoid = cleanStringArray(value.avoid, 5, 220);
+  const interactiveHint = cleanString(value.interactive_hint ?? value.interactiveHint, "", 500);
+
+  if (!objective && !goalContext && focusPoints.length === 0 && avoid.length === 0 && !interactiveHint) {
+    return null;
+  }
+
+  return {
+    objective,
+    goalContext,
+    focusPoints,
+    avoid,
+    ...(interactiveHint ? { interactiveHint } : {}),
+  };
+}
+
+function teachingBriefFromPlan(value: unknown, fallback: string) {
+  if (!isRecord(value)) return fallback;
+
+  const goalContext = cleanString(value.goal_context ?? value.goalContext, "", 700);
+  const objective = cleanString(value.objective, "", 500);
+
+  return goalContext || objective || fallback;
+}
+
 function isMissingSchemaCacheFunctionError(message: string) {
   return (
     message.includes("Could not find the function public.create_skill_tree_with_graph") &&
@@ -107,16 +161,25 @@ function isMissingSkillNodesMetadataError(message: string) {
     "Could not find the 'zone' column of 'skill_nodes'",
     "Could not find the 'zone_color' column of 'skill_nodes'",
     "Could not find the 'teaching_brief' column of 'skill_nodes'",
+    "Could not find the 'teaching_plan' column of 'skill_nodes'",
     "Could not find the 'position_z' column of 'skill_nodes'",
     "column skill_nodes.difficulty_level does not exist",
     "column skill_nodes.is_checkpoint does not exist",
     "column skill_nodes.zone does not exist",
     "column skill_nodes.zone_color does not exist",
     "column skill_nodes.teaching_brief does not exist",
+    "column skill_nodes.teaching_plan does not exist",
     "column skill_nodes.position_z does not exist",
   ];
 
   return missingColumnPhrases.some((phrase) => message.includes(phrase));
+}
+
+function isMissingTeachingPlanError(message: string) {
+  return (
+    message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
+    message.includes("column skill_nodes.teaching_plan does not exist")
+  );
 }
 
 function isRetryableSchemaMismatchError(message: string) {
@@ -134,6 +197,11 @@ function stripNodeMetadata(node: NodeInsert): LegacyNodeInsert {
   };
 }
 
+function stripTeachingPlan(node: NodeInsert): NodeInsertWithoutTeachingPlan {
+  const { teaching_plan: _teachingPlan, ...withoutTeachingPlan } = node;
+  return withoutTeachingPlan;
+}
+
 async function saveSkillTreeWithDirectInserts({
   supabase,
   treeId,
@@ -148,7 +216,7 @@ async function saveSkillTreeWithDirectInserts({
   userId: string;
   subject: string;
   goal: string;
-  nodeInserts: Array<NodeInsert | LegacyNodeInsert>;
+  nodeInserts: Array<NodeInsert | NodeInsertWithoutTeachingPlan | LegacyNodeInsert>;
   edgeInserts: EdgeInsert[];
 }) {
   const treeSummary = {
@@ -228,6 +296,22 @@ async function saveSkillTreeWithAdaptiveDirectInserts({
     return richInsert;
   }
 
+  if (isMissingTeachingPlanError(richInsert.error.message)) {
+    const withoutTeachingPlanInsert = await saveSkillTreeWithDirectInserts({
+      supabase,
+      treeId,
+      userId,
+      subject,
+      goal,
+      nodeInserts: nodeInserts.map(stripTeachingPlan),
+      edgeInserts,
+    });
+
+    if (!withoutTeachingPlanInsert.error || !isMissingSkillNodesMetadataError(withoutTeachingPlanInsert.error.message)) {
+      return withoutTeachingPlanInsert;
+    }
+  }
+
   return saveSkillTreeWithDirectInserts({
     supabase,
     treeId,
@@ -282,12 +366,18 @@ export async function POST(req: NextRequest) {
 
   const nodeInserts: NodeInsert[] = rawNodes.map((node, index) => {
     const localId = localIds[index];
+    const description = cleanString(node.description, "", 1200);
+    const teachingBrief = teachingBriefFromPlan(
+      node.teaching,
+      cleanString(node.teaching_brief, description, 1600),
+    );
     return {
       id: nodeIdMap.get(localId)!,
       tree_id: treeId,
       name: cleanString(node.name, localId, 180),
-      description: cleanString(node.description, "", 1200),
-      teaching_brief: cleanString(node.teaching_brief, "", 1600),
+      description,
+      teaching_brief: teachingBrief,
+      teaching_plan: cleanTeachingPlan(node.teaching, teachingBrief, description),
       difficulty_level: Math.max(1, Math.min(10, integer(node.difficulty_level, 1))),
       is_checkpoint: node.is_checkpoint === true,
       zone: cleanString(node.zone, "Core", 120),

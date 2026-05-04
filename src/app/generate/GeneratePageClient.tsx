@@ -38,6 +38,7 @@ interface GeneratePageClientProps {
 export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientProps) {
   const [goal, setGoal] = useState("");
   const [schema, setSchema] = useState<string | null>(null);
+  const [schemaTreeId, setSchemaTreeId] = useState<string | null>(null);
   const [schemaDraft, setSchemaDraft] = useState("");
   const [navPaths, setNavPaths] = useState(learningPaths);
   const [loading, setLoading] = useState(false);
@@ -94,6 +95,7 @@ export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientPro
         savedPath,
         ...current.filter((path) => path.id !== savedPath.id),
       ]);
+      setSchemaTreeId(savedPath.id);
       setSchema(nextSchema);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -109,9 +111,11 @@ export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientPro
         edges={[]}
         subject={tryParseSubject(schema) ?? "Generated Learning Path"}
         initialSchema={schema}
+        schemaTreeId={schemaTreeId ?? undefined}
         learningPaths={navPaths}
         onNewPath={() => {
           setSchema(null);
+          setSchemaTreeId(null);
           setGoal("");
           setSchemaDraft("");
           setError(null);

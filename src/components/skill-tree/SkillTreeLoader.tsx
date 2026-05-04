@@ -15,8 +15,10 @@ interface SkillTreeLoaderProps {
   edges: SkillEdge[];
   subject: string;
   initialSchema?: string;
+  schemaTreeId?: string;
   learningPaths?: LearningPathNavItem[];
   onNewPath?: () => void;
+  onDeletePath?: (id: string) => void;
 }
 
 export function SkillTreeLoader(props: SkillTreeLoaderProps) {
