@@ -35,6 +35,11 @@ interface NodeInsert {
   position_z: number;
 }
 
+type LegacyNodeInsert = Pick<
+  NodeInsert,
+  "id" | "tree_id" | "name" | "description" | "position_x" | "position_y"
+>;
+
 interface EdgeInsert {
   tree_id: string;
   from_node_id: string;
@@ -95,6 +100,40 @@ function isMissingSchemaCacheFunctionError(message: string) {
   );
 }
 
+function isMissingSkillNodesMetadataError(message: string) {
+  const missingColumnPhrases = [
+    "Could not find the 'difficulty_level' column of 'skill_nodes'",
+    "Could not find the 'is_checkpoint' column of 'skill_nodes'",
+    "Could not find the 'zone' column of 'skill_nodes'",
+    "Could not find the 'zone_color' column of 'skill_nodes'",
+    "Could not find the 'teaching_brief' column of 'skill_nodes'",
+    "Could not find the 'position_z' column of 'skill_nodes'",
+    "column skill_nodes.difficulty_level does not exist",
+    "column skill_nodes.is_checkpoint does not exist",
+    "column skill_nodes.zone does not exist",
+    "column skill_nodes.zone_color does not exist",
+    "column skill_nodes.teaching_brief does not exist",
+    "column skill_nodes.position_z does not exist",
+  ];
+
+  return missingColumnPhrases.some((phrase) => message.includes(phrase));
+}
+
+function isRetryableSchemaMismatchError(message: string) {
+  return isMissingSchemaCacheFunctionError(message) || isMissingSkillNodesMetadataError(message);
+}
+
+function stripNodeMetadata(node: NodeInsert): LegacyNodeInsert {
+  return {
+    id: node.id,
+    tree_id: node.tree_id,
+    name: node.name,
+    description: node.description,
+    position_x: node.position_x,
+    position_y: node.position_y,
+  };
+}
+
 async function saveSkillTreeWithDirectInserts({
   supabase,
   treeId,
@@ -109,7 +148,7 @@ async function saveSkillTreeWithDirectInserts({
   userId: string;
   subject: string;
   goal: string;
-  nodeInserts: NodeInsert[];
+  nodeInserts: Array<NodeInsert | LegacyNodeInsert>;
   edgeInserts: EdgeInsert[];
 }) {
   const treeSummary = {
@@ -156,6 +195,48 @@ async function saveSkillTreeWithDirectInserts({
   }
 
   return { data: treeSummary, error: null };
+}
+
+async function saveSkillTreeWithAdaptiveDirectInserts({
+  supabase,
+  treeId,
+  userId,
+  subject,
+  goal,
+  nodeInserts,
+  edgeInserts,
+}: {
+  supabase: SupabaseClient;
+  treeId: string;
+  userId: string;
+  subject: string;
+  goal: string;
+  nodeInserts: NodeInsert[];
+  edgeInserts: EdgeInsert[];
+}) {
+  const richInsert = await saveSkillTreeWithDirectInserts({
+    supabase,
+    treeId,
+    userId,
+    subject,
+    goal,
+    nodeInserts,
+    edgeInserts,
+  });
+
+  if (!richInsert.error || !isMissingSkillNodesMetadataError(richInsert.error.message)) {
+    return richInsert;
+  }
+
+  return saveSkillTreeWithDirectInserts({
+    supabase,
+    treeId,
+    userId,
+    subject,
+    goal,
+    nodeInserts: nodeInserts.map(stripNodeMetadata),
+    edgeInserts,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -244,11 +325,11 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    if (!isMissingSchemaCacheFunctionError(error.message)) {
+    if (!isRetryableSchemaMismatchError(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const fallback = await saveSkillTreeWithDirectInserts({
+    const fallback = await saveSkillTreeWithAdaptiveDirectInserts({
       supabase,
       treeId,
       userId: user.id,

@@ -304,10 +304,10 @@ interface StoredNode {
   description: string;
   position_x: number;
   position_y: number;
-  difficulty_level: number | null;
-  is_checkpoint: boolean | null;
-  zone: string | null;
-  zone_color: string | null;
+  difficulty_level?: number | null;
+  is_checkpoint?: boolean | null;
+  zone?: string | null;
+  zone_color?: string | null;
 }
 
 interface StoredEdge {
@@ -319,6 +319,40 @@ interface StoredEdge {
 interface StoredProgress {
   node_id: string;
   status: SkillNode["status"];
+}
+
+function isMissingSkillNodesMetadataError(message: string) {
+  return (
+    message.includes("Could not find the 'difficulty_level' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'is_checkpoint' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'zone' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'zone_color' column of 'skill_nodes'") ||
+    message.includes("column skill_nodes.difficulty_level does not exist") ||
+    message.includes("column skill_nodes.is_checkpoint does not exist") ||
+    message.includes("column skill_nodes.zone does not exist") ||
+    message.includes("column skill_nodes.zone_color does not exist")
+  );
+}
+
+async function fetchStoredNodes(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  treeId: string,
+) {
+  const richResult = await supabase
+    .from("skill_nodes")
+    .select("id, tree_id, name, description, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+    .eq("tree_id", treeId)
+    .order("position_x", { ascending: true });
+
+  if (!richResult.error || !isMissingSkillNodesMetadataError(richResult.error.message)) {
+    return richResult;
+  }
+
+  return supabase
+    .from("skill_nodes")
+    .select("id, tree_id, name, description, position_x, position_y")
+    .eq("tree_id", treeId)
+    .order("position_x", { ascending: true });
 }
 
 function buildStoredGraph(
@@ -423,9 +457,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     if (selectedTree) {
       const [
         { data: tree },
-        { data: storedNodes },
         { data: storedEdges },
         { data: progress },
+        { data: storedNodes },
       ] = await Promise.all([
         supabase
           .from("skill_trees")
@@ -434,11 +468,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           .eq("user_id", user.id)
           .single(),
         supabase
-          .from("skill_nodes")
-          .select("id, tree_id, name, description, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
-          .eq("tree_id", selectedTree.id)
-          .order("position_x", { ascending: true }),
-        supabase
           .from("skill_edges")
           .select("tree_id, from_node_id, to_node_id")
           .eq("tree_id", selectedTree.id),
@@ -446,6 +475,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           .from("user_node_progress")
           .select("node_id, status")
           .eq("user_id", user.id),
+        fetchStoredNodes(supabase, selectedTree.id),
       ]);
 
       if (tree && storedNodes && storedNodes.length > 0) {
