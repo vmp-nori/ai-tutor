@@ -27,27 +27,72 @@ interface WaitlistFormProps {
 }
 
 const MAP_NODES = [
-  { id: "python", x: 78, y: 276, label: "Python core", status: "current" },
-  { id: "algebra", x: 248, y: 150, label: "Linear algebra" },
-  { id: "stats", x: 248, y: 286, label: "Statistics" },
-  { id: "numpy", x: 248, y: 420, label: "NumPy" },
-  { id: "training", x: 438, y: 244, label: "Model training", status: "checkpoint" },
-  { id: "validation", x: 612, y: 152, label: "Validation" },
-  { id: "networks", x: 612, y: 334, label: "Neural networks" },
-  { id: "deploy", x: 784, y: 248, label: "Deploy models", status: "goal" },
+  { id: "chemistry", x: 84, y: 166, label: "Chemistry", status: "done" },
+  { id: "safety", x: 84, y: 286, label: "Safety basics", status: "current" },
+  { id: "math", x: 84, y: 406, label: "Applied math", status: "done" },
+  { id: "oxidizers", x: 234, y: 112, label: "Oxidizers", status: "done" },
+  { id: "fuels", x: 234, y: 206, label: "Fuels" },
+  { id: "binders", x: 234, y: 300, label: "Binders" },
+  { id: "stoich", x: 234, y: 394, label: "Stoichiometry" },
+  { id: "hazards", x: 234, y: 488, label: "Hazard classes" },
+  { id: "particle", x: 390, y: 96, label: "Particle size" },
+  { id: "mixing", x: 390, y: 178, label: "Mixing order" },
+  { id: "color", x: 390, y: 260, label: "Color chemistry", status: "checkpoint" },
+  { id: "thermal", x: 390, y: 342, label: "Thermal output" },
+  { id: "stability", x: 390, y: 424, label: "Stability tests" },
+  { id: "records", x: 390, y: 506, label: "Lab records" },
+  { id: "grain", x: 548, y: 108, label: "Grain geometry" },
+  { id: "burn", x: 548, y: 196, label: "Burn rate", status: "checkpoint" },
+  { id: "effect", x: 548, y: 284, label: "Effect design" },
+  { id: "containment", x: 548, y: 372, label: "Containment" },
+  { id: "diagnostics", x: 548, y: 460, label: "Diagnostics" },
+  { id: "stars", x: 706, y: 92, label: "Stars" },
+  { id: "fountains", x: 706, y: 164, label: "Fountains" },
+  { id: "rockets", x: 706, y: 236, label: "Rockets" },
+  { id: "timing", x: 706, y: 308, label: "Timing systems" },
+  { id: "failure", x: 706, y: 380, label: "Failure modes" },
+  { id: "field", x: 706, y: 452, label: "Field testing" },
+  { id: "display", x: 858, y: 158, label: "Display design" },
+  { id: "compliance", x: 858, y: 262, label: "Compliance" },
+  { id: "iteration", x: 858, y: 366, label: "Iteration loop" },
+  { id: "launch", x: 858, y: 470, label: "Capstone", status: "goal" },
 ];
 
 const MAP_EDGES = [
-  ["python", "algebra"],
-  ["python", "stats"],
-  ["python", "numpy"],
-  ["algebra", "training"],
-  ["stats", "training"],
-  ["numpy", "training"],
-  ["training", "validation"],
-  ["training", "networks"],
-  ["validation", "deploy"],
-  ["networks", "deploy"],
+  ["chemistry", "oxidizers"],
+  ["chemistry", "fuels"],
+  ["safety", "hazards"],
+  ["math", "stoich"],
+  ["oxidizers", "particle"],
+  ["fuels", "mixing"],
+  ["fuels", "color"],
+  ["binders", "mixing"],
+  ["stoich", "thermal"],
+  ["hazards", "stability"],
+  ["hazards", "records"],
+  ["particle", "grain"],
+  ["mixing", "burn"],
+  ["color", "effect"],
+  ["thermal", "effect"],
+  ["stability", "containment"],
+  ["records", "diagnostics"],
+  ["grain", "stars"],
+  ["burn", "fountains"],
+  ["burn", "rockets"],
+  ["effect", "stars"],
+  ["effect", "fountains"],
+  ["containment", "timing"],
+  ["diagnostics", "failure"],
+  ["diagnostics", "field"],
+  ["stars", "display"],
+  ["fountains", "display"],
+  ["rockets", "display"],
+  ["timing", "compliance"],
+  ["failure", "iteration"],
+  ["field", "iteration"],
+  ["display", "launch"],
+  ["compliance", "launch"],
+  ["iteration", "launch"],
 ];
 
 const MAP_NODE_BY_ID = new Map(MAP_NODES.map((node) => [node.id, node]));
@@ -77,6 +122,30 @@ const FAILURE_MODES = [
   "Restarting because the path was wrong",
 ];
 
+const EMAIL_PROMPTS = [
+  "tungtungtungsahur@gmail.com",
+  "sonion@imcrine.com",
+  "teatowel@coldwater.com",
+  "saywallahi@bro.com",
+  "kingnasir@dance.com",
+  "asufratleader@truechad.com",
+  "marlon@gotmogged.com",
+  "myxpbarislow@mommy.com",
+  "matchadrinker@clairo.com",
+  "jerrylxadeeth@mpreg.com",
+];
+
+function getNextEmailPromptIndex(currentIndex: number) {
+  if (EMAIL_PROMPTS.length < 2) return currentIndex;
+
+  let nextIndex = currentIndex;
+  while (nextIndex === currentIndex) {
+    nextIndex = Math.floor(Math.random() * EMAIL_PROMPTS.length);
+  }
+
+  return nextIndex;
+}
+
 function useReveal(): RevealResult {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -102,6 +171,134 @@ function useReveal(): RevealResult {
   return { ref, visible };
 }
 
+function useTypedEmailPrompt(enabled: boolean) {
+  const [prompt, setPrompt] = useState(EMAIL_PROMPTS[0]);
+
+  useEffect(() => {
+    if (!enabled) {
+      setPrompt("you@email.com");
+      return;
+    }
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduceMotion.matches) {
+      setPrompt(EMAIL_PROMPTS[0]);
+      return;
+    }
+
+    let frame = window.setTimeout(() => undefined, 0);
+    let emailIndex = 0;
+    let charIndex = 0;
+    let deleting = false;
+
+    function tick() {
+      const email = EMAIL_PROMPTS[emailIndex];
+      const nextPrompt = email.slice(0, charIndex);
+      setPrompt(nextPrompt || " ");
+
+      if (!deleting && charIndex < email.length) {
+        charIndex += 1;
+        frame = window.setTimeout(tick, 48 + Math.random() * 42);
+        return;
+      }
+
+      if (!deleting) {
+        deleting = true;
+        frame = window.setTimeout(tick, 1150);
+        return;
+      }
+
+      if (charIndex > 0) {
+        charIndex -= 1;
+        frame = window.setTimeout(tick, 24 + Math.random() * 24);
+        return;
+      }
+
+      deleting = false;
+      emailIndex = getNextEmailPromptIndex(emailIndex);
+      frame = window.setTimeout(tick, 260);
+    }
+
+    tick();
+
+    return () => window.clearTimeout(frame);
+  }, [enabled]);
+
+  return prompt;
+}
+
+function useHeroScrollMotion() {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const target = el;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+
+    function setMotionVars({
+      opacity,
+      scale,
+      tilt,
+      x,
+      y,
+    }: {
+      opacity: number;
+      scale: number;
+      tilt: number;
+      x: number;
+      y: number;
+    }) {
+      target.style.setProperty("--lp-scroll-x", `${x}px`);
+      target.style.setProperty("--lp-scroll-y", `${y}px`);
+      target.style.setProperty("--lp-scroll-tilt", `${tilt}deg`);
+      target.style.setProperty("--lp-scroll-scale", `${scale}`);
+      target.style.setProperty("--lp-scroll-opacity", `${opacity}`);
+    }
+
+    function update() {
+      frame = 0;
+
+      if (reduceMotion.matches) {
+        setMotionVars({ opacity: 0.82, scale: 1.04, tilt: 0, x: 0, y: 0 });
+        return;
+      }
+
+      const viewportHeight = Math.max(window.innerHeight, 1);
+      const progress = Math.min(window.scrollY / viewportHeight, 1.35);
+
+      setMotionVars({
+        opacity: 0.82 - 0.24 * progress,
+        scale: 1.04 + 0.04 * progress,
+        tilt: 1.9 * progress,
+        x: -46 * progress,
+        y: 84 * progress,
+      });
+    }
+
+    function requestUpdate() {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    }
+
+    update();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    reduceMotion.addEventListener("change", requestUpdate);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+      reduceMotion.removeEventListener("change", requestUpdate);
+    };
+  }, []);
+
+  return ref;
+}
+
 function splitLabel(label: string) {
   const words = label.split(" ");
   if (words.length === 1) return [label];
@@ -109,85 +306,123 @@ function splitLabel(label: string) {
 }
 
 function HeroGraphScene() {
+  const motionRef = useHeroScrollMotion();
+
   return (
-    <div className="lp-map-stage" aria-hidden="true">
-      <div className="lp-map-prompt">
-        <span>Goal</span>
-        <strong>Machine learning engineering</strong>
-      </div>
+    <div className="lp-map-stage" ref={motionRef} aria-hidden="true">
+      <div className="lp-product-shell">
+        <div className="lp-product-topbar">
+          <div className="lp-product-brand">
+            <span />
+            <strong>Pathwise</strong>
+          </div>
+          <div className="lp-product-topic">Pyrotechnics Engineering</div>
+          <div className="lp-product-progress">
+            <strong>9</strong> of 29 complete
+            <span />
+          </div>
+        </div>
 
-      <svg
-        className="lp-map-svg"
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 900 560"
-        role="img"
-      >
-        <defs>
-          <marker
-            id="lp-arrow"
-            markerHeight="8"
-            markerWidth="8"
-            orient="auto"
-            refX="7"
-            refY="4"
-          >
-            <path d="M0 0 L8 4 L0 8 Z" fill="var(--lp-line-strong)" />
-          </marker>
-        </defs>
-
-        <g className="lp-map-zones">
-          <rect x="20" y="62" width="260" height="426" rx="8" />
-          <rect x="320" y="62" width="208" height="426" rx="8" />
-          <rect x="566" y="62" width="286" height="426" rx="8" />
-          <text x="38" y="92">Foundations</text>
-          <text x="338" y="92">Core model</text>
-          <text x="584" y="92">Production</text>
-        </g>
-
-        <g className="lp-map-edges">
-          {MAP_EDGES.map(([from, to], index) => {
-            const a = MAP_NODE_BY_ID.get(from);
-            const b = MAP_NODE_BY_ID.get(to);
-            if (!a || !b) return null;
-
-            const c1x = a.x + (b.x - a.x) * 0.52;
-            const c2x = a.x + (b.x - a.x) * 0.48;
-            return (
-              <path
-                key={`${from}-${to}`}
-                className="lp-map-edge"
-                d={`M ${a.x + 58} ${a.y} C ${c1x} ${a.y}, ${c2x} ${b.y}, ${b.x - 58} ${b.y}`}
-                markerEnd="url(#lp-arrow)"
-                style={{ animationDelay: `${index * 70}ms` }}
-              />
-            );
-          })}
-        </g>
-
-        <g className="lp-map-nodes">
-          {MAP_NODES.map((node, index) => (
-            <g
-              key={node.id}
-              className={`lp-map-node is-${node.status ?? "default"}`}
-              style={{ animationDelay: `${220 + index * 55}ms` }}
+        <svg
+          className="lp-map-svg"
+          preserveAspectRatio="xMidYMid slice"
+          viewBox="0 0 960 620"
+          role="img"
+        >
+          <defs>
+            <marker
+              id="lp-arrow"
+              markerHeight="8"
+              markerWidth="8"
+              orient="auto"
+              refX="7"
+              refY="4"
             >
-              <rect x={node.x - 58} y={node.y - 28} width="116" height="56" rx="8" />
-              <text x={node.x} y={node.y - 4}>
-                {splitLabel(node.label).map((line, lineIndex) => (
-                  <tspan key={line} x={node.x} dy={lineIndex === 0 ? 0 : 15}>
-                    {line}
-                  </tspan>
-                ))}
-              </text>
-            </g>
-          ))}
-        </g>
-      </svg>
+              <path d="M0 0 L8 4 L0 8 Z" fill="var(--lp-line-strong)" />
+            </marker>
+          </defs>
 
-      <div className="lp-map-legend">
-        <span>23 nodes</span>
-        <span>5 zones</span>
-        <span>1 clear next step</span>
+          <g className="lp-map-world">
+            <g className="lp-map-zones">
+              <rect className="zone-a" x="18" y="70" width="176" height="486" rx="8" />
+              <rect className="zone-b" x="206" y="70" width="166" height="486" rx="8" />
+              <rect className="zone-c" x="384" y="70" width="176" height="486" rx="8" />
+              <rect className="zone-d" x="572" y="70" width="168" height="486" rx="8" />
+              <rect className="zone-e" x="752" y="70" width="186" height="486" rx="8" />
+              <text x="38" y="102">01 Foundations</text>
+              <text x="226" y="102">02 Materials</text>
+              <text x="404" y="102">03 Formulation</text>
+              <text x="592" y="102">04 Effects</text>
+              <text x="772" y="102">05 Execution</text>
+            </g>
+
+            <g className="lp-map-edges">
+              {MAP_EDGES.map(([from, to], index) => {
+                const a = MAP_NODE_BY_ID.get(from);
+                const b = MAP_NODE_BY_ID.get(to);
+                if (!a || !b) return null;
+
+                const c1x = a.x + (b.x - a.x) * 0.58;
+                const c2x = a.x + (b.x - a.x) * 0.42;
+                const path = `M ${a.x + 54} ${a.y} C ${c1x} ${a.y}, ${c2x} ${b.y}, ${b.x - 54} ${b.y}`;
+                return (
+                  <path
+                    key={`${from}-${to}`}
+                    className="lp-map-edge"
+                    d={path}
+                    markerEnd="url(#lp-arrow)"
+                    style={{ animationDelay: `${index * 34}ms` }}
+                  />
+                );
+              })}
+            </g>
+
+            <g className="lp-map-traces">
+              {MAP_EDGES.slice(0, 18).map(([from, to], index) => {
+                const a = MAP_NODE_BY_ID.get(from);
+                const b = MAP_NODE_BY_ID.get(to);
+                if (!a || !b) return null;
+
+                const c1x = a.x + (b.x - a.x) * 0.58;
+                const c2x = a.x + (b.x - a.x) * 0.42;
+                return (
+                  <path
+                    key={`trace-${from}-${to}`}
+                    className="lp-map-trace"
+                    d={`M ${a.x + 54} ${a.y} C ${c1x} ${a.y}, ${c2x} ${b.y}, ${b.x - 54} ${b.y}`}
+                    style={{ animationDelay: `${index * 420}ms` }}
+                  />
+                );
+              })}
+            </g>
+
+            <g className="lp-map-nodes">
+              {MAP_NODES.map((node, index) => (
+                <g
+                  key={node.id}
+                  className={`lp-map-node is-${node.status ?? "default"}`}
+                  style={{ animationDelay: `${180 + index * 28}ms` }}
+                >
+                  <rect x={node.x - 54} y={node.y - 25} width="108" height="50" rx="7" />
+                  <circle cx={node.x - 39} cy={node.y - 10} r="3" />
+                  <text x={node.x} y={node.y + 7}>
+                    {splitLabel(node.label).map((line, lineIndex) => (
+                      <tspan key={line} x={node.x} dy={lineIndex === 0 ? 0 : 13}>
+                        {line}
+                      </tspan>
+                    ))}
+                  </text>
+                </g>
+              ))}
+            </g>
+          </g>
+        </svg>
+
+        <div className="lp-map-legend">
+          <span>29 nodes</span>
+          <span>5 chapters</span>
+          <span>Next: Burn rate</span>
+        </div>
       </div>
     </div>
   );
@@ -206,6 +441,7 @@ function WaitlistForm({
   const isLoading = status === "loading";
   const isError = status === "error";
   const errorId = `${formId}-error`;
+  const typedPrompt = useTypedEmailPrompt(!email && !isLoading);
 
   if (status === "success") {
     return (
@@ -232,7 +468,7 @@ function WaitlistForm({
           disabled={isLoading}
           id={formId}
           onChange={(event) => onEmailChange(event.target.value)}
-          placeholder="you@email.com"
+          placeholder={typedPrompt}
           required
           type="email"
           value={email}
@@ -339,6 +575,7 @@ export default function LandingPage() {
 
         .lp-nav {
           align-items: center;
+          animation: lp-hero-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
           background: oklch(96.8% 0.014 168 / 0.93);
           border-bottom: 1px solid var(--lp-line);
           display: flex;
@@ -402,6 +639,9 @@ export default function LandingPage() {
           color: oklch(97.8% 0.012 168);
           cursor: pointer;
           padding: 0 14px;
+          transition:
+            background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+            transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .lp-link:hover {
@@ -410,6 +650,11 @@ export default function LandingPage() {
 
         .lp-nav-button:hover {
           background: oklch(22% 0.024 238);
+          transform: translateY(-1px);
+        }
+
+        .lp-nav-button:active {
+          transform: translateY(0) scale(0.98);
         }
 
         .lp-hero {
@@ -452,6 +697,7 @@ export default function LandingPage() {
 
         .lp-eyebrow {
           align-items: center;
+          animation: lp-hero-rise 680ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
           color: var(--lp-ink-soft);
           display: inline-flex;
           font-size: 14px;
@@ -469,6 +715,7 @@ export default function LandingPage() {
         }
 
         .lp-title {
+          animation: lp-hero-rise 760ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
           color: var(--lp-ink);
           font-size: 5.8rem;
           font-weight: 800;
@@ -480,6 +727,7 @@ export default function LandingPage() {
         }
 
         .lp-hero-text {
+          animation: lp-hero-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 340ms both;
           color: var(--lp-ink-soft);
           font-size: 19px;
           font-weight: 400;
@@ -490,6 +738,7 @@ export default function LandingPage() {
         }
 
         .lp-hero-proof {
+          animation: lp-hero-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) 520ms both;
           border-top: 1px solid var(--lp-line);
           color: var(--lp-muted);
           font-size: 14px;
@@ -500,46 +749,115 @@ export default function LandingPage() {
         }
 
         .lp-map-stage {
-          bottom: -118px;
-          left: -132px;
+          animation: lp-graph-arrive 940ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
+          bottom: -124px;
+          contain: paint;
+          left: -150px;
           min-width: 0;
-          opacity: 0.76;
+          opacity: var(--lp-scroll-opacity, 0.82);
           position: absolute;
-          right: -132px;
-          top: 18px;
+          right: -150px;
+          top: 16px;
+          transform: translate3d(var(--lp-scroll-x, 0px), var(--lp-scroll-y, 0px), 0);
+          transform-origin: center;
+          will-change: transform, opacity;
           z-index: 0;
         }
 
-        .lp-map-prompt {
-          align-items: center;
-          background: var(--lp-panel);
+        .lp-product-shell {
+          background:
+            linear-gradient(90deg, oklch(82% 0.035 184 / 0.36) 1px, transparent 1px),
+            linear-gradient(0deg, oklch(82% 0.035 184 / 0.28) 1px, transparent 1px),
+            oklch(98.1% 0.015 168 / 0.88);
+          background-size: 36px 36px;
           border: 1px solid var(--lp-line);
-          border-radius: 8px;
-          box-shadow: 0 18px 50px oklch(32% 0.04 185 / 0.08);
-          display: flex;
-          gap: 14px;
-          left: 88px;
-          min-height: 48px;
-          padding: 0 16px;
+          border-radius: 10px;
+          box-shadow: 0 34px 92px oklch(28% 0.035 185 / 0.16);
+          height: 100%;
+          overflow: hidden;
+          position: relative;
+          transform:
+            rotate(calc(-1.6deg + var(--lp-scroll-tilt, 0deg)))
+            scale(var(--lp-scroll-scale, 1.04));
+          transform-origin: center;
+          will-change: transform;
+        }
+
+        .lp-product-shell::after {
+          background:
+            radial-gradient(ellipse at 50% 28%, transparent 0 26%, oklch(96.8% 0.014 168 / 0.44) 56%, oklch(96.8% 0.014 168 / 0.8) 100%),
+            linear-gradient(180deg, transparent 0 52%, oklch(96.8% 0.014 168 / 0.72) 100%);
+          content: "";
+          inset: 0;
+          pointer-events: none;
           position: absolute;
+          z-index: 4;
+        }
+
+        .lp-product-topbar {
+          align-items: center;
+          background: oklch(98.8% 0.009 168 / 0.96);
+          border-bottom: 1px solid var(--lp-line);
+          display: flex;
+          gap: 22px;
+          height: 48px;
+          left: 0;
+          padding: 0 18px;
+          position: absolute;
+          right: 0;
           top: 0;
-          width: min(420px, 42vw);
           z-index: 3;
         }
 
-        .lp-map-prompt span {
+        .lp-product-brand,
+        .lp-product-progress {
+          align-items: center;
+          display: flex;
+        }
+
+        .lp-product-brand {
+          color: var(--lp-ink);
+          font-size: 14px;
+          font-weight: 800;
+          gap: 10px;
+        }
+
+        .lp-product-brand span {
+          background: var(--lp-ink);
+          border-radius: 5px;
+          height: 20px;
+          width: 20px;
+        }
+
+        .lp-product-topic {
+          border-left: 1px solid var(--lp-line);
+          color: var(--lp-ink-soft);
+          font-size: 13px;
+          font-weight: 700;
+          padding-left: 22px;
+        }
+
+        .lp-product-progress {
           color: var(--lp-muted);
           font-size: 12px;
+          font-weight: 700;
+          gap: 5px;
+          margin-left: auto;
+        }
+
+        .lp-product-progress strong {
+          color: var(--lp-ink);
           font-weight: 800;
         }
 
-        .lp-map-prompt strong {
-          color: var(--lp-ink);
-          font-size: 15px;
-          font-weight: 800;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+        .lp-product-progress span {
+          animation: lp-progress-scan 3.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+          background: linear-gradient(90deg, var(--lp-line-strong) 0 60%, var(--lp-line) 60% 100%);
+          background-size: 180% 100%;
+          border-radius: 999px;
+          height: 4px;
+          margin-left: 8px;
+          width: 90px;
         }
 
         .lp-map-svg {
@@ -549,10 +867,33 @@ export default function LandingPage() {
           width: 100%;
         }
 
+        .lp-map-world {
+          animation: lp-map-drift 14s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+          transform-box: fill-box;
+          transform-origin: center;
+          will-change: transform;
+        }
+
         .lp-map-zones rect {
-          fill: oklch(94% 0.021 168 / 0.62);
+          fill: oklch(94% 0.021 168 / 0.46);
           stroke: var(--lp-line);
           stroke-width: 1;
+        }
+
+        .lp-map-zones .zone-b {
+          fill: oklch(95% 0.025 212 / 0.46);
+        }
+
+        .lp-map-zones .zone-c {
+          fill: oklch(95% 0.031 76 / 0.36);
+        }
+
+        .lp-map-zones .zone-d {
+          fill: oklch(95% 0.029 288 / 0.38);
+        }
+
+        .lp-map-zones .zone-e {
+          fill: oklch(94% 0.028 164 / 0.42);
         }
 
         .lp-map-zones text {
@@ -568,7 +909,17 @@ export default function LandingPage() {
           stroke-dasharray: 520;
           stroke-dashoffset: 520;
           stroke-linecap: round;
-          stroke-width: 2;
+          stroke-width: 1.4;
+        }
+
+        .lp-map-trace {
+          animation: lp-trace 4.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+          fill: none;
+          opacity: 0;
+          stroke: var(--lp-blue);
+          stroke-dasharray: 26 470;
+          stroke-linecap: round;
+          stroke-width: 2.6;
         }
 
         .lp-map-node {
@@ -578,16 +929,31 @@ export default function LandingPage() {
         }
 
         .lp-map-node rect {
+          animation: lp-node-light 6.8s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
           fill: var(--lp-panel);
           stroke: var(--lp-line);
           stroke-width: 1.3;
+          filter: drop-shadow(0 5px 10px oklch(32% 0.04 185 / 0.08));
+        }
+
+        .lp-map-node circle {
+          fill: var(--lp-muted);
         }
 
         .lp-map-node text {
           fill: var(--lp-ink-soft);
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 800;
           text-anchor: middle;
+        }
+
+        .lp-map-node.is-done rect {
+          fill: oklch(94% 0.052 150);
+          stroke: oklch(66% 0.14 150);
+        }
+
+        .lp-map-node.is-done circle {
+          fill: oklch(49% 0.122 150);
         }
 
         .lp-map-node.is-current rect {
@@ -595,9 +961,23 @@ export default function LandingPage() {
           stroke: var(--lp-green);
         }
 
+        .lp-map-node.is-current {
+          animation:
+            lp-node-in 560ms cubic-bezier(0.16, 1, 0.3, 1) both,
+            lp-current-pulse 3.8s cubic-bezier(0.16, 1, 0.3, 1) 1.2s infinite;
+        }
+
+        .lp-map-node.is-current circle {
+          fill: var(--lp-green);
+        }
+
         .lp-map-node.is-checkpoint rect {
           fill: oklch(94% 0.053 76);
           stroke: var(--lp-amber);
+        }
+
+        .lp-map-node.is-checkpoint circle {
+          fill: var(--lp-amber);
         }
 
         .lp-map-node.is-goal rect {
@@ -612,15 +992,16 @@ export default function LandingPage() {
         .lp-map-legend {
           background: var(--lp-ink);
           border-radius: 8px;
-          bottom: 76px;
+          bottom: 64px;
           box-shadow: 0 18px 50px oklch(32% 0.04 185 / 0.13);
           color: oklch(97.8% 0.012 168);
           display: grid;
           gap: 1px;
           overflow: hidden;
           position: absolute;
-          right: 112px;
-          width: 180px;
+          right: 86px;
+          width: 188px;
+          z-index: 5;
         }
 
         .lp-map-legend span {
@@ -647,7 +1028,84 @@ export default function LandingPage() {
           }
         }
 
+        @keyframes lp-hero-rise {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 18px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes lp-graph-arrive {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 22px, 0) scale(0.985);
+          }
+          to {
+            opacity: var(--lp-scroll-opacity, 0.82);
+            transform: translate3d(var(--lp-scroll-x, 0px), var(--lp-scroll-y, 0px), 0);
+          }
+        }
+
+        @keyframes lp-map-drift {
+          from {
+            transform: translate3d(-18px, 6px, 0) scale(1.012);
+          }
+          to {
+            transform: translate3d(22px, -12px, 0) scale(1.035);
+          }
+        }
+
+        @keyframes lp-trace {
+          0% {
+            opacity: 0;
+            stroke-dashoffset: 520;
+          }
+          16% {
+            opacity: 0.72;
+          }
+          72% {
+            opacity: 0.72;
+          }
+          100% {
+            opacity: 0;
+            stroke-dashoffset: 0;
+          }
+        }
+
+        @keyframes lp-current-pulse {
+          0%,
+          100% {
+            filter: drop-shadow(0 0 0 oklch(67% 0.145 164 / 0));
+          }
+          45% {
+            filter: drop-shadow(0 0 16px oklch(67% 0.145 164 / 0.35));
+          }
+        }
+
+        @keyframes lp-node-light {
+          from {
+            filter: drop-shadow(0 5px 10px oklch(32% 0.04 185 / 0.06));
+          }
+          to {
+            filter: drop-shadow(0 8px 14px oklch(32% 0.04 185 / 0.12));
+          }
+        }
+
+        @keyframes lp-progress-scan {
+          from {
+            background-position: 100% 0;
+          }
+          to {
+            background-position: 0 0;
+          }
+        }
+
         .lp-form {
+          animation: lp-hero-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) 440ms both;
           max-width: 560px;
         }
 
@@ -684,6 +1142,10 @@ export default function LandingPage() {
           min-width: 0;
           outline: none;
           padding: 0 16px;
+          transition:
+            border-color 170ms cubic-bezier(0.16, 1, 0.3, 1),
+            box-shadow 170ms cubic-bezier(0.16, 1, 0.3, 1),
+            transform 170ms cubic-bezier(0.16, 1, 0.3, 1);
           width: 100%;
         }
 
@@ -694,6 +1156,7 @@ export default function LandingPage() {
         .lp-input:focus {
           border-color: var(--lp-line-strong);
           box-shadow: 0 0 0 3px oklch(67% 0.145 164 / 0.18);
+          transform: translateY(-1px);
         }
 
         .lp-input:disabled {
@@ -721,11 +1184,22 @@ export default function LandingPage() {
           height: 50px;
           justify-content: center;
           padding: 0 20px;
+          transition:
+            background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+            box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+            transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+            opacity 180ms cubic-bezier(0.16, 1, 0.3, 1);
           white-space: nowrap;
         }
 
         .lp-submit:hover:not(:disabled) {
           background: oklch(22% 0.024 238);
+          box-shadow: 0 10px 22px oklch(20% 0.02 238 / 0.14);
+          transform: translateY(-1px);
+        }
+
+        .lp-submit:active:not(:disabled) {
+          transform: translateY(0) scale(0.985);
         }
 
         .lp-submit:disabled {
@@ -1049,16 +1523,17 @@ export default function LandingPage() {
 
           .lp-map-stage {
             bottom: -118px;
-            left: -220px;
+            left: -240px;
             min-width: 760px;
-            right: -220px;
+            right: -240px;
             top: 18px;
             width: auto;
           }
 
-          .lp-map-prompt {
-            left: 128px;
-            width: 360px;
+          .lp-product-shell {
+            transform:
+              rotate(calc(-1.2deg + var(--lp-scroll-tilt, 0deg)))
+              scale(var(--lp-scroll-scale, 1.02));
           }
 
           .lp-problem,
@@ -1119,16 +1594,20 @@ export default function LandingPage() {
           .lp-map-stage {
             bottom: -96px;
             left: -330px;
-            opacity: 0.55;
+            opacity: calc(var(--lp-scroll-opacity, 0.82) * 0.68);
             right: -330px;
             top: 18px;
-            transform: none;
             transform-origin: top left;
           }
 
-          .lp-map-prompt,
+          .lp-product-topic,
+          .lp-product-progress,
           .lp-map-legend {
             display: none;
+          }
+
+          .lp-product-topbar {
+            height: 42px;
           }
 
           .lp-problem,
@@ -1179,8 +1658,21 @@ export default function LandingPage() {
         }
 
         @media (prefers-reduced-motion: reduce) {
+          .lp-nav,
+          .lp-eyebrow,
+          .lp-title,
+          .lp-hero-text,
+          .lp-hero-proof,
+          .lp-form,
+          .lp-map-stage,
           .lp-map-edge,
+          .lp-map-trace,
+          .lp-map-world,
           .lp-map-node,
+          .lp-map-node.is-current,
+          .lp-map-node rect,
+          .lp-product-progress span,
+          .lp-product-shell,
           .lp-spinner,
           .lp-reveal {
             animation: none;
@@ -1188,6 +1680,11 @@ export default function LandingPage() {
             stroke-dashoffset: 0;
             transform: none;
             transition: none;
+          }
+
+          .lp-map-stage {
+            opacity: 0.82;
+            transform: none;
           }
         }
       `}</style>
