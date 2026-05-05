@@ -3,6 +3,8 @@ import {
   ConverseCommand,
   type ConverseCommandOutput,
 } from "@aws-sdk/client-bedrock-runtime";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 import type { GeneratedLesson, LessonDiagram, LessonSection, TeachingPlan } from "@/lib/types";
@@ -27,6 +29,7 @@ interface StoredNode {
   description: string;
   teaching_brief?: string | null;
   teaching_plan?: unknown;
+  generated_lesson?: unknown;
 }
 
 interface StoredPrerequisite {
@@ -35,9 +38,10 @@ interface StoredPrerequisite {
   description: string;
 }
 
-const DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6-20251001-v1:0";
 const DEFAULT_REGION = "us-east-1";
 const MAX_ID_LENGTH = 180;
+const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "lessongeneration.txt");
 
 const lessonJsonSchema = {
   type: "object",
@@ -84,25 +88,6 @@ const lessonJsonSchema = {
   required: ["title", "sections", "worked_example", "misconceptions", "try_this"],
 };
 
-const SYSTEM_PROMPT = `You are Pathwise's teaching agent.
-
-Create one short, focused lesson for a single atomic concept inside a larger learning goal. Return only valid JSON matching the schema.
-
-Rules:
-- Teach only the requested concept, using the provided teaching plan and prerequisite context.
-- Keep the lesson compact. Do not write a chapter or course module.
-- Tie the explanation to the learner's final goal whenever it helps.
-- Avoid the listed detours and over-advanced theory.
-- Include 2 to 4 lesson sections.
-- Include one concrete worked example.
-- Include 2 to 4 common misconceptions.
-- Include one small "try this" prompt, but do not quiz or grade the learner.
-- Include diagram only if an interactive visual materially helps the concept.
-- If including diagram, diagram.html must be a self-contained HTML body snippet using inline CSS, SVG or canvas, and vanilla JavaScript only.
-- Diagram code must not use external scripts, external stylesheets, external images, fetch, XMLHttpRequest, WebSocket, EventSource, localStorage, sessionStorage, cookies, forms, iframes, object/embed tags, or links.
-- Diagram code must fit in a constrained lesson pane and must work without network access.
-- If no diagram is useful, omit the diagram key.
-- Do not include markdown, code fences, comments, or text outside the JSON object.`;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -197,12 +182,12 @@ Teaching plan:
 - Interactive hint: ${teachingPlan.interactiveHint || "Only include a diagram if the concept is genuinely visual or interactive."}`;
 }
 
-function buildBedrockCommand(prompt: string) {
+function buildBedrockCommand(prompt: string, systemPrompt: string) {
   const modelId = process.env.BEDROCK_MODEL_ID?.trim() || DEFAULT_MODEL;
 
   return new ConverseCommand({
     modelId,
-    system: [{ text: SYSTEM_PROMPT }],
+    system: [{ text: systemPrompt }],
     messages: [
       {
         role: "user",
@@ -319,7 +304,7 @@ async function fetchStoredNode(
   const candidates = nodeIdCandidates(treeId, nodeId);
   const richResult = await supabase
     .from("skill_nodes")
-    .select("id, tree_id, name, description, teaching_brief, teaching_plan")
+    .select("id, tree_id, name, description, teaching_brief, teaching_plan, generated_lesson")
     .eq("tree_id", treeId)
     .in("id", candidates);
 
@@ -394,6 +379,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Concept was not found" }, { status: 404 });
     }
 
+    const storedNode = node as StoredNode;
+
+    if (isRecord(storedNode.generated_lesson)) {
+      try {
+        const cached = normalizeLesson(storedNode.generated_lesson, storedNode);
+        return NextResponse.json(cached, {
+          headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+        });
+      } catch {
+        // cached value malformed — fall through to regenerate
+      }
+    }
+
     const { data: prerequisiteEdges } = await supabase
       .from("skill_edges")
       .select("from_node_id")
@@ -411,20 +409,26 @@ export async function POST(req: NextRequest) {
           .in("id", prerequisiteIds)
       : { data: [] };
 
-    const teachingPlan = normalizeTeachingPlan((node as StoredNode).teaching_plan, node as StoredNode);
+    const systemPrompt = (await readFile(SYSTEM_PROMPT_PATH, "utf8")).trim();
+    const teachingPlan = normalizeTeachingPlan(storedNode.teaching_plan, storedNode);
     const bedrockResponse = await getBedrockClient().send(
       buildBedrockCommand(buildLessonPrompt({
         tree: tree as StoredTree,
-        node: node as StoredNode,
+        node: storedNode,
         teachingPlan,
         prerequisites: (prerequisites ?? []) as StoredPrerequisite[],
-      })),
+      }), systemPrompt),
       { abortSignal: AbortSignal.timeout(45_000) },
     );
 
     const lessonText = responseText(bedrockResponse);
     const parsed = JSON.parse(extractJson(lessonText));
-    const lesson = normalizeLesson(parsed, node as StoredNode);
+    const lesson = normalizeLesson(parsed, storedNode);
+
+    await supabase
+      .from("skill_nodes")
+      .update({ generated_lesson: parsed })
+      .eq("id", storedNode.id);
 
     return NextResponse.json(lesson, {
       headers: {

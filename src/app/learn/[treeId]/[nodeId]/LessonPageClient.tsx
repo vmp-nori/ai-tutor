@@ -111,7 +111,7 @@ export function LessonPageClient({
     <>
       <style>{`
         .lesson-action:hover:not(:disabled) { background: var(--color-button-primary-hover) !important; }
-        .lesson-secondary:hover { border-color: var(--color-border-mid) !important; color: var(--color-text-primary) !important; }
+        .lesson-nav-btn:hover { border-color: var(--color-border-mid) !important; color: var(--color-text-primary) !important; }
         .lesson-skeleton {
           border-radius: 7px;
           background: linear-gradient(90deg, var(--color-chrome), var(--color-panel), var(--color-chrome));
@@ -195,7 +195,7 @@ export function LessonPageClient({
           </div>
 
           <a
-            className="lesson-secondary"
+            className="lesson-nav-btn"
             href={dashboardHref}
             style={{
               height: 30,
@@ -222,7 +222,7 @@ export function LessonPageClient({
           style={{
             maxWidth: 1180,
             margin: "0 auto",
-            padding: "88px 24px 56px",
+            padding: "88px 24px 80px",
           }}
         >
           <div
@@ -230,7 +230,7 @@ export function LessonPageClient({
             style={{
               display: "grid",
               gridTemplateColumns: "280px minmax(0, 760px)",
-              gap: 46,
+              gap: 56,
               alignItems: "start",
             }}
           >
@@ -239,67 +239,79 @@ export function LessonPageClient({
               style={{
                 position: "sticky",
                 top: 72,
-                borderRight: "1px solid var(--color-border)",
-                paddingRight: 24,
               }}
             >
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 750,
-                  color: "var(--color-text-muted)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  marginBottom: 10,
-                }}
-              >
-                Concept
+              {/* Concept block */}
+              <div style={{ marginBottom: 32 }}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 750,
+                    color: "var(--color-text-muted)",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    marginBottom: 10,
+                  }}
+                >
+                  Concept
+                </div>
+                <h1
+                  style={{
+                    margin: "0 0 10px",
+                    fontSize: 24,
+                    lineHeight: 1.12,
+                    fontWeight: 780,
+                    letterSpacing: 0,
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  {nodeName}
+                </h1>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  {nodeDescription}
+                </p>
               </div>
-              <h1
-                style={{
-                  margin: "0 0 12px",
-                  fontSize: 24,
-                  lineHeight: 1.12,
-                  fontWeight: 780,
-                  letterSpacing: 0,
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {nodeName}
-              </h1>
-              <p
-                style={{
-                  margin: "0 0 22px",
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                {nodeDescription}
-              </p>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 750,
-                  color: "var(--color-text-muted)",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  marginBottom: 8,
-                }}
-              >
-                End goal
-              </div>
-              <p
-                style={{
-                  margin: "0 0 24px",
-                  fontSize: 12.5,
-                  lineHeight: 1.55,
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                {goal}
-              </p>
 
+              {/* Goal block */}
+              <div
+                style={{
+                  marginBottom: 32,
+                  paddingTop: 20,
+                  borderTop: "1px solid var(--color-border)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 750,
+                    color: "var(--color-text-muted)",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    marginBottom: 8,
+                  }}
+                >
+                  End goal
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 12.5,
+                    lineHeight: 1.55,
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  {goal}
+                </p>
+              </div>
+
+              {/* Actions block */}
               <button
                 type="button"
                 className="lesson-action"
@@ -331,34 +343,50 @@ export function LessonPageClient({
                 <div
                   role="status"
                   style={{
-                    marginTop: 14,
-                    paddingTop: 14,
-                    borderTop: "1px solid var(--color-border)",
+                    marginTop: 12,
                     display: "grid",
                     gap: 8,
                   }}
                 >
                   <a
-                    className="lesson-secondary"
+                    className="lesson-nav-btn"
                     href={completion.dashboardHref}
                     style={{
+                      height: 36,
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 7,
+                      background: "var(--color-node)",
                       color: "var(--color-text-secondary)",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       fontSize: 12.5,
                       fontWeight: 650,
-                      textDecoration: "none",
                     }}
                   >
                     Return to graph
                   </a>
                   {completion.nextNode && (
                     <a
-                      className="lesson-secondary"
+                      className="lesson-nav-btn"
                       href={completion.nextNode.href}
                       style={{
+                        height: 36,
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 7,
+                        background: "var(--color-node)",
                         color: "var(--color-text-secondary)",
+                        textDecoration: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         fontSize: 12.5,
                         fontWeight: 650,
-                        textDecoration: "none",
+                        padding: "0 12px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       Next: {completion.nextNode.name}
@@ -406,7 +434,7 @@ export function LessonPageClient({
                 <>
                   <h2
                     style={{
-                      margin: "0 0 22px",
+                      margin: "0 0 36px",
                       fontSize: 32,
                       lineHeight: 1.12,
                       fontWeight: 790,
@@ -419,11 +447,11 @@ export function LessonPageClient({
                   </h2>
 
                   {lesson.sections.map((section) => (
-                    <section key={section.heading} style={{ marginBottom: 24, maxWidth: "72ch" }}>
+                    <section key={section.heading} style={{ marginBottom: 32, maxWidth: "72ch" }}>
                       <h3
                         style={{
                           margin: "0 0 8px",
-                          fontSize: 16,
+                          fontSize: 15,
                           lineHeight: 1.3,
                           fontWeight: 760,
                           color: "var(--color-text-primary)",
@@ -440,11 +468,32 @@ export function LessonPageClient({
 
                   {lesson.diagram && <SandboxedDiagram diagram={lesson.diagram} />}
 
-                  <section style={{ marginBottom: 24, maxWidth: "72ch" }}>
+                  {/* Worked example — visually distinct from prose sections */}
+                  <section
+                    style={{
+                      marginBottom: 40,
+                      maxWidth: "72ch",
+                      background: "var(--color-panel)",
+                      borderRadius: 10,
+                      padding: "20px 24px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 750,
+                        color: "var(--color-text-muted)",
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Worked example
+                    </div>
                     <h3
                       style={{
-                        margin: "0 0 8px",
-                        fontSize: 16,
+                        margin: "0 0 10px",
+                        fontSize: 15,
                         lineHeight: 1.3,
                         fontWeight: 760,
                         color: "var(--color-text-primary)",
@@ -459,11 +508,11 @@ export function LessonPageClient({
                   </section>
 
                   {lesson.misconceptions.length > 0 && (
-                    <section style={{ marginBottom: 24, maxWidth: "72ch" }}>
+                    <section style={{ marginBottom: 40, maxWidth: "72ch" }}>
                       <h3
                         style={{
-                          margin: "0 0 10px",
-                          fontSize: 16,
+                          margin: "0 0 14px",
+                          fontSize: 15,
                           lineHeight: 1.3,
                           fontWeight: 760,
                           color: "var(--color-text-primary)",
@@ -472,13 +521,34 @@ export function LessonPageClient({
                       >
                         Watch for
                       </h3>
-                      <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 7 }}>
-                        {lesson.misconceptions.map((item) => (
-                          <li key={item} style={{ fontSize: 14, lineHeight: 1.6, color: "var(--color-text-secondary)" }}>
-                            {item}
+                      <ol style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "grid", gap: 10 }}>
+                        {lesson.misconceptions.map((item, i) => (
+                          <li
+                            key={item}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "24px 1fr",
+                              gap: 10,
+                              fontSize: 14,
+                              lineHeight: 1.6,
+                              color: "var(--color-text-secondary)",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 750,
+                                color: "var(--color-text-muted)",
+                                paddingTop: 3,
+                                fontVariantNumeric: "tabular-nums",
+                              }}
+                            >
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span>{item}</span>
                           </li>
                         ))}
-                      </ul>
+                      </ol>
                     </section>
                   )}
 
@@ -487,21 +557,21 @@ export function LessonPageClient({
                       style={{
                         maxWidth: "72ch",
                         borderTop: "1px solid var(--color-border)",
-                        paddingTop: 18,
+                        paddingTop: 28,
                       }}
                     >
-                      <h3
+                      <div
                         style={{
-                          margin: "0 0 8px",
-                          fontSize: 16,
-                          lineHeight: 1.3,
-                          fontWeight: 760,
-                          color: "var(--color-text-primary)",
-                          letterSpacing: 0,
+                          fontSize: 10,
+                          fontWeight: 750,
+                          color: "var(--color-text-muted)",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          marginBottom: 8,
                         }}
                       >
                         Try this
-                      </h3>
+                      </div>
                       <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.72, color: "var(--color-text-secondary)" }}>
                         {lesson.tryThis}
                       </p>

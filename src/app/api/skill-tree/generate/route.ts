@@ -15,11 +15,11 @@ interface GenerateRequest {
   subject?: unknown;
 }
 
-const DEFAULT_MODEL = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+const DEFAULT_MODEL = "us.anthropic.claude-opus-4-7-20250514-v1:0";
 const DEFAULT_REGION = "us-east-1";
 const MAX_GOAL_LENGTH = 800;
 const MAX_SUBJECT_LENGTH = 140;
-const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "skill-tree-system-prompt.txt");
+const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "graphgeneration.txt");
 
 const responseJsonSchema = {
   type: "object",
