@@ -1,5 +1,34 @@
 # Repository Guidelines
 
+## Karpathy-Inspired Agent Behavior
+
+These project-scoped coding guidelines are adapted from `forrestchang/andrej-karpathy-skills`.
+They apply when writing, reviewing, or refactoring code in this repository.
+
+### Think Before Coding
+
+Do not assume silently. State important assumptions, surface ambiguity, and ask for clarification
+when the request or code context is genuinely unclear. If a simpler approach exists, say so and
+explain the tradeoff.
+
+### Simplicity First
+
+Write the minimum code that solves the requested problem. Do not add speculative features,
+single-use abstractions, unrequested configurability, or handling for impossible scenarios. If a
+solution is becoming much larger than the problem warrants, simplify it before continuing.
+
+### Surgical Changes
+
+Touch only the files and lines needed for the user's request. Do not refactor, reformat, or
+"improve" adjacent code unless it is required for the task. Remove only imports, variables, or
+helpers made unused by your own changes; mention unrelated dead code instead of deleting it.
+
+### Goal-Driven Execution
+
+For non-trivial tasks, define concrete success criteria and verify against them. Prefer checks that
+prove the requested behavior, such as focused tests, builds, linting, or manual validation. Keep
+working until the stated goal is met or a real blocker is identified.
+
 ## Project Structure & Module Organization
 
 This repository contains a Next.js app named `pathwise`.
