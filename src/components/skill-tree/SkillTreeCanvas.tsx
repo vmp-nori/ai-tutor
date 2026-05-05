@@ -119,6 +119,12 @@ function normalizeZoneColor(value: unknown, index: number) {
     : fallbackColors[index % fallbackColors.length];
 }
 
+function fallbackZoneName(index: number, total: number) {
+  const chapterCount = Math.min(5, Math.max(1, Math.ceil(total / 4)));
+  const chapterIndex = Math.min(chapterCount - 1, Math.floor((index * chapterCount) / total));
+  return `Chapter ${chapterIndex + 1}`;
+}
+
 function normalizeStatus(value: unknown, hasAnyStatus: boolean, index: number): NodeStatus {
   if (value === "completed" || value === "current" || value === "available") return value;
   if (value === "locked") return "available";
@@ -274,16 +280,16 @@ function resolveInitialGraph(
 export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subject: initialSubject, initialSchema, schemaTreeId, learningPaths, onNewPath, onDeletePath }: SkillTreeCanvasProps) {
   const router = useRouter();
   const scrollRef  = useRef<HTMLDivElement>(null);
-  const [graph, setGraph] = useState<GraphState>(() =>
-    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject }, schemaTreeId)
+  const initialGraph = useMemo(
+    () => resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject }, schemaTreeId),
+    [initialEdges, initialNodes, initialSchema, initialSubject, schemaTreeId],
   );
+  const [graph, setGraph] = useState<GraphState>(initialGraph);
   const [selectedNode, setSelectedNode] = useState<SkillNodeType | null>(null);
   const [pressedNodeId, setPressedNodeId] = useState<string | null>(null);
   const [scrollEl, setScrollEl]         = useState<HTMLElement | null>(null);
   const [jsonInputOpen, setJsonInputOpen] = useState(false);
-  const [jsonDraft, setJsonDraft] = useState(() => graphToSchema(
-    resolveInitialGraph(initialSchema, { nodes: initialNodes, edges: initialEdges, subject: initialSubject }, schemaTreeId)
-  ));
+  const [jsonDraft, setJsonDraft] = useState(() => graphToSchema(initialGraph));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -326,20 +332,28 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
 
   const zoneRegions = useMemo(() => {
     const zoneMap = new Map<string, { color: string; nodes: SkillNodeType[] }>();
-    regularNodes.forEach((node) => {
-      if (!node.zone) return;
-      const zone = zoneMap.get(node.zone) ?? {
-        color: node.zoneColor ?? "#6EF1E0",
+    const shouldDeriveZones = regularNodes.length > 1 && regularNodes.every((node) => {
+      const zone = node.zone?.trim().toLowerCase();
+      return !zone || zone === "core";
+    });
+
+    regularNodes.forEach((node, index) => {
+      const zoneName = shouldDeriveZones
+        ? fallbackZoneName(index, regularNodes.length)
+        : node.zone?.trim() || fallbackZoneName(index, regularNodes.length);
+      const zone = zoneMap.get(zoneName) ?? {
+        color: normalizeZoneColor(node.zoneColor, zoneMap.size),
         nodes: [],
       };
       zone.nodes.push(node);
-      zoneMap.set(node.zone, zone);
+      zoneMap.set(zoneName, zone);
     });
 
     const lanes = Array.from(zoneMap.entries())
       .map(([name, zone]) => ({
         name,
         color: zone.color,
+        nodes: zone.nodes,
         minX: Math.min(...zone.nodes.map((node) => node.x)),
         maxX: Math.max(...zone.nodes.map((node) => node.x + NODE_W)),
       }))
@@ -357,9 +371,17 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
         y: 0,
         width: Math.max(220, right - left),
         height: canvasHeight,
+        nodes: zone.nodes,
       };
     });
   }, [regularNodes, canvasWidth, canvasHeight]);
+
+  useEffect(() => {
+    setGraph(initialGraph);
+    setJsonDraft(graphToSchema(initialGraph));
+    setJsonError(null);
+    setJsonInputOpen(false);
+  }, [initialGraph]);
 
   useEffect(() => {
     posRef.current = new Map(nodes.map(n => [n.id, { x: n.x, y: n.y }]));
@@ -701,11 +723,11 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
         >
           {zoneRegions.map((zone, i) => {
             const vpWidth = zone.width * zoom;
-            const hasCurrentNode = regularNodes.some(n => n.zone === zone.name && n.status === "current");
+            const hasCurrentNode = zone.nodes.some(n => n.status === "current");
             const numSize = vpWidth < 220 ? 40 : vpWidth < 280 ? 48 : 56;
             const nameSize = vpWidth < 240 ? 13 : 15;
-            const zoneDone = regularNodes.filter(n => n.zone === zone.name && n.status === "completed").length;
-            const zoneTotal = regularNodes.filter(n => n.zone === zone.name).length;
+            const zoneDone = zone.nodes.filter(n => n.status === "completed").length;
+            const zoneTotal = zone.nodes.length;
             return (
               <div
                 key={zone.name}
