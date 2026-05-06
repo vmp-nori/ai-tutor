@@ -18,7 +18,20 @@ export const metadata: Metadata = {
 const themeScript = `
 (() => {
   try {
-    const themes = new Set(["light", "paper", "mist", "sage", "linen", "parchment", "dark"]);
+    const themes = new Set([
+      "light",
+      "paper",
+      "mist",
+      "sage",
+      "linen",
+      "parchment",
+      "dark",
+      "dark-mist",
+      "dark-blueprint",
+      "dark-sage",
+      "dark-clay",
+      "dark-archive",
+    ]);
     const storedTheme = window.localStorage.getItem("pathwise-theme");
     const theme = themes.has(storedTheme)
       ? storedTheme

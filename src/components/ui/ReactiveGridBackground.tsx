@@ -33,7 +33,7 @@ export function ReactiveGridBackground({ className = "" }: ReactiveGridBackgroun
     function isDarkTheme() {
       const root = document.documentElement;
       const t = root.dataset.theme;
-      if (t) return t === "dark";
+      if (t) return t === "dark" || t.startsWith("dark-");
       return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
 

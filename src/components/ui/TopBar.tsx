@@ -266,8 +266,6 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           </button>
         )}
 
-        <ThemeSwitcher />
-
         {/* User avatar — dark circle */}
           <button
           type="button"
@@ -287,6 +285,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
         >
           Sign out
         </button>
+
+        <ThemeSwitcher />
       </div>
     </header>
   );
