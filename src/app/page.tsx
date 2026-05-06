@@ -97,35 +97,16 @@ const MAP_EDGES = [
 
 const MAP_NODE_BY_ID = new Map(MAP_NODES.map((node) => [node.id, node]));
 
-const SYSTEM_POINTS = [
-  {
-    kicker: "Prerequisites",
-    title: "The hidden steps become visible.",
-    body: "Advanced ideas stop arriving as surprises because every node shows what it depends on.",
-  },
-  {
-    kicker: "Atomic concepts",
-    title: "No vague modules to decode.",
-    body: "Each step is small enough to learn, search, practice, and mark complete.",
-  },
-  {
-    kicker: "Progression",
-    title: "You know what opens next.",
-    body: "The map gives you sequence, optional branches, and checkpoint moments where understanding compounds.",
-  },
-];
-
 const FAILURE_MODES = [
-  "A dozen tutorials, no order",
-  "Prerequisites discovered too late",
-  "Big goals broken into blurry modules",
-  "Restarting because the path was wrong",
+  "Enter a goal",
+  "Understand the pathway",
+  "Start learning",
+  "Rinse and repeat",
 ];
 
 const EMAIL_PROMPTS = [
   "tungtungtungsahur@gmail.com",
   "sonion@imcrine.com",
-  "teatowel@coldwater.com",
   "saywallahi@bro.com",
   "kingnasir@dance.com",
   "asufratleader@truechad.com",
@@ -135,15 +116,76 @@ const EMAIL_PROMPTS = [
   "jerrylxadeeth@mpreg.com",
 ];
 
-function getNextEmailPromptIndex(currentIndex: number) {
-  if (EMAIL_PROMPTS.length < 2) return currentIndex;
+const HERO_GOALS = [
+  "become a machine learning engineer",
+  "master pyrotechnics engineering",
+  "understand nuclear physics",
+  "build autonomous robots",
+  "design quantum algorithms",
+  "model climate systems",
+  "engineer fusion reactors",
+  "study computational neuroscience",
+  "develop aerospace control systems",
+  "build satellite communication systems",
+  "design biomedical devices",
+  "map the human genome",
+  "create computer vision models",
+  "engineer sustainable batteries",
+  "build secure distributed systems",
+  "design prosthetic limbs",
+  "simulate fluid dynamics",
+  "understand particle physics",
+  "develop reinforcement learning agents",
+  "build embedded systems",
+  "study cryptographic protocols",
+  "engineer lab automation",
+  "model infectious disease spread",
+  "design solar energy systems",
+  "build neural interfaces",
+  "master statistical mechanics",
+  "create robotics perception stacks",
+  "study materials science",
+  "engineer rocket propulsion",
+  "build database engines",
+  "design medical imaging systems",
+  "understand astrodynamics",
+  "develop natural language models",
+  "build high-performance compilers",
+  "study molecular biology",
+  "engineer desalination systems",
+  "design chip architectures",
+  "model financial risk systems",
+  "build cybersecurity tooling",
+  "study geospatial analytics",
+  "engineer autonomous drones",
+  "design control theory systems",
+  "understand plasma physics",
+  "build bioinformatics pipelines",
+  "create generative AI systems",
+  "study ocean engineering",
+  "engineer precision agriculture",
+  "design data center infrastructure",
+  "build augmented reality systems",
+  "master synthetic biology",
+];
+
+function getNextPromptIndex(currentIndex: number, total: number) {
+  if (total < 2) return currentIndex;
 
   let nextIndex = currentIndex;
   while (nextIndex === currentIndex) {
-    nextIndex = Math.floor(Math.random() * EMAIL_PROMPTS.length);
+    nextIndex = Math.floor(Math.random() * total);
   }
 
   return nextIndex;
+}
+
+function getRandomPromptIndex(total: number) {
+  return Math.floor(Math.random() * total);
+}
+
+function getNextEmailPromptIndex(currentIndex: number) {
+  return getNextPromptIndex(currentIndex, EMAIL_PROMPTS.length);
 }
 
 function useReveal(): RevealResult {
@@ -225,6 +267,61 @@ function useTypedEmailPrompt(enabled: boolean) {
   }, [enabled]);
 
   return prompt;
+}
+
+function useTypedHeroGoal(enabled: boolean) {
+  const [goal, setGoal] = useState("");
+
+  useEffect(() => {
+    if (!enabled) {
+      setGoal("");
+      return;
+    }
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduceMotion.matches) {
+      setGoal(HERO_GOALS[getRandomPromptIndex(HERO_GOALS.length)]);
+      return;
+    }
+
+    let frame = window.setTimeout(() => undefined, 0);
+    let goalIndex = getRandomPromptIndex(HERO_GOALS.length);
+    let charIndex = 0;
+    let deleting = false;
+
+    function tick() {
+      const text = HERO_GOALS[goalIndex];
+      setGoal(text.slice(0, charIndex));
+
+      if (!deleting && charIndex < text.length) {
+        charIndex += 1;
+        frame = window.setTimeout(tick, 38 + Math.random() * 28);
+        return;
+      }
+
+      if (!deleting) {
+        deleting = true;
+        frame = window.setTimeout(tick, 1450);
+        return;
+      }
+
+      if (charIndex > 0) {
+        charIndex -= 1;
+        frame = window.setTimeout(tick, 18 + Math.random() * 18);
+        return;
+      }
+
+      deleting = false;
+      goalIndex = getNextPromptIndex(goalIndex, HERO_GOALS.length);
+      frame = window.setTimeout(tick, 240);
+    }
+
+    tick();
+
+    return () => window.clearTimeout(frame);
+  }, [enabled]);
+
+  return goal;
 }
 
 function useHeroScrollMotion() {
@@ -499,8 +596,20 @@ export default function LandingPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const heroFormRef = useRef<HTMLFormElement | null>(null);
   const problemReveal = useReveal();
-  const systemReveal = useReveal();
   const closeReveal = useReveal();
+  const [heroGoalActive, setHeroGoalActive] = useState(false);
+  const heroGoal = useTypedHeroGoal(heroGoalActive);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduceMotion.matches) {
+      setHeroGoalActive(true);
+      return;
+    }
+
+    const frame = window.setTimeout(() => setHeroGoalActive(true), 1950);
+    return () => window.clearTimeout(frame);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -666,8 +775,8 @@ export default function LandingPage() {
 
         .lp-hero::before {
           background:
-            radial-gradient(ellipse at 50% 24%, var(--lp-paper) 0 34%, oklch(96.8% 0.014 168 / 0.88) 48%, transparent 76%),
-            linear-gradient(180deg, var(--lp-paper) 0 16%, transparent 70%);
+            radial-gradient(ellipse at 50% 24%, oklch(96.8% 0.014 168 / 0.82) 0 28%, oklch(96.8% 0.014 168 / 0.54) 48%, transparent 76%),
+            linear-gradient(180deg, oklch(96.8% 0.014 168 / 0.76) 0 14%, transparent 68%);
           content: "";
           inset: 0;
           pointer-events: none;
@@ -692,12 +801,24 @@ export default function LandingPage() {
           flex-direction: column;
           max-width: 900px;
           padding: 32px 0 32px;
+          position: relative;
+          isolation: isolate;
           text-align: center;
+        }
+
+        .lp-hero-copy::before {
+          background:
+            radial-gradient(ellipse at 50% 38%, oklch(96.8% 0.014 168 / 0.68) 0 36%, oklch(96.8% 0.014 168 / 0.44) 54%, transparent 76%);
+          content: "";
+          inset: -42px -74px -30px;
+          pointer-events: none;
+          position: absolute;
+          z-index: -1;
         }
 
         .lp-eyebrow {
           align-items: center;
-          animation: lp-hero-rise 680ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+          animation: lp-eyebrow-track 820ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
           color: var(--lp-ink-soft);
           display: inline-flex;
           font-size: 14px;
@@ -708,15 +829,18 @@ export default function LandingPage() {
         }
 
         .lp-eyebrow::before {
+          animation: lp-eyebrow-mark 860ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
           background: var(--lp-coral);
           content: "";
           height: 10px;
+          transform-origin: left center;
           width: 10px;
         }
 
         .lp-title {
-          animation: lp-hero-rise 760ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
           color: var(--lp-ink);
+          display: flex;
+          flex-direction: column;
           font-size: 5.8rem;
           font-weight: 800;
           letter-spacing: 0;
@@ -726,8 +850,20 @@ export default function LandingPage() {
           text-wrap: balance;
         }
 
+        .lp-title span {
+          display: block;
+        }
+
+        .lp-title span:first-child {
+          animation: lp-title-left 1160ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both;
+        }
+
+        .lp-title span:last-child {
+          animation: lp-title-right 1160ms cubic-bezier(0.16, 1, 0.3, 1) 820ms both;
+        }
+
         .lp-hero-text {
-          animation: lp-hero-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 340ms both;
+          animation: lp-hero-line-load 920ms cubic-bezier(0.16, 1, 0.3, 1) 1880ms both;
           color: var(--lp-ink-soft);
           font-size: 19px;
           font-weight: 400;
@@ -737,8 +873,41 @@ export default function LandingPage() {
           text-wrap: pretty;
         }
 
+        .lp-hero-goal {
+          color: var(--lp-ink);
+          display: inline-block;
+          font-weight: 750;
+          padding-bottom: 2px;
+          position: relative;
+          text-align: left;
+          text-decoration: underline;
+          text-decoration-color: var(--lp-green);
+          text-decoration-thickness: 2px;
+          text-underline-offset: 5px;
+          white-space: nowrap;
+        }
+
+        .lp-hero-suffix {
+          color: var(--lp-ink);
+          display: inline-block;
+          font-weight: 850;
+          margin-left: 2px;
+          padding: 0 2px;
+        }
+
+        .lp-hero-goal::after {
+          animation: lp-caret-blink 920ms steps(1, end) infinite;
+          background: var(--lp-coral);
+          content: "";
+          display: inline-block;
+          height: 1em;
+          margin-left: 3px;
+          vertical-align: -0.14em;
+          width: 2px;
+        }
+
         .lp-hero-proof {
-          animation: lp-hero-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) 520ms both;
+          animation: lp-hero-rise 820ms cubic-bezier(0.16, 1, 0.3, 1) 3950ms both;
           border-top: 1px solid var(--lp-line);
           color: var(--lp-muted);
           font-size: 14px;
@@ -1039,6 +1208,126 @@ export default function LandingPage() {
           }
         }
 
+        @keyframes lp-eyebrow-track {
+          0% {
+            clip-path: inset(0 100% 0 0);
+            opacity: 0;
+            transform: translate3d(-22px, 0, 0);
+          }
+
+          100% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes lp-eyebrow-mark {
+          0% {
+            transform: scaleX(0.16);
+          }
+
+          62% {
+            transform: scaleX(2.4);
+          }
+
+          100% {
+            transform: scaleX(1);
+          }
+        }
+
+        @keyframes lp-title-left {
+          0% {
+            clip-path: inset(0 100% 0 0);
+            opacity: 0;
+            transform: translate3d(-54px, 10px, 0) scale(0.985);
+          }
+
+          72% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(4px, 0, 0) scale(1.004);
+          }
+
+          100% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        @keyframes lp-title-right {
+          0% {
+            clip-path: inset(0 0 0 100%);
+            opacity: 0;
+            transform: translate3d(54px, 10px, 0) scale(0.985);
+          }
+
+          72% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(-4px, 0, 0) scale(1.004);
+          }
+
+          100% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        @keyframes lp-hero-line-load {
+          0% {
+            clip-path: inset(0 100% 0 0);
+            opacity: 0;
+            transform: translate3d(-18px, 0, 0);
+          }
+
+          72% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(3px, 0, 0);
+          }
+
+          100% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        @keyframes lp-form-load {
+          0% {
+            clip-path: inset(0 0 0 100%);
+            opacity: 0;
+            transform: translate3d(34px, 0, 0) scale(0.99);
+          }
+
+          70% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(-3px, 0, 0) scale(1);
+          }
+
+          100% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        @keyframes lp-caret-blink {
+          0%,
+          46% {
+            opacity: 1;
+          }
+
+          47%,
+          100% {
+            opacity: 0;
+          }
+        }
+
         @keyframes lp-graph-arrive {
           from {
             opacity: 0;
@@ -1105,11 +1394,11 @@ export default function LandingPage() {
         }
 
         .lp-form {
-          animation: lp-hero-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) 440ms both;
           max-width: 560px;
         }
 
         .lp-hero-copy .lp-form {
+          animation: lp-form-load 1060ms cubic-bezier(0.16, 1, 0.3, 1) 2920ms both;
           margin: 0 auto;
           text-align: left;
           width: min(100%, 560px);
@@ -1280,6 +1569,7 @@ export default function LandingPage() {
           display: grid;
           gap: 46px;
           grid-template-columns: minmax(0, 0.85fr) minmax(320px, 1fr);
+          margin-top: -88px;
           padding: 86px max(28px, calc((100vw - 1240px) / 2)) 96px;
         }
 
@@ -1395,11 +1685,13 @@ export default function LandingPage() {
 
         .lp-close {
           background:
-            linear-gradient(90deg, oklch(27% 0.025 236) 1px, transparent 1px),
-            linear-gradient(0deg, oklch(27% 0.025 236) 1px, transparent 1px),
-            var(--lp-dark);
+            radial-gradient(ellipse at 78% 28%, oklch(67% 0.145 164 / 0.14), transparent 34%),
+            radial-gradient(ellipse at 18% 72%, oklch(61% 0.14 246 / 0.11), transparent 38%),
+            linear-gradient(90deg, oklch(82% 0.035 184 / 0.42) 1px, transparent 1px),
+            linear-gradient(0deg, oklch(82% 0.035 184 / 0.42) 1px, transparent 1px),
+            var(--lp-paper);
           background-size: 48px 48px;
-          color: oklch(96% 0.01 168);
+          color: var(--lp-ink);
           display: grid;
           gap: 42px;
           grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.68fr);
@@ -1412,7 +1704,7 @@ export default function LandingPage() {
         }
 
         .lp-close p {
-          color: oklch(73% 0.019 220);
+          color: var(--lp-ink-soft);
           font-size: 19px;
           line-height: 1.65;
           margin: 28px 0 0;
@@ -1420,7 +1712,7 @@ export default function LandingPage() {
         }
 
         .lp-close .lp-label {
-          color: oklch(73% 0.019 220);
+          color: var(--lp-muted);
         }
 
         .lp-form.is-dark .lp-input {
@@ -1498,8 +1790,8 @@ export default function LandingPage() {
 
           .lp-hero::before {
             background:
-              radial-gradient(ellipse at 50% 24%, var(--lp-paper) 0 32%, oklch(96.8% 0.014 168 / 0.86) 50%, transparent 78%),
-              linear-gradient(180deg, var(--lp-paper) 0 18%, transparent 76%);
+              radial-gradient(ellipse at 50% 24%, oklch(96.8% 0.014 168 / 0.84) 0 28%, oklch(96.8% 0.014 168 / 0.56) 50%, transparent 78%),
+              linear-gradient(180deg, oklch(96.8% 0.014 168 / 0.76) 0 16%, transparent 74%);
           }
 
           .lp-hero-inner {
@@ -1519,6 +1811,15 @@ export default function LandingPage() {
 
           .lp-hero-text {
             font-size: 18px;
+          }
+
+          .lp-hero-goal {
+            min-width: 0;
+            white-space: normal;
+          }
+
+          .lp-hero-suffix {
+            margin-left: 0;
           }
 
           .lp-map-stage {
@@ -1581,6 +1882,12 @@ export default function LandingPage() {
 
           .lp-hero-text {
             font-size: 18px;
+          }
+
+          .lp-hero-goal {
+            display: block;
+            margin: 4px auto 0;
+            text-align: center;
           }
 
           .lp-form-row {
@@ -1662,6 +1969,7 @@ export default function LandingPage() {
           .lp-eyebrow,
           .lp-title,
           .lp-hero-text,
+          .lp-hero-goal::after,
           .lp-hero-proof,
           .lp-form,
           .lp-map-stage,
@@ -1709,11 +2017,17 @@ export default function LandingPage() {
           <HeroGraphScene />
           <div className="lp-hero-inner">
             <div className="lp-hero-copy">
-              <p className="lp-eyebrow">For learning anything without getting lost</p>
-              <h1 className="lp-title">skillmaxxing, made easy.</h1>
+              <p className="lp-eyebrow">Don&apos;t know where to start learning? Start here.</p>
+              <h1 className="lp-title">
+                <span>skillmaxxing,</span>
+                <span>made easy.</span>
+              </h1>
               <p className="lp-hero-text">
-                Tell Pathwise what you want to learn. It turns the goal into a
-                prerequisite map, so the next concept is always obvious.
+                Learn how to{" "}
+                <span className="lp-hero-goal" aria-live="polite">
+                  {heroGoal}
+                </span>{" "}
+                <span className="lp-hero-suffix">skill by skill.</span>
               </p>
 
               <WaitlistForm
@@ -1727,8 +2041,7 @@ export default function LandingPage() {
               />
 
               <p className="lp-hero-proof">
-                Built for learners with ambition, scattered tabs, and no patience
-                for guessing the order of a subject.
+                Built for ambitious learners, learn only what you need, at your own pace.
               </p>
             </div>
           </div>
@@ -1740,7 +2053,7 @@ export default function LandingPage() {
         >
           <div>
             <p className="lp-section-label">The real blocker</p>
-            <h2>Most learning fails before lesson one.</h2>
+            <h2>Most learning fails before you even start.</h2>
             <p className="lp-problem-copy">
               The hard part is not motivation. It is order. People waste weeks
               collecting resources when what they needed was a map of dependencies.
@@ -1750,35 +2063,9 @@ export default function LandingPage() {
           <div className="lp-failure-list">
             {FAILURE_MODES.map((item, index) => (
               <div className="lp-failure-row" key={item}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
+                <span>{index + 1}</span>
                 <span>{item}</span>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section
-          className={`lp-system lp-reveal${systemReveal.visible ? " is-visible" : ""}`}
-          ref={systemReveal.ref}
-        >
-          <div className="lp-system-intro">
-            <p className="lp-section-label">What Pathwise gives you</p>
-            <h2>A curriculum you can traverse.</h2>
-            <p>
-              Ask for the destination. Pathwise returns the structure underneath
-              it, from foundational concepts to the goal node.
-            </p>
-          </div>
-
-          <div className="lp-system-list">
-            {SYSTEM_POINTS.map((point) => (
-              <article className="lp-system-row" key={point.kicker}>
-                <span>{point.kicker}</span>
-                <div>
-                  <h3>{point.title}</h3>
-                  <p>{point.body}</p>
-                </div>
-              </article>
             ))}
           </div>
         </section>
@@ -1801,7 +2088,6 @@ export default function LandingPage() {
             errorMsg={errorMsg}
             formId="close-email"
             status={status}
-            tone="dark"
             onEmailChange={setEmail}
             onSubmit={handleSubmit}
           />

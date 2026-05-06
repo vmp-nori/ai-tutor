@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-06T00:00:00+10:00",
+  "title": "Design System: Pathwise Landing",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Drafting Paper",
+        "canonical": "oklch(96.8% 0.014 168)",
+        "tonalRamp": [
+          "oklch(18% 0.014 168)",
+          "oklch(28% 0.014 168)",
+          "oklch(40% 0.014 168)",
+          "oklch(54% 0.014 168)",
+          "oklch(68% 0.014 168)",
+          "oklch(80% 0.014 168)",
+          "oklch(90% 0.014 168)",
+          "oklch(96.8% 0.014 168)"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Blueprint Ink",
+        "canonical": "oklch(16.8% 0.018 238)",
+        "tonalRamp": [
+          "oklch(14% 0.018 238)",
+          "oklch(20% 0.018 238)",
+          "oklch(30% 0.018 238)",
+          "oklch(42% 0.018 238)",
+          "oklch(56% 0.018 238)",
+          "oklch(70% 0.018 238)",
+          "oklch(84% 0.018 238)",
+          "oklch(94% 0.018 238)"
+        ]
+      },
+      "green": {
+        "role": "primary",
+        "displayName": "Verdigris Signal",
+        "canonical": "oklch(67% 0.145 164)",
+        "tonalRamp": [
+          "oklch(18% 0.08 164)",
+          "oklch(28% 0.10 164)",
+          "oklch(40% 0.12 164)",
+          "oklch(52% 0.135 164)",
+          "oklch(67% 0.145 164)",
+          "oklch(76% 0.11 164)",
+          "oklch(86% 0.07 164)",
+          "oklch(95% 0.035 164)"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Amber Checkpoint",
+        "canonical": "oklch(78% 0.153 76)",
+        "tonalRamp": [
+          "oklch(20% 0.08 76)",
+          "oklch(32% 0.10 76)",
+          "oklch(46% 0.12 76)",
+          "oklch(60% 0.14 76)",
+          "oklch(78% 0.153 76)",
+          "oklch(84% 0.11 76)",
+          "oklch(90% 0.065 76)",
+          "oklch(96% 0.035 76)"
+        ]
+      },
+      "coral": {
+        "role": "secondary",
+        "displayName": "Coral Interrupt",
+        "canonical": "oklch(66% 0.17 28)",
+        "tonalRamp": [
+          "oklch(18% 0.08 28)",
+          "oklch(30% 0.105 28)",
+          "oklch(42% 0.13 28)",
+          "oklch(54% 0.155 28)",
+          "oklch(66% 0.17 28)",
+          "oklch(76% 0.12 28)",
+          "oklch(87% 0.07 28)",
+          "oklch(96% 0.035 28)"
+        ]
+      },
+      "blue": {
+        "role": "tertiary",
+        "displayName": "Path Blue",
+        "canonical": "oklch(61% 0.14 246)",
+        "tonalRamp": [
+          "oklch(16% 0.07 246)",
+          "oklch(28% 0.09 246)",
+          "oklch(40% 0.11 246)",
+          "oklch(52% 0.13 246)",
+          "oklch(61% 0.14 246)",
+          "oklch(74% 0.10 246)",
+          "oklch(86% 0.06 246)",
+          "oklch(95% 0.03 246)"
+        ]
+      },
+      "dark": {
+        "role": "neutral",
+        "displayName": "Night Graphite",
+        "canonical": "oklch(17.5% 0.02 236)",
+        "tonalRamp": [
+          "oklch(13% 0.02 236)",
+          "oklch(17.5% 0.02 236)",
+          "oklch(26% 0.02 236)",
+          "oklch(38% 0.02 236)",
+          "oklch(52% 0.02 236)",
+          "oklch(68% 0.02 236)",
+          "oklch(82% 0.02 236)",
+          "oklch(94% 0.02 236)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headline only. Oversized, heavy, and short."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Major section claims and final conversion copy."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Plain-language explanation with generous line-height."
+      }
+    },
+    "shadows": [
+      {
+        "name": "product-shell-lift",
+        "value": "0 34px 92px oklch(28% 0.035 185 / 0.16)",
+        "purpose": "Signature animated graph surface."
+      },
+      {
+        "name": "floating-control",
+        "value": "0 18px 50px oklch(32% 0.04 185 / 0.13)",
+        "purpose": "Small overlay legends and controls."
+      },
+      {
+        "name": "button-hover-lift",
+        "value": "0 10px 22px oklch(20% 0.02 238 / 0.14)",
+        "purpose": "Primary button hover feedback only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Hero entrance, graph drift, scroll parallax, and interaction feedback."
+      },
+      {
+        "name": "hero-rise",
+        "value": "620ms to 760ms",
+        "purpose": "Staggered page-load choreography."
+      },
+      {
+        "name": "trace-loop",
+        "value": "4.8s infinite",
+        "purpose": "Animated dependency traversal on graph lines."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "tablet",
+        "value": "980px"
+      },
+      {
+        "name": "mobile",
+        "value": "620px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main light-surface conversion button.",
+      "html": "<button class=\"ds-btn-primary\">Join waitlist</button>",
+      "css": ".ds-btn-primary { height: 50px; border: 0; border-radius: 8px; background: var(--lp-ink, oklch(16.8% 0.018 238)); color: oklch(97.8% 0.012 168); padding: 0 20px; font: inherit; font-size: 15px; font-weight: 800; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: oklch(22% 0.024 238); box-shadow: 0 10px 22px oklch(20% 0.02 238 / 0.14); transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 3px solid oklch(67% 0.145 164 / 0.22); outline-offset: 2px; }"
+    },
+    {
+      "name": "Email Input",
+      "kind": "input",
+      "refersTo": "input-email",
+      "description": "Waitlist field with precise border and focus lift.",
+      "html": "<input class=\"ds-input-email\" placeholder=\"you@email.com\" />",
+      "css": ".ds-input-email { height: 50px; width: 100%; border: 1px solid var(--lp-line, oklch(82% 0.035 184)); border-radius: 8px; background: var(--lp-panel, oklch(98.8% 0.009 168)); color: var(--lp-ink, oklch(16.8% 0.018 238)); padding: 0 16px; font: inherit; font-size: 15px; font-weight: 600; transition: border-color 170ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 170ms cubic-bezier(0.16, 1, 0.3, 1), transform 170ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-input-email::placeholder { color: oklch(64% 0.018 212); } .ds-input-email:focus { outline: none; border-color: var(--lp-line-strong, oklch(47% 0.112 174)); box-shadow: 0 0 0 3px oklch(67% 0.145 164 / 0.18); transform: translateY(-1px); }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "chip-status",
+      "description": "Small informational state label.",
+      "html": "<span class=\"ds-chip-status\">Early access</span>",
+      "css": ".ds-chip-status { display: inline-flex; align-items: center; border: 1px solid var(--lp-line, oklch(82% 0.035 184)); border-radius: 4px; color: var(--lp-ink-soft, oklch(36% 0.024 238)); padding: 4px 8px; font-size: 12px; font-weight: 600; }"
+    },
+    {
+      "name": "Landing Nav",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Fixed paper topbar with compact product confidence.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-wordmark\">Pathwise</a><span class=\"ds-chip-status\">Early access</span><button class=\"ds-nav-button\">Join</button></nav>",
+      "css": ".ds-nav { height: 58px; display: flex; align-items: center; gap: 18px; padding: 0 28px; background: oklch(96.8% 0.014 168 / 0.93); border-bottom: 1px solid var(--lp-line, oklch(82% 0.035 184)); } .ds-wordmark { color: var(--lp-ink, oklch(16.8% 0.018 238)); font-size: 18px; font-weight: 800; text-decoration: none; } .ds-nav-button { margin-left: auto; height: 34px; border: 0; border-radius: 6px; background: var(--lp-ink, oklch(16.8% 0.018 238)); color: oklch(97.8% 0.012 168); padding: 0 14px; font-size: 13px; font-weight: 700; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-button:hover { background: oklch(22% 0.024 238); transform: translateY(-1px); }"
+    },
+    {
+      "name": "Product Graph Shell",
+      "kind": "custom",
+      "refersTo": "signature-graph",
+      "description": "Animated product preview surface that should guide the app redesign.",
+      "html": "<div class=\"ds-graph-shell\"><div class=\"ds-graph-topbar\"><strong>Pathwise</strong><span>Pyrotechnics Engineering</span></div><div class=\"ds-graph-node\">Burn rate</div></div>",
+      "css": ".ds-graph-shell { min-height: 260px; border: 1px solid var(--lp-line, oklch(82% 0.035 184)); border-radius: 10px; background: linear-gradient(90deg, oklch(82% 0.035 184 / 0.36) 1px, transparent 1px), linear-gradient(0deg, oklch(82% 0.035 184 / 0.28) 1px, transparent 1px), oklch(98.1% 0.015 168 / 0.88); background-size: 36px 36px; box-shadow: 0 34px 92px oklch(28% 0.035 185 / 0.16); overflow: hidden; } .ds-graph-topbar { height: 48px; display: flex; align-items: center; gap: 22px; padding: 0 18px; background: oklch(98.8% 0.009 168 / 0.96); border-bottom: 1px solid var(--lp-line, oklch(82% 0.035 184)); color: var(--lp-ink, oklch(16.8% 0.018 238)); font-size: 13px; } .ds-graph-node { width: 128px; margin: 84px auto; border: 1px solid var(--lp-line, oklch(82% 0.035 184)); border-radius: 8px; background: var(--lp-panel, oklch(98.8% 0.009 168)); padding: 13px 14px; color: var(--lp-ink, oklch(16.8% 0.018 238)); font-size: 13px; font-weight: 800; box-shadow: 0 5px 10px oklch(32% 0.04 185 / 0.08); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Moving Curriculum Blueprint",
+    "overview": "Pathwise should feel like a precise learning map laid on tinted drafting paper: quiet, technical, and alive. The landing page proves the product by letting the graph become the atmosphere. It is not a marketing decoration; it is the interface behaving as brand.",
+    "keyCharacteristics": [
+      "Product-first hero: the animated skill-tree background carries the page.",
+      "Technical paper surfaces: off-white, gridded, tinted, never pure white.",
+      "Hard-working typography: large, heavy, compact, and direct.",
+      "Precision accents: green, amber, coral, and blue have named jobs.",
+      "Motion with purpose: show traversal, dependency, and progress."
+    ],
+    "rules": [
+      {
+        "name": "The Graph Color Rule",
+        "body": "Green, amber, coral, and blue are state colors first. Do not use them as random decorative fills.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinted Neutral Rule",
+        "body": "Pure white and pure black are forbidden. Every neutral should carry a small hue bias toward the Pathwise paper or graphite family.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Decorative-Type Rule",
+        "body": "Do not use gradient text, italic display flourishes, typewriter fonts, or monospace as a shortcut for technical.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-At-Rest Rule",
+        "body": "Most surfaces are separated by lines, grid, contrast, and spacing. Shadows are earned by interaction or signature product preview.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do make the graph the first visual signal. The product visualization is not a supporting illustration.",
+      "Do use Drafting Paper, Hairline Teal, and Blueprint Ink as the default interface foundation.",
+      "Do use motion to explain traversal, dependency, progress, and state."
+    ],
+    "donts": [
+      "Don't use generic AI product sites: blue-purple gradients, glowing orbs, glassmorphism, or \"the future is here\" hero copy.",
+      "Don't make Pathwise feel like gamified learning apps (Duolingo-style): streaks, badges, confetti, excessive color, or childlike illustration.",
+      "Don't redesign the app with the old dashboard palette as the reference. The landing page is the new visual target."
+    ]
+  }
+}

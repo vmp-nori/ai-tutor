@@ -41,7 +41,7 @@ export function ThemeSwitcher() {
       aria-label="Theme"
       role="group"
       style={{
-        height: 30,
+        height: 34,
         border: "1px solid var(--color-border)",
         borderRadius: 6,
         background: "var(--color-node)",
@@ -106,7 +106,7 @@ function ThemeButton({
       onClick={onClick}
       style={{
         width: 24,
-        height: 24,
+        height: 28,
         border: "none",
         borderRadius: 4,
         background: active ? "var(--color-button-primary)" : "transparent",

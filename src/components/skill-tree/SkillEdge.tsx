@@ -5,23 +5,23 @@ import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
 
 const STROKE: Record<string, string> = {
   done:   "var(--color-success)",
-  active: "var(--color-accent)",
-  open:   "var(--color-border-mid)",
+  active: "var(--color-border-accent)",
+  open:   "var(--color-border)",
   locked: "var(--color-border)",
 };
 
 const WIDTH: Record<string, number> = {
   done:   1,
-  active: 1.6,
+  active: 1.8,
   open:   1,
   locked: 1,
 };
 
 const OPACITY: Record<string, number> = {
-  done:   0.70,
+  done:   0.74,
   active: 1,
-  open:   0.70,
-  locked: 0.70,
+  open:   0.62,
+  locked: 0.48,
 };
 
 interface SkillEdgeProps {
