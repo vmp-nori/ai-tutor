@@ -49,10 +49,19 @@ export interface LessonSection {
   body: string;
 }
 
+export type DiagramType =
+  | "function_plot"
+  | "number_line"
+  | "bar_chart"
+  | "line_chart"
+  | "step_sequence"
+  | "comparison_table";
+
 export interface LessonDiagram {
+  type: DiagramType;
   title: string;
-  html: string;
-  height?: number;
+  spec: Record<string, unknown>;
+  sectionIndex?: number;
 }
 
 export interface GeneratedLesson {
@@ -61,5 +70,5 @@ export interface GeneratedLesson {
   workedExample: LessonSection;
   misconceptions: string[];
   tryThis: string;
-  diagram?: LessonDiagram;
+  diagrams?: LessonDiagram[];
 }

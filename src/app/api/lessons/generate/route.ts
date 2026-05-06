@@ -27,6 +27,7 @@ interface StoredNode {
   tree_id: string;
   name: string;
   description: string;
+  category?: string | null;
   teaching_brief?: string | null;
   teaching_plan?: unknown;
   generated_lesson?: unknown;
@@ -38,10 +39,15 @@ interface StoredPrerequisite {
   description: string;
 }
 
-const DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6-20251001-v1:0";
+const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/global.anthropic.claude-sonnet-4-6";
 const DEFAULT_REGION = "us-east-1";
 const MAX_ID_LENGTH = 180;
-const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "lessongeneration.txt");
+
+const PROMPT_PATHS: Record<string, string> = {
+  math_and_logic: join(process.cwd(), "prompts", "math_and_logic.txt"),
+  systems_and_economics: join(process.cwd(), "prompts", "systems_and_economics.txt"),
+  technical_and_code: join(process.cwd(), "prompts", "technical_and_code.txt"),
+};
 
 const lessonJsonSchema = {
   type: "object",
@@ -74,15 +80,29 @@ const lessonJsonSchema = {
       items: { type: "string" },
     },
     try_this: { type: "string" },
-    diagram: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        title: { type: "string" },
-        height: { type: "integer" },
-        html: { type: "string" },
+    diagrams: {
+      type: "array",
+      description: "Zero or more diagrams to render alongside the lesson. Include one per concept or section that benefits from visualization.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          type: {
+            type: "string",
+            enum: ["function_plot", "number_line", "bar_chart", "line_chart", "step_sequence", "comparison_table"],
+          },
+          title: { type: "string" },
+          section_index: {
+            type: "integer",
+            description: "0-based index of the lesson section this diagram should appear after. Omit to place at the end.",
+          },
+          spec: {
+            type: "string",
+            description: "Valid JSON string containing the diagram spec for the chosen type.",
+          },
+        },
+        required: ["type", "title", "spec"],
       },
-      required: ["title", "height", "html"],
     },
   },
   required: ["title", "sections", "worked_example", "misconceptions", "try_this"],
@@ -236,15 +256,35 @@ function lessonSection(value: unknown, fallbackHeading: string): LessonSection {
   };
 }
 
+const VALID_DIAGRAM_TYPES = new Set(["function_plot", "number_line", "bar_chart", "line_chart", "step_sequence", "comparison_table"]);
+
 function lessonDiagram(value: unknown): LessonDiagram | undefined {
   if (!isRecord(value)) return undefined;
-  const html = trimString(value.html, 14000);
-  if (!html) return undefined;
+  const type = trimString(value.type, 40);
+  if (!VALID_DIAGRAM_TYPES.has(type)) return undefined;
+
+  let spec: Record<string, unknown>;
+  if (typeof value.spec === "string") {
+    try {
+      const parsed: unknown = JSON.parse(value.spec);
+      if (!isRecord(parsed)) return undefined;
+      spec = parsed;
+    } catch {
+      return undefined;
+    }
+  } else if (isRecord(value.spec)) {
+    spec = value.spec;
+  } else {
+    return undefined;
+  }
+
+  const sectionIndex = typeof value.section_index === "number" ? Math.max(0, Math.floor(value.section_index)) : undefined;
 
   return {
-    title: trimString(value.title, 140) || "Interactive diagram",
-    height: Math.max(240, Math.min(680, typeof value.height === "number" ? value.height : 420)),
-    html,
+    type: type as LessonDiagram["type"],
+    title: trimString(value.title, 140) || "Diagram",
+    spec,
+    ...(sectionIndex !== undefined ? { sectionIndex } : {}),
   };
 }
 
@@ -257,6 +297,11 @@ function normalizeLesson(value: unknown, node: StoredNode): GeneratedLesson {
     ? value.sections.map((item, index) => lessonSection(item, `Part ${index + 1}`)).filter((item) => item.body)
     : [];
 
+  const rawDiagrams = Array.isArray(value.diagrams)
+    ? value.diagrams
+    : value.diagram != null ? [value.diagram] : [];
+  const diagrams = rawDiagrams.map(lessonDiagram).filter((d): d is LessonDiagram => d !== undefined);
+
   return {
     title: trimString(value.title, 180) || node.name,
     sections: sections.length > 0
@@ -265,7 +310,7 @@ function normalizeLesson(value: unknown, node: StoredNode): GeneratedLesson {
     workedExample: lessonSection(value.worked_example ?? value.workedExample, "Worked example"),
     misconceptions: stringArray(value.misconceptions, 4, 320),
     tryThis: trimString(value.try_this ?? value.tryThis, 800),
-    ...(lessonDiagram(value.diagram) ? { diagram: lessonDiagram(value.diagram) } : {}),
+    ...(diagrams.length > 0 ? { diagrams } : {}),
   };
 }
 
@@ -304,7 +349,7 @@ async function fetchStoredNode(
   const candidates = nodeIdCandidates(treeId, nodeId);
   const richResult = await supabase
     .from("skill_nodes")
-    .select("id, tree_id, name, description, teaching_brief, teaching_plan, generated_lesson")
+    .select("id, tree_id, name, description, category, teaching_brief, teaching_plan, generated_lesson")
     .eq("tree_id", treeId)
     .in("id", candidates);
 
@@ -409,7 +454,9 @@ export async function POST(req: NextRequest) {
           .in("id", prerequisiteIds)
       : { data: [] };
 
-    const systemPrompt = (await readFile(SYSTEM_PROMPT_PATH, "utf8")).trim();
+    const category = typeof storedNode.category === "string" ? storedNode.category : "technical_and_code";
+    const promptPath = PROMPT_PATHS[category] ?? PROMPT_PATHS.technical_and_code;
+    const systemPrompt = (await readFile(promptPath, "utf8")).trim();
     const teachingPlan = normalizeTeachingPlan(storedNode.teaching_plan, storedNode);
     const bedrockResponse = await getBedrockClient().send(
       buildBedrockCommand(buildLessonPrompt({

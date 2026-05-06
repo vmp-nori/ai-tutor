@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { GeneratedLesson } from "@/lib/types";
-import { SandboxedDiagram } from "./SandboxedDiagram";
+import { DiagramRenderer } from "@/components/diagrams/DiagramRenderer";
+import { LatexRenderer } from "./LatexRenderer";
 
 interface LessonPageClientProps {
   treeId: string;
@@ -112,6 +113,18 @@ export function LessonPageClient({
       <style>{`
         .lesson-action:hover:not(:disabled) { background: var(--color-button-primary-hover) !important; }
         .lesson-nav-btn:hover { border-color: var(--color-border-mid) !important; color: var(--color-text-primary) !important; }
+        .lesson-prose > * { margin: 0; }
+        .lesson-prose p { margin-bottom: 0.75em; }
+        .lesson-prose p:last-child { margin-bottom: 0; }
+        .lesson-prose strong { font-weight: 720; color: var(--color-text-primary); }
+        .lesson-prose em { font-style: italic; }
+        .lesson-prose code { font-family: var(--font-mono); font-size: 13px; background: var(--color-panel); border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 5px; }
+        .lesson-prose pre { background: var(--color-panel); border: 1.5px solid var(--color-border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
+        .lesson-prose pre code { background: none; border: none; padding: 0; font-size: 13px; }
+        .lesson-prose ul, .lesson-prose ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direction: column; gap: 4px; }
+        .lesson-prose li { line-height: 1.65; }
+        .lesson-prose h1,.lesson-prose h2,.lesson-prose h3,.lesson-prose h4 { color: var(--color-text-primary); font-weight: 760; margin: 14px 0 6px; line-height: 1.25; }
+        .lesson-prose blockquote { border-left: 3px solid var(--color-border-mid); padding-left: 14px; color: var(--color-text-muted); margin: 10px 0; }
         .lesson-skeleton {
           border-radius: 7px;
           background: linear-gradient(90deg, var(--color-chrome), var(--color-panel), var(--color-chrome));
@@ -126,7 +139,7 @@ export function LessonPageClient({
           .lesson-shell { grid-template-columns: 1fr !important; }
           .lesson-aside { position: static !important; top: auto !important; }
           .lesson-header { padding: 0 16px !important; }
-          .lesson-main { padding: 76px 16px 48px !important; }
+          .lesson-main { padding: 76px 20px 48px !important; }
         }
       `}</style>
 
@@ -138,7 +151,7 @@ export function LessonPageClient({
             inset: "0 0 auto 0",
             height: 48,
             background: "var(--color-chrome)",
-            borderBottom: "1px solid var(--color-border)",
+            borderBottom: "1.5px solid var(--color-border)",
             display: "flex",
             alignItems: "center",
             padding: "0 24px",
@@ -199,7 +212,7 @@ export function LessonPageClient({
             href={dashboardHref}
             style={{
               height: 30,
-              border: "1px solid var(--color-border)",
+              border: "1.5px solid var(--color-border)",
               borderRadius: 6,
               background: "var(--color-node)",
               color: "var(--color-text-secondary)",
@@ -220,16 +233,14 @@ export function LessonPageClient({
         <main
           className="lesson-main"
           style={{
-            maxWidth: 1180,
-            margin: "0 auto",
-            padding: "88px 24px 80px",
+            padding: "88px 40px 80px",
           }}
         >
           <div
             className="lesson-shell"
             style={{
               display: "grid",
-              gridTemplateColumns: "280px minmax(0, 760px)",
+              gridTemplateColumns: "300px minmax(0, 1fr)",
               gap: 56,
               alignItems: "start",
             }}
@@ -284,7 +295,7 @@ export function LessonPageClient({
                 style={{
                   marginBottom: 32,
                   paddingTop: 20,
-                  borderTop: "1px solid var(--color-border)",
+                  borderTop: "1.5px solid var(--color-border)",
                 }}
               >
                 <div
@@ -353,7 +364,7 @@ export function LessonPageClient({
                     href={completion.dashboardHref}
                     style={{
                       height: 36,
-                      border: "1px solid var(--color-border)",
+                      border: "1.5px solid var(--color-border)",
                       borderRadius: 7,
                       background: "var(--color-node)",
                       color: "var(--color-text-secondary)",
@@ -373,7 +384,7 @@ export function LessonPageClient({
                       href={completion.nextNode.href}
                       style={{
                         height: 36,
-                        border: "1px solid var(--color-border)",
+                        border: "1.5px solid var(--color-border)",
                         borderRadius: 7,
                         background: "var(--color-node)",
                         color: "var(--color-text-secondary)",
@@ -446,8 +457,8 @@ export function LessonPageClient({
                     {lesson.title}
                   </h2>
 
-                  {lesson.sections.map((section) => (
-                    <section key={section.heading} style={{ marginBottom: 32, maxWidth: "72ch" }}>
+                  {lesson.sections.map((section, i) => (
+                    <section key={section.heading} style={{ marginBottom: 32, maxWidth: "unset" }}>
                       <h3
                         style={{
                           margin: "0 0 8px",
@@ -460,19 +471,22 @@ export function LessonPageClient({
                       >
                         {section.heading}
                       </h3>
-                      <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.72, color: "var(--color-text-secondary)" }}>
-                        {section.body}
-                      </p>
+                      <LatexRenderer text={section.body} />
+                      {lesson.diagrams?.filter((d) => d.sectionIndex === i).map((d, j) => (
+                        <DiagramRenderer key={j} diagram={d} />
+                      ))}
                     </section>
                   ))}
 
-                  {lesson.diagram && <SandboxedDiagram diagram={lesson.diagram} />}
+                  {lesson.diagrams?.filter((d) => d.sectionIndex == null).map((d, i) => (
+                    <DiagramRenderer key={i} diagram={d} />
+                  ))}
 
                   {/* Worked example — visually distinct from prose sections */}
                   <section
                     style={{
                       marginBottom: 40,
-                      maxWidth: "72ch",
+                      maxWidth: "unset",
                       background: "var(--color-panel)",
                       borderRadius: 10,
                       padding: "20px 24px",
@@ -502,13 +516,11 @@ export function LessonPageClient({
                     >
                       {lesson.workedExample.heading}
                     </h3>
-                    <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.72, color: "var(--color-text-secondary)" }}>
-                      {lesson.workedExample.body}
-                    </p>
+                      <LatexRenderer text={lesson.workedExample.body} />
                   </section>
 
                   {lesson.misconceptions.length > 0 && (
-                    <section style={{ marginBottom: 40, maxWidth: "72ch" }}>
+                    <section style={{ marginBottom: 40, maxWidth: "unset" }}>
                       <h3
                         style={{
                           margin: "0 0 14px",
@@ -545,7 +557,7 @@ export function LessonPageClient({
                             >
                               {String(i + 1).padStart(2, "0")}
                             </span>
-                            <span>{item}</span>
+                            <div><LatexRenderer text={item} /></div>
                           </li>
                         ))}
                       </ol>
@@ -555,8 +567,8 @@ export function LessonPageClient({
                   {lesson.tryThis && (
                     <section
                       style={{
-                        maxWidth: "72ch",
-                        borderTop: "1px solid var(--color-border)",
+                        maxWidth: "unset",
+                        borderTop: "1.5px solid var(--color-border)",
                         paddingTop: 28,
                       }}
                     >
@@ -572,9 +584,7 @@ export function LessonPageClient({
                       >
                         Try this
                       </div>
-                      <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.72, color: "var(--color-text-secondary)" }}>
-                        {lesson.tryThis}
-                      </p>
+                      <LatexRenderer text={lesson.tryThis} />
                     </section>
                   )}
                 </>

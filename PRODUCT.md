@@ -28,7 +28,15 @@ Anyone who wants to learn a complex skill or doesn't know how to structure their
 
 ## Product Purpose
 
-An AI-powered educational platform that generates a Skill Tree (Directed Acyclic Graph) for any subject. Given a goal, it decomposes it into atomic prerequisite concepts and arranges them into a clear, traversable path — revealing the hidden structure of a subject so the learner always knows what to learn next and why. Success is when a user can go from "I want to learn X" to a structured, actionable curriculum in seconds, and follow it to completion.
+An AI-powered educational platform with two integrated systems:
+
+**Graph generation.** Given a goal, Pathwise uses Claude Opus 4.7 to decompose it into atomic prerequisite concepts arranged into a linear DAG — revealing the hidden structure of a subject so the learner always knows what to learn next and why.
+
+**Lesson delivery.** Each node in the graph is a teachable concept with a dedicated lesson page, generated on first visit by Claude Sonnet 4.6 and cached permanently. Lessons include focused explanatory sections, a concrete worked example, common misconceptions numbered for scan-ability, an optional interactive diagram (sandboxed SVG/canvas/vanilla JS), and a "try this" self-guided practice prompt. The graph generation phase injects a structured teaching plan (objective, goal context, focus points, detours to avoid) into every node, which the lesson model consumes to stay aligned with the learner's actual goal.
+
+**Progress.** Learners move through the graph one node at a time. Completing a lesson marks it done and advances the current pointer to the next node.
+
+Success is when a user can go from "I want to learn X" to a structured, AI-tutored curriculum in seconds — and follow it concept by concept to completion.
 
 ## Brand Personality
 
@@ -46,10 +54,11 @@ Not gamified, not cheerful, not corporate. The tone is that of a brilliant mento
 ## Design Principles
 
 1. **The graph is the product.** The skill tree visualization is the primary UI, not a feature inside a page. Design centers and serves it.
-2. **Structure reveals meaning.** The DAG layout should make concept dependencies legible without labels explaining them. Visual hierarchy does the cognitive work.
-3. **Earn every element.** No decorative surfaces, no filler copy, no chrome for its own sake. If it doesn't serve the learner's task, it doesn't exist.
-4. **Tool confidence.** This is a precision instrument for serious learners. It should feel capable and calm — not playful, not loud, not anxious.
-5. **Get out of the way.** The interface recedes so the learner's mental model can expand. Minimal UI, maximum clarity.
+2. **The lesson is a reading experience.** Lesson pages are the second primary surface. They must be calm, typographically clear, and free of chrome. The learner is reading and thinking — nothing should compete for attention.
+3. **Structure reveals meaning.** The DAG layout should make concept dependencies legible without labels explaining them. Visual hierarchy does the cognitive work.
+4. **Earn every element.** No decorative surfaces, no filler copy, no chrome for its own sake. If it doesn't serve the learner's task, it doesn't exist.
+5. **Tool confidence.** This is a precision instrument for serious learners. It should feel capable and calm — not playful, not loud, not anxious.
+6. **Get out of the way.** The interface recedes so the learner's mental model can expand. Minimal UI, maximum clarity.
 
 ## Accessibility & Inclusion
 

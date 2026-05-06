@@ -15,7 +15,7 @@ interface GenerateRequest {
   subject?: unknown;
 }
 
-const DEFAULT_MODEL = "us.anthropic.claude-opus-4-7-20250514-v1:0";
+const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/global.anthropic.claude-opus-4-7";
 const DEFAULT_REGION = "us-east-1";
 const MAX_GOAL_LENGTH = 800;
 const MAX_SUBJECT_LENGTH = 140;
@@ -102,6 +102,11 @@ const responseJsonSchema = {
             type: "string",
             description: "Hex color assigned to this node's zone.",
           },
+          category: {
+            type: "string",
+            description: "Learning category for this concept. Must be one of: math_and_logic, systems_and_economics, technical_and_code.",
+            enum: ["math_and_logic", "systems_and_economics", "technical_and_code"],
+          },
           prerequisite_ids: {
             type: "array",
             description: "Zero or one earlier node id that must be learned before this concept.",
@@ -132,6 +137,7 @@ const responseJsonSchema = {
           "difficulty_level",
           "zone",
           "zone_color",
+          "category",
           "prerequisite_ids",
           "coordinates",
         ],

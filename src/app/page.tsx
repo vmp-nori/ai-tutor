@@ -213,6 +213,107 @@ function useReveal(): RevealResult {
   return { ref, visible };
 }
 
+function useProblemScrollReveal(): RevealResult {
+  const ref = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const target = el;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+
+    function clamp(value: number) {
+      return Math.min(Math.max(value, 0), 1);
+    }
+
+    function easeOutQuint(value: number) {
+      return 1 - Math.pow(1 - value, 5);
+    }
+
+    function setProgressVars(progress: number) {
+      const eased = easeOutQuint(progress);
+      const rowProgress = [0.08, 0.28, 0.48, 0.68].map((start) =>
+        easeOutQuint(clamp((progress - start) / 0.32)),
+      );
+      const labelProgress = easeOutQuint(clamp(progress / 0.38));
+      const titleProgress = easeOutQuint(clamp((progress - 0.2) / 0.56));
+      const titleLineProgress = [0.2, 0.34, 0.48].map((start) =>
+        easeOutQuint(clamp((progress - start) / 0.38)),
+      );
+      const copyProgress = easeOutQuint(clamp((progress - 0.58) / 0.38));
+
+      target.style.setProperty("--lp-problem-field-opacity", `${eased * 0.28}`);
+      target.style.setProperty("--lp-problem-field-y", `${(1 - eased) * 44}px`);
+      target.style.setProperty("--lp-problem-label-opacity", `${0.42 + labelProgress * 0.58}`);
+      target.style.setProperty("--lp-problem-label-x", `${(1 - labelProgress) * 18}px`);
+      target.style.setProperty("--lp-problem-title-y", `${(1 - titleProgress) * 14}px`);
+      target.style.setProperty("--lp-problem-copy-opacity", `${copyProgress}`);
+      target.style.setProperty("--lp-problem-copy-y", `${(1 - copyProgress) * 18}px`);
+      target.style.setProperty("--lp-problem-scan-opacity", `${0.1 + eased * 0.26}`);
+      target.style.setProperty("--lp-problem-scan-x", `${-18 + eased * 30}%`);
+      target.style.setProperty("--lp-problem-scan-y", `${8 - eased * 14}%`);
+
+      rowProgress.forEach((row, index) => {
+        const number = index + 1;
+        target.style.setProperty(`--lp-row-${number}-opacity`, `${row}`);
+        target.style.setProperty(`--lp-row-${number}-x`, `${(1 - row) * -42}px`);
+        target.style.setProperty(`--lp-row-${number}-scale`, `${0.94 + row * 0.06}`);
+        target.style.setProperty(`--lp-row-${number}-number-y`, `${(1 - row) * 16}px`);
+      });
+
+      titleLineProgress.forEach((line, index) => {
+        const number = index + 1;
+        const offsets = [42, -32, 28];
+        const skews = [0.7, -0.55, 0.45];
+        target.style.setProperty(`--lp-title-line-${number}-opacity`, `${0.3 + line * 0.7}`);
+        target.style.setProperty(`--lp-title-line-${number}-x`, `${(1 - line) * offsets[index]}px`);
+        target.style.setProperty(`--lp-title-line-${number}-y`, `${(1 - line) * 8}px`);
+        target.style.setProperty(`--lp-title-line-${number}-skew`, `${(1 - line) * skews[index]}deg`);
+      });
+    }
+
+    function update() {
+      frame = 0;
+
+      if (reduceMotion.matches) {
+        setProgressVars(1);
+        setVisible(true);
+        return;
+      }
+
+      const rect = target.getBoundingClientRect();
+      const viewportHeight = Math.max(window.innerHeight, 1);
+      const start = viewportHeight * 0.46;
+      const end = viewportHeight * -0.18;
+      const progress = clamp((start - rect.top) / (start - end));
+
+      setProgressVars(progress);
+      if (progress > 0.28) setVisible(true);
+    }
+
+    function requestUpdate() {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    }
+
+    update();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    reduceMotion.addEventListener("change", requestUpdate);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+      reduceMotion.removeEventListener("change", requestUpdate);
+    };
+  }, []);
+
+  return { ref, visible };
+}
+
 function useTypedEmailPrompt(enabled: boolean) {
   const [prompt, setPrompt] = useState(EMAIL_PROMPTS[0]);
 
@@ -595,7 +696,7 @@ export default function LandingPage() {
   const [status, setStatus] = useState<WaitlistStatus>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const heroFormRef = useRef<HTMLFormElement | null>(null);
-  const problemReveal = useReveal();
+  const problemReveal = useProblemScrollReveal();
   const closeReveal = useReveal();
   const [heroGoalActive, setHeroGoalActive] = useState(false);
   const heroGoal = useTypedHeroGoal(heroGoalActive);
@@ -1567,10 +1668,57 @@ export default function LandingPage() {
           background: oklch(18% 0.02 236);
           color: oklch(96% 0.01 168);
           display: grid;
-          gap: 46px;
-          grid-template-columns: minmax(0, 0.85fr) minmax(320px, 1fr);
+          gap: clamp(46px, 6vw, 94px);
+          grid-template-columns: minmax(300px, 0.7fr) minmax(0, 1fr);
+          isolation: isolate;
           margin-top: -88px;
+          overflow: hidden;
           padding: 86px max(28px, calc((100vw - 1240px) / 2)) 96px;
+        }
+
+        .lp-problem::before {
+          background:
+            linear-gradient(90deg, transparent, oklch(67% 0.145 164 / 0.18), transparent),
+            linear-gradient(180deg, transparent, oklch(78% 0.153 76 / 0.1), transparent);
+          content: "";
+          inset: -35% -15%;
+          opacity: var(--lp-problem-scan-opacity, 0);
+          pointer-events: none;
+          position: absolute;
+          transform: translate3d(var(--lp-problem-scan-x, -18%), var(--lp-problem-scan-y, 8%), 0) rotate(-8deg);
+          z-index: 0;
+        }
+
+        .lp-problem::after {
+          background:
+            linear-gradient(90deg, transparent 0 28%, oklch(67% 0.145 164 / 0.18) 48%, transparent 68%),
+            repeating-linear-gradient(90deg, transparent 0 76px, oklch(31% 0.031 236 / 0.72) 77px, transparent 78px);
+          content: "";
+          inset: 0;
+          opacity: var(--lp-problem-field-opacity, 0);
+          pointer-events: none;
+          position: absolute;
+          transform: translate3d(0, var(--lp-problem-field-y, 44px), 0);
+          z-index: 0;
+        }
+
+        .lp-problem.is-visible::before {
+          animation: lp-problem-scan-flow 8.5s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+        }
+
+        .lp-problem.is-visible::after {
+          animation: lp-problem-field-flow 12s cubic-bezier(0.16, 1, 0.3, 1) 900ms infinite alternate;
+        }
+
+        .lp-problem-intro {
+          align-self: center;
+          order: 2;
+          position: relative;
+          z-index: 1;
+        }
+
+        .lp-problem.is-visible .lp-problem-intro {
+          animation: lp-problem-intro-drift 9s cubic-bezier(0.16, 1, 0.3, 1) 1.1s infinite alternate;
         }
 
         .lp-section-label {
@@ -1578,6 +1726,12 @@ export default function LandingPage() {
           font-size: 13px;
           font-weight: 800;
           margin: 0 0 22px;
+        }
+
+        .lp-problem .lp-section-label {
+          opacity: var(--lp-problem-label-opacity, 0.42);
+          transform: translate3d(var(--lp-problem-label-x, 18px), 0, 0);
+          will-change: opacity, transform;
         }
 
         .lp-problem h2,
@@ -1599,10 +1753,67 @@ export default function LandingPage() {
           max-width: 54ch;
         }
 
+        .lp-problem h2 {
+          transform: translate3d(0, var(--lp-problem-title-y, 14px), 0);
+          will-change: opacity, transform;
+        }
+
+        .lp-problem h2 span {
+          display: block;
+          opacity: var(--lp-title-line-opacity, 0.3);
+          transform:
+            translate3d(var(--lp-title-line-x, 0), var(--lp-title-line-y, 8px), 0)
+            skewX(var(--lp-title-line-skew, 0deg));
+          transform-origin: left center;
+          will-change: opacity, transform;
+        }
+
+        .lp-problem h2 span:nth-child(1) {
+          --lp-title-line-opacity: var(--lp-title-line-1-opacity, 0.3);
+          --lp-title-line-skew: var(--lp-title-line-1-skew, 0.7deg);
+          --lp-title-line-x: var(--lp-title-line-1-x, 42px);
+          --lp-title-line-y: var(--lp-title-line-1-y, 8px);
+        }
+
+        .lp-problem h2 span:nth-child(2) {
+          --lp-title-line-opacity: var(--lp-title-line-2-opacity, 0.3);
+          --lp-title-line-skew: var(--lp-title-line-2-skew, -0.55deg);
+          --lp-title-line-x: var(--lp-title-line-2-x, -32px);
+          --lp-title-line-y: var(--lp-title-line-2-y, 8px);
+        }
+
+        .lp-problem h2 span:nth-child(3) {
+          --lp-title-line-opacity: var(--lp-title-line-3-opacity, 0.3);
+          --lp-title-line-skew: var(--lp-title-line-3-skew, 0.45deg);
+          --lp-title-line-x: var(--lp-title-line-3-x, 28px);
+          --lp-title-line-y: var(--lp-title-line-3-y, 8px);
+        }
+
+        .lp-problem.is-visible h2 span {
+          animation: lp-problem-title-signal 7.4s cubic-bezier(0.16, 1, 0.3, 1) 1.2s infinite alternate;
+        }
+
+        .lp-problem.is-visible h2 span:nth-child(2) {
+          animation-delay: 1.8s;
+        }
+
+        .lp-problem.is-visible h2 span:nth-child(3) {
+          animation-delay: 2.4s;
+        }
+
+        .lp-problem-copy {
+          opacity: var(--lp-problem-copy-opacity, 0);
+          transform: translate3d(0, var(--lp-problem-copy-y, 18px), 0);
+          will-change: opacity, transform;
+        }
+
         .lp-failure-list {
           align-self: end;
           border-top: 1px solid var(--lp-dark-line);
           display: grid;
+          order: 1;
+          position: relative;
+          z-index: 1;
         }
 
         .lp-failure-row {
@@ -1612,12 +1823,64 @@ export default function LandingPage() {
           gap: 22px;
           grid-template-columns: 72px 1fr;
           min-height: 78px;
+          opacity: var(--lp-row-opacity, 0);
+          overflow: hidden;
+          position: relative;
+          transform: translate3d(var(--lp-row-x, -42px), 0, 0) scale(var(--lp-row-scale, 0.9));
+          will-change: opacity, transform;
+        }
+
+        .lp-failure-row::after {
+          background: radial-gradient(ellipse at center, oklch(67% 0.145 164 / 0.16), transparent 68%);
+          content: "";
+          inset: -24px -36px;
+          opacity: 0;
+          pointer-events: none;
+          position: absolute;
+          transform: translateX(-115%) scaleX(0.55);
+          z-index: 0;
+        }
+
+        .lp-problem.is-visible .lp-failure-row::after {
+          animation: lp-failure-live-scan 5.8s cubic-bezier(0.16, 1, 0.3, 1) 1.4s infinite;
+        }
+
+        .lp-failure-row:nth-child(1) {
+          --lp-row-opacity: var(--lp-row-1-opacity, 0);
+          --lp-row-number-y: var(--lp-row-1-number-y, 16px);
+          --lp-row-scale: var(--lp-row-1-scale, 0.9);
+          --lp-row-x: var(--lp-row-1-x, -42px);
+        }
+
+        .lp-failure-row:nth-child(2) {
+          --lp-row-opacity: var(--lp-row-2-opacity, 0);
+          --lp-row-number-y: var(--lp-row-2-number-y, 16px);
+          --lp-row-scale: var(--lp-row-2-scale, 0.9);
+          --lp-row-x: var(--lp-row-2-x, -42px);
+        }
+
+        .lp-failure-row:nth-child(3) {
+          --lp-row-opacity: var(--lp-row-3-opacity, 0);
+          --lp-row-number-y: var(--lp-row-3-number-y, 16px);
+          --lp-row-scale: var(--lp-row-3-scale, 0.9);
+          --lp-row-x: var(--lp-row-3-x, -42px);
+        }
+
+        .lp-failure-row:nth-child(4) {
+          --lp-row-opacity: var(--lp-row-4-opacity, 0);
+          --lp-row-number-y: var(--lp-row-4-number-y, 16px);
+          --lp-row-scale: var(--lp-row-4-scale, 0.9);
+          --lp-row-x: var(--lp-row-4-x, -42px);
         }
 
         .lp-failure-row span:first-child {
           color: var(--lp-amber);
           font-size: 28px;
           font-weight: 800;
+          position: relative;
+          transform: translate3d(0, var(--lp-row-number-y, 16px), 0);
+          transform-origin: left center;
+          z-index: 1;
         }
 
         .lp-failure-row span:last-child {
@@ -1625,6 +1888,31 @@ export default function LandingPage() {
           font-size: 20px;
           font-weight: 800;
           line-height: 1.25;
+          position: relative;
+          z-index: 1;
+        }
+
+        .lp-problem.is-visible .lp-failure-row span:first-child {
+          animation: lp-failure-number-live 4.8s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+        }
+
+        .lp-problem.is-visible .lp-failure-row span:last-child {
+          animation: lp-failure-label-live 6.2s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+        }
+
+        .lp-problem.is-visible .lp-failure-row:nth-child(2) span,
+        .lp-problem.is-visible .lp-failure-row:nth-child(2)::after {
+          animation-delay: 520ms;
+        }
+
+        .lp-problem.is-visible .lp-failure-row:nth-child(3) span,
+        .lp-problem.is-visible .lp-failure-row:nth-child(3)::after {
+          animation-delay: 1040ms;
+        }
+
+        .lp-problem.is-visible .lp-failure-row:nth-child(4) span,
+        .lp-problem.is-visible .lp-failure-row:nth-child(4)::after {
+          animation-delay: 1560ms;
         }
 
         .lp-system {
@@ -1774,6 +2062,86 @@ export default function LandingPage() {
           transform: translateY(0);
         }
 
+        @keyframes lp-problem-scan-flow {
+          from {
+            background-position: 0 0, 0 0;
+            filter: saturate(0.9);
+          }
+          to {
+            background-position: 180px -80px, -90px 140px;
+            filter: saturate(1.18);
+          }
+        }
+
+        @keyframes lp-problem-field-flow {
+          from {
+            background-position: -220px 0, 0 0;
+          }
+          to {
+            background-position: 260px 0, 78px 0;
+          }
+        }
+
+        @keyframes lp-problem-intro-drift {
+          from {
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            transform: translate3d(0, -7px, 0);
+          }
+        }
+
+        @keyframes lp-problem-title-signal {
+          from {
+            color: oklch(96% 0.01 168);
+            text-shadow: 0 0 0 oklch(67% 0.145 164 / 0);
+          }
+          to {
+            color: oklch(98% 0.012 168);
+            text-shadow: 0 0 22px oklch(67% 0.145 164 / 0.16);
+          }
+        }
+
+        @keyframes lp-failure-live-scan {
+          0%,
+          56% {
+            opacity: 0;
+            transform: translateX(-115%) scaleX(0.55);
+          }
+          68% {
+            opacity: 0.42;
+          }
+          82%,
+          100% {
+            opacity: 0;
+            transform: translateX(115%) scaleX(0.55);
+          }
+        }
+
+        @keyframes lp-failure-number-live {
+          from {
+            color: var(--lp-amber);
+            text-shadow: 0 0 0 oklch(78% 0.153 76 / 0);
+            transform: translate3d(0, var(--lp-row-number-y, 0), 0) scale(1);
+          }
+          to {
+            color: oklch(84% 0.16 76);
+            text-shadow: 0 0 18px oklch(78% 0.153 76 / 0.32);
+            transform: translate3d(3px, var(--lp-row-number-y, 0), 0) scale(1.06);
+          }
+        }
+
+        @keyframes lp-failure-label-live {
+          from {
+            color: oklch(91% 0.013 168);
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            color: oklch(96% 0.018 168);
+            transform: translate3d(4px, 0, 0);
+          }
+        }
+
         @media (max-width: 980px) {
           .lp-nav {
             padding: 0 18px;
@@ -1849,6 +2217,15 @@ export default function LandingPage() {
           .lp-system h2,
           .lp-close h2 {
             font-size: 3.35rem;
+          }
+
+          .lp-problem-intro {
+            order: 1;
+          }
+
+          .lp-failure-list {
+            align-self: stretch;
+            order: 2;
           }
 
           .lp-system-row {
@@ -1982,8 +2359,19 @@ export default function LandingPage() {
           .lp-product-progress span,
           .lp-product-shell,
           .lp-spinner,
+          .lp-problem::before,
+          .lp-problem::after,
+          .lp-problem-intro,
+          .lp-problem .lp-section-label,
+          .lp-problem h2,
+          .lp-problem h2 span,
+          .lp-problem-copy,
+          .lp-failure-row,
+          .lp-failure-row::after,
+          .lp-failure-row span,
           .lp-reveal {
             animation: none;
+            clip-path: none;
             opacity: 1;
             stroke-dashoffset: 0;
             transform: none;
@@ -1993,6 +2381,12 @@ export default function LandingPage() {
           .lp-map-stage {
             opacity: 0.82;
             transform: none;
+          }
+
+          .lp-problem::before,
+          .lp-problem::after,
+          .lp-failure-row::after {
+            opacity: 0;
           }
         }
       `}</style>
@@ -2048,12 +2442,16 @@ export default function LandingPage() {
         </section>
 
         <section
-          className={`lp-problem lp-reveal${problemReveal.visible ? " is-visible" : ""}`}
+          className={`lp-problem${problemReveal.visible ? " is-visible" : ""}`}
           ref={problemReveal.ref}
         >
-          <div>
+          <div className="lp-problem-intro">
             <p className="lp-section-label">The real blocker</p>
-            <h2>Most learning fails before you even start.</h2>
+            <h2>
+              <span>Most learning</span>
+              <span>fails before</span>
+              <span>you even start.</span>
+            </h2>
             <p className="lp-problem-copy">
               The hard part is not motivation. It is order. People waste weeks
               collecting resources when what they needed was a map of dependencies.
