@@ -6,7 +6,10 @@ import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
 import { THEME_EVENT } from "@/components/ui/ThemeSwitcher";
 
 const MM_W = 220;
-const MM_H = 68;
+const MM_H = 74;
+const CONTROL_OFFSET = 20;
+const CONTROL_GAP = 12;
+const ZOOM_CONTROL_H = 34;
 
 const NODE_W = 232;
 const NODE_H = 78;
@@ -54,15 +57,15 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
     if (!ctx) return;
 
     const colors = {
-      canvas: themeColor("--color-canvas", "oklch(98.8% 0.004 100)"),
-      goal: themeColor("--color-goal", "oklch(18.4% 0.006 255)"),
-      node: themeColor("--color-node", "oklch(99.4% 0.003 100)"),
-      nodeCurrent: themeColor("--color-node-current", "oklch(97.2% 0.022 249)"),
-      nodeDone: themeColor("--color-node-done", "oklch(95.5% 0.044 150)"),
-      nodeLocked: themeColor("--color-node-locked", "oklch(96.5% 0.005 100)"),
-      border: themeColor("--color-border", "oklch(90.6% 0.008 100)"),
-      borderMid: themeColor("--color-border-mid", "oklch(80.9% 0.012 100)"),
-      accent: themeColor("--color-accent", "oklch(78.4% 0.097 249)"),
+      canvas: themeColor("--color-canvas", "oklch(96.8% 0.014 168)"),
+      goal: themeColor("--color-goal", "oklch(16.8% 0.018 238)"),
+      node: themeColor("--color-node", "oklch(98.8% 0.009 168)"),
+      nodeCurrent: themeColor("--color-node-current", "oklch(90% 0.071 164)"),
+      nodeDone: themeColor("--color-node-done", "oklch(94% 0.052 150)"),
+      nodeLocked: themeColor("--color-node-locked", "oklch(92.2% 0.025 168)"),
+      border: themeColor("--color-border", "oklch(82% 0.035 184)"),
+      borderMid: themeColor("--color-border-mid", "oklch(72% 0.045 184)"),
+      accent: themeColor("--color-accent", "oklch(67% 0.145 164)"),
       success: themeColor("--color-success", "oklch(49.1% 0.122 150)"),
     };
 
@@ -143,15 +146,15 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
     <div
       style={{
         position: "fixed",
-        bottom: 52,
-        left: 16,
+        bottom: CONTROL_OFFSET + ZOOM_CONTROL_H + CONTROL_GAP,
+        left: CONTROL_OFFSET,
         width: MM_W,
         background: "var(--color-panel)",
         border: "1px solid var(--color-border)",
-        borderRadius: 6,
+        borderRadius: 8,
         overflow: "hidden",
         zIndex: 190,
-        boxShadow: "var(--shadow-card)",
+        boxShadow: "var(--shadow-floating)",
       }}
       aria-hidden="true"
     >
@@ -161,7 +164,7 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
         style={{
           position: "absolute",
           border: "1px solid var(--color-accent)",
-          borderRadius: 2,
+          borderRadius: 3,
           background: "color-mix(in srgb, var(--color-accent) 16%, transparent)",
           pointerEvents: "none",
           transition: "left 60ms linear, top 60ms linear",
@@ -170,8 +173,8 @@ export function MiniMap({ nodes, edges, canvasWidth, canvasHeight, scrollEl, zoo
       <div
         style={{
           padding: "3px 6px 4px",
-          fontSize: 7.5,
-          fontWeight: 700,
+          fontSize: 8,
+          fontWeight: 800,
           textTransform: "uppercase" as const,
           letterSpacing: "0.10em",
           color: "var(--color-text-muted)",

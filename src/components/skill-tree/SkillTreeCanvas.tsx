@@ -13,13 +13,15 @@ import { TopBar, type LearningPathNavItem } from "@/components/ui/TopBar";
 
 const CANVAS_W = 3000;
 const CANVAS_H = 820;
-const TOPBAR_H = 48;
+const TOPBAR_H = 58;
 const CHAPTER_RAIL_H = 96;
 const CANVAS_TOP = TOPBAR_H + CHAPTER_RAIL_H;
 const NODE_W = 232;
 const NODE_H = 78;
 const GOAL_W = 264;
 const GOAL_H = 78;
+const CONTROL_OFFSET = 20;
+const ZOOM_CONTROL_H = 34;
 const IMPORT_COLUMN_GAP = 304;
 const ABSOLUTE_MIN_ZOOM = 0.12;
 const MAX_ZOOM = 2.8;
@@ -704,7 +706,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
         learningPaths={learningPaths}
       />
 
-      {/* Chapter rail — Swiss-grid editorial style */}
+      {/* Chapter rail */}
       {zoneRegions.length > 0 && (
         <div
           aria-hidden="true"
@@ -714,8 +716,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
             left: 0,
             right: 0,
             height: CHAPTER_RAIL_H,
-            background: "color-mix(in srgb, var(--color-canvas) 88%, transparent)",
-            backdropFilter: "blur(10px)",
+            background: "var(--color-canvas)",
             borderBottom: "1px solid var(--color-border)",
             zIndex: 100,
             overflow: "hidden",
@@ -743,16 +744,19 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   willChange: "transform",
                   top: 0,
                   height: CHAPTER_RAIL_H,
-                  padding: "14px 18px",
+                  padding: "16px 20px",
                   overflow: "hidden",
                   borderLeft: i > 0 ? "1px solid var(--color-border)" : "none",
+                  background: hasCurrentNode
+                    ? "color-mix(in srgb, var(--color-accent-subtle) 46%, transparent)"
+                    : "transparent",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
                   {/* Oversize chapter numeral */}
                   <span style={{
                     fontSize: numSize,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     letterSpacing: 0,
                     color: hasCurrentNode ? "var(--color-text-accent)" : "var(--color-text-subtle)",
                     lineHeight: 0.85,
@@ -764,8 +768,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
                       fontSize: 9.5,
-                      fontWeight: 700,
-                      letterSpacing: "0.16em",
+                      fontWeight: 800,
+                      letterSpacing: "0.12em",
                       textTransform: "uppercase" as const,
                       color: "var(--color-text-muted)",
                       marginBottom: 3,
@@ -774,7 +778,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                     </div>
                     <div style={{
                       fontSize: nameSize,
-                      fontWeight: 650,
+                      fontWeight: 750,
                       lineHeight: 1.15,
                       letterSpacing: 0,
                       color: "var(--color-text-primary)",
@@ -797,9 +801,9 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                     position: "absolute",
                     left: 0,
                     bottom: -1,
-                    height: 2,
+                    height: 3,
                     width: "100%",
-                    background: "var(--color-accent)",
+                    background: "var(--color-border-accent)",
                   }} />
                 )}
               </div>
@@ -825,7 +829,12 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
           position: "fixed",
           inset: `${CANVAS_TOP}px 0 0 0`,
           overflow: "auto",
-          background: "transparent",
+          background: `
+            linear-gradient(90deg, color-mix(in srgb, var(--color-border) 48%, transparent) 1px, transparent 1px),
+            linear-gradient(0deg, color-mix(in srgb, var(--color-border) 48%, transparent) 1px, transparent 1px),
+            var(--color-canvas)
+          `,
+          backgroundSize: "56px 56px",
           overscrollBehavior: "contain",
         }}
       >
@@ -860,8 +869,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   top: zone.y,
                   width: zone.width,
                   height: zone.height,
-                  borderLeft: i > 0 ? `1px solid color-mix(in srgb, ${zone.color} 22%, var(--color-border))` : "none",
-                  background: `color-mix(in srgb, ${zone.color} 9%, transparent)`,
+                  borderLeft: i > 0 ? "1px solid var(--color-border)" : "none",
+                  background: `color-mix(in srgb, ${zone.color} 7%, transparent)`,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -871,11 +880,11 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                     position: "absolute",
                     right: 18,
                     bottom: 18,
-                    color: "var(--color-text-primary)",
+                    color: "var(--color-text-accent)",
                     fontSize: 46,
                     fontWeight: 800,
                     letterSpacing: 0,
-                    opacity: 0.04,
+                    opacity: 0.07,
                     textTransform: "uppercase",
                     whiteSpace: "nowrap",
                   }}
@@ -960,27 +969,27 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
         zoom={zoom}
       />
 
-      {/* Zoom controls — bottom-left */}
+      {/* Zoom controls */}
       <div
         style={{
           position: "fixed",
-          bottom: 16,
-          left: 16,
+          bottom: CONTROL_OFFSET,
+          left: CONTROL_OFFSET,
           display: "inline-flex",
-          height: 32,
+          height: ZOOM_CONTROL_H,
           background: "var(--color-panel)",
           border: "1px solid var(--color-border)",
-          borderRadius: 7,
+          borderRadius: 8,
           overflow: "hidden",
           zIndex: 190,
-          boxShadow: "var(--shadow-control)",
+          boxShadow: "var(--shadow-floating)",
         }}
         aria-label="Graph zoom controls"
       >
         <button type="button" onClick={zoomOut} disabled={zoom <= minZoom + 0.005} style={zoomBtnStyle(zoom <= minZoom + 0.005)}>−</button>
-        <button type="button" onClick={resetZoom} style={{ ...zoomBtnStyle(false), width: 50, fontFamily: "ui-monospace, monospace", letterSpacing: "0.02em" }}>{zoomPct}%</button>
+        <button type="button" onClick={resetZoom} style={{ ...zoomBtnStyle(false), width: 54, fontFamily: "ui-monospace, monospace", letterSpacing: "0.02em" }}>{zoomPct}%</button>
         <button type="button" onClick={zoomIn} style={zoomBtnStyle(false)}>＋</button>
-        <button type="button" onClick={fitGraph} style={{ ...zoomBtnStyle(false), width: 36, borderRight: "none" }}>Fit</button>
+        <button type="button" onClick={fitGraph} style={{ ...zoomBtnStyle(false), width: 40, borderRight: "none" }}>Fit</button>
       </div>
     </>
   );
@@ -1025,7 +1034,7 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
         width: 320,
         background: "var(--color-panel)",
         border: "1px solid var(--color-border-mid)",
-        borderRadius: 12,
+        borderRadius: 10,
         padding: 16,
         zIndex: 25,
         boxShadow: "var(--shadow-floating)",
@@ -1179,8 +1188,8 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
             height: 36,
             borderRadius: 8,
             border: "none",
-            background: "var(--color-accent)",
-            color: "var(--color-text-on-accent)",
+            background: "var(--color-button-primary)",
+            color: "var(--color-button-primary-text)",
             fontWeight: 700,
             fontSize: 12.5,
             cursor: "pointer",
@@ -1219,7 +1228,7 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
 function zoomBtnStyle(disabled: boolean): React.CSSProperties {
   return {
     width: 36,
-    height: 32,
+    height: ZOOM_CONTROL_H,
     border: "none",
     borderRight: "1px solid var(--color-border)",
     background: "transparent",

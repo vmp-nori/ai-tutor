@@ -23,7 +23,7 @@ export function DetailPanel({ node, allNodes, onClose }: DetailPanelProps) {
       aria-label="Concept detail"
       style={{
         position: "fixed",
-        inset: "48px 0 0 auto",
+        inset: "58px 0 0 auto",
         width: 296,
         background: "var(--color-panel)",
         borderLeft: "1px solid var(--color-border)",
