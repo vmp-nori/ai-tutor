@@ -431,6 +431,7 @@ function useHeroScrollMotion() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const stage = el;
     const shell = el.querySelector<HTMLElement>(".lp-product-shell");
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -440,8 +441,8 @@ function useHeroScrollMotion() {
       frame = 0;
 
       if (reduceMotion.matches) {
-        el.style.transform = "translate3d(0px, 0px, 0)";
-        el.style.opacity = "0.82";
+        stage.style.transform = "translate3d(0px, 0px, 0)";
+        stage.style.opacity = "0.82";
         if (shell) shell.style.transform = "rotate(-1.6deg) scale(1.04)";
         return;
       }
@@ -455,8 +456,8 @@ function useHeroScrollMotion() {
       const x = -46 * progress;
       const y = 84 * progress;
 
-      el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      el.style.opacity = String(opacity);
+      stage.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      stage.style.opacity = String(opacity);
       if (shell) shell.style.transform = `rotate(${tilt}deg) scale(${scale})`;
     }
 
