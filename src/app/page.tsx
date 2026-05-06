@@ -285,12 +285,12 @@ function useProblemScrollReveal(): RevealResult {
 
       const rect = target.getBoundingClientRect();
       const viewportHeight = Math.max(window.innerHeight, 1);
-      const start = viewportHeight * 0.46;
-      const end = viewportHeight * -0.18;
+      const start = viewportHeight * 0.8;
+      const end = viewportHeight * 0.18;
       const progress = clamp((start - rect.top) / (start - end));
 
       setProgressVars(progress);
-      if (progress > 0.28) setVisible(true);
+      if (progress > 0) setVisible(true);
     }
 
     function requestUpdate() {
@@ -431,49 +431,33 @@ function useHeroScrollMotion() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const target = el;
+    const shell = el.querySelector<HTMLElement>(".lp-product-shell");
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
-
-    function setMotionVars({
-      opacity,
-      scale,
-      tilt,
-      x,
-      y,
-    }: {
-      opacity: number;
-      scale: number;
-      tilt: number;
-      x: number;
-      y: number;
-    }) {
-      target.style.setProperty("--lp-scroll-x", `${x}px`);
-      target.style.setProperty("--lp-scroll-y", `${y}px`);
-      target.style.setProperty("--lp-scroll-tilt", `${tilt}deg`);
-      target.style.setProperty("--lp-scroll-scale", `${scale}`);
-      target.style.setProperty("--lp-scroll-opacity", `${opacity}`);
-    }
 
     function update() {
       frame = 0;
 
       if (reduceMotion.matches) {
-        setMotionVars({ opacity: 0.82, scale: 1.04, tilt: 0, x: 0, y: 0 });
+        el.style.transform = "translate3d(0px, 0px, 0)";
+        el.style.opacity = "0.82";
+        if (shell) shell.style.transform = "rotate(-1.6deg) scale(1.04)";
         return;
       }
 
       const viewportHeight = Math.max(window.innerHeight, 1);
       const progress = Math.min(window.scrollY / viewportHeight, 1.35);
 
-      setMotionVars({
-        opacity: 0.82 - 0.24 * progress,
-        scale: 1.04 + 0.04 * progress,
-        tilt: 1.9 * progress,
-        x: -46 * progress,
-        y: 84 * progress,
-      });
+      const opacity = 0.82 - 0.24 * progress;
+      const scale = 1.04 + 0.04 * progress;
+      const tilt = -1.6 + 1.9 * progress;
+      const x = -46 * progress;
+      const y = 84 * progress;
+
+      el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      el.style.opacity = String(opacity);
+      if (shell) shell.style.transform = `rotate(${tilt}deg) scale(${scale})`;
     }
 
     function requestUpdate() {
@@ -1024,11 +1008,11 @@ export default function LandingPage() {
           contain: paint;
           left: -150px;
           min-width: 0;
-          opacity: var(--lp-scroll-opacity, 0.82);
+          opacity: 0.82;
           position: absolute;
           right: -150px;
           top: 16px;
-          transform: translate3d(var(--lp-scroll-x, 0px), var(--lp-scroll-y, 0px), 0);
+          transform: translate3d(0px, 0px, 0);
           transform-origin: center;
           will-change: transform, opacity;
           z-index: 0;
@@ -1046,9 +1030,7 @@ export default function LandingPage() {
           height: 100%;
           overflow: hidden;
           position: relative;
-          transform:
-            rotate(calc(-1.6deg + var(--lp-scroll-tilt, 0deg)))
-            scale(var(--lp-scroll-scale, 1.04));
+          transform: rotate(-1.6deg) scale(1.04);
           transform-origin: center;
           will-change: transform;
         }
@@ -1435,8 +1417,8 @@ export default function LandingPage() {
             transform: translate3d(0, 22px, 0) scale(0.985);
           }
           to {
-            opacity: var(--lp-scroll-opacity, 0.82);
-            transform: translate3d(var(--lp-scroll-x, 0px), var(--lp-scroll-y, 0px), 0);
+            opacity: 0.82;
+            transform: translate3d(0px, 0px, 0);
           }
         }
 
@@ -2200,9 +2182,7 @@ export default function LandingPage() {
           }
 
           .lp-product-shell {
-            transform:
-              rotate(calc(-1.2deg + var(--lp-scroll-tilt, 0deg)))
-              scale(var(--lp-scroll-scale, 1.02));
+            transform: rotate(-1.2deg) scale(1.02);
           }
 
           .lp-problem,
