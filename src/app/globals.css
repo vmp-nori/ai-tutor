@@ -10,61 +10,61 @@
   color-scheme: light;
 
   /* Canvas and surfaces */
-  --color-canvas:       oklch(98.8% 0.004 100);
-  --color-chrome:       oklch(99.4% 0.003 100);
-  --color-panel:        oklch(99.1% 0.003 100);
-  --color-node:         oklch(99.4% 0.003 100);
-  --color-node-current: oklch(97.2% 0.022 249);
-  --color-node-done:    oklch(95.5% 0.044 150);
-  --color-node-locked:  oklch(96.5% 0.005 100);
-  --color-goal:         oklch(18.4% 0.006 255);
+  --color-canvas:       oklch(96.8% 0.014 168);
+  --color-chrome:       oklch(98.8% 0.009 168);
+  --color-panel:        oklch(98.8% 0.009 168);
+  --color-node:         oklch(98.8% 0.009 168);
+  --color-node-current: oklch(90% 0.071 164);
+  --color-node-done:    oklch(94% 0.052 150);
+  --color-node-locked:  oklch(92.2% 0.025 168);
+  --color-goal:         oklch(16.8% 0.018 238);
 
   /* Borders */
-  --color-border:        oklch(90.6% 0.008 100);
-  --color-border-mid:    oklch(80.9% 0.012 100);
-  --color-border-accent: oklch(78.4% 0.097 249 / 0.58);
+  --color-border:        oklch(82% 0.035 184);
+  --color-border-mid:    oklch(72% 0.045 184);
+  --color-border-accent: oklch(47% 0.112 174 / 0.72);
 
   /* Text */
-  --color-text-primary:   oklch(18.4% 0.006 255);
-  --color-text-secondary: oklch(39.6% 0.010 255);
-  --color-text-muted:     oklch(61.2% 0.010 100);
-  --color-text-subtle:    oklch(74.2% 0.011 100);
-  --color-text-inverted:  oklch(98.8% 0.004 100);
-  --color-text-accent:    oklch(50.5% 0.181 258);
+  --color-text-primary:   oklch(16.8% 0.018 238);
+  --color-text-secondary: oklch(36% 0.024 238);
+  --color-text-muted:     oklch(53% 0.021 212);
+  --color-text-subtle:    oklch(68% 0.018 212);
+  --color-text-inverted:  oklch(97.8% 0.012 168);
+  --color-text-accent:    oklch(47% 0.112 174);
 
   /* Accent and learning states */
-  --color-accent:         oklch(78.4% 0.097 249);
-  --color-accent-hover:   oklch(70.7% 0.139 252);
-  --color-accent-subtle:  oklch(92.6% 0.034 249);
+  --color-accent:         oklch(67% 0.145 164);
+  --color-accent-hover:   oklch(72% 0.148 164);
+  --color-accent-subtle:  oklch(94% 0.052 150);
   --color-success:        oklch(49.1% 0.122 150);
-  --color-success-soft:   oklch(95.5% 0.044 150);
-  --color-success-subtle: oklch(98.1% 0.020 150);
-  --color-success-border: oklch(87.1% 0.078 150);
-  --color-available:      oklch(52.2% 0.018 255);
-  --color-locked:         oklch(84.7% 0.009 255);
-  --color-danger:         oklch(57.7% 0.209 25);
-  --color-danger-soft:    oklch(96.3% 0.020 25);
-  --color-danger-border:  oklch(86.1% 0.071 25);
-  --color-warning-soft:   oklch(96.2% 0.033 96);
-  --color-focus-ring:     oklch(18.4% 0.006 255 / 0.06);
-  --color-spinner-track:  oklch(98.8% 0.004 100 / 0.35);
-  --color-shadow:         oklch(20% 0.020 75 / 0.12);
+  --color-success-soft:   oklch(94% 0.052 150);
+  --color-success-subtle: oklch(95.5% 0.044 150);
+  --color-success-border: oklch(66% 0.14 150);
+  --color-available:      oklch(53% 0.021 212);
+  --color-locked:         oklch(82% 0.035 184);
+  --color-danger:         oklch(66% 0.17 28);
+  --color-danger-soft:    oklch(96% 0.035 28);
+  --color-danger-border:  oklch(76% 0.12 28);
+  --color-warning-soft:   oklch(96% 0.035 76);
+  --color-focus-ring:     oklch(67% 0.145 164 / 0.18);
+  --color-spinner-track:  oklch(97.8% 0.012 168 / 0.35);
+  --color-shadow:         oklch(28% 0.035 185 / 0.16);
 
-  --shadow-card: 0 2px 12px oklch(20% 0.020 75 / 0.07);
-  --shadow-control: 0 1px 4px oklch(20% 0.020 75 / 0.06);
-  --shadow-node: 0 1px 2px oklch(20% 0.020 75 / 0.04);
-  --shadow-node-active: 0 1px 3px oklch(78.4% 0.097 249 / 0.34), 0 4px 12px oklch(78.4% 0.097 249 / 0.13);
-  --shadow-node-selected: 0 0 0 3px oklch(78.4% 0.097 249 / 0.22), 0 4px 18px oklch(20% 0.020 75 / 0.08);
-  --shadow-goal: 0 6px 20px oklch(20% 0.020 75 / 0.12);
-  --shadow-drag: 0 8px 28px oklch(20% 0.020 75 / 0.14), 0 0 0 2px oklch(78.4% 0.097 249 / 0.34);
-  --shadow-floating: 0 18px 44px oklch(20% 0.020 75 / 0.12), 0 2px 6px oklch(20% 0.020 75 / 0.04);
-  --shadow-popover: 0 14px 40px oklch(20% 0.020 75 / 0.12), 0 2px 8px oklch(20% 0.020 75 / 0.06);
+  --shadow-card: 0 18px 50px oklch(32% 0.04 185 / 0.10);
+  --shadow-control: 0 1px 4px oklch(32% 0.04 185 / 0.08);
+  --shadow-node: 0 5px 10px oklch(32% 0.04 185 / 0.08);
+  --shadow-node-active: 0 0 0 3px oklch(67% 0.145 164 / 0.18), 0 8px 16px oklch(32% 0.04 185 / 0.10);
+  --shadow-node-selected: 0 0 0 3px oklch(47% 0.112 174 / 0.20), 0 10px 22px oklch(20% 0.02 238 / 0.12);
+  --shadow-goal: 0 14px 34px oklch(20% 0.02 238 / 0.16);
+  --shadow-drag: 0 16px 36px oklch(20% 0.02 238 / 0.16), 0 0 0 2px oklch(47% 0.112 174 / 0.28);
+  --shadow-floating: 0 18px 50px oklch(32% 0.04 185 / 0.13);
+  --shadow-popover: 0 18px 50px oklch(32% 0.04 185 / 0.13);
   --color-button-primary: var(--color-goal);
-  --color-button-primary-hover: oklch(27.5% 0.008 255);
+  --color-button-primary-hover: oklch(22% 0.024 238);
   --color-button-primary-text: var(--color-text-inverted);
   --color-text-on-accent: var(--color-text-primary);
   --color-scrollbar-thumb: var(--color-border-mid);
-  --color-scrollbar-thumb-hover: oklch(70.5% 0.013 100);
+  --color-scrollbar-thumb-hover: var(--color-border-accent);
 }
 
 :root[data-theme="paper"] {
@@ -114,7 +114,7 @@
   --color-button-primary: var(--color-goal);
   --color-button-primary-hover: oklch(29.6% 0.044 125);
   --color-button-primary-text: var(--color-text-inverted);
-  --color-text-on-accent: var(--color-text-primary);
+  --color-text-on-accent: oklch(17.5% 0.02 236);
   --color-scrollbar-thumb: var(--color-border-mid);
   --color-scrollbar-thumb-hover: oklch(65.4% 0.032 92);
 }
@@ -166,7 +166,7 @@
   --color-button-primary: var(--color-goal);
   --color-button-primary-hover: oklch(29.2% 0.050 255);
   --color-button-primary-text: var(--color-text-inverted);
-  --color-text-on-accent: var(--color-text-primary);
+  --color-text-on-accent: oklch(17.5% 0.02 236);
   --color-scrollbar-thumb: var(--color-border-mid);
   --color-scrollbar-thumb-hover: oklch(64.8% 0.048 242);
 }
@@ -218,7 +218,7 @@
   --color-button-primary: var(--color-goal);
   --color-button-primary-hover: oklch(28.4% 0.044 155);
   --color-button-primary-text: var(--color-text-inverted);
-  --color-text-on-accent: var(--color-text-primary);
+  --color-text-on-accent: oklch(17.5% 0.02 236);
   --color-scrollbar-thumb: var(--color-border-mid);
   --color-scrollbar-thumb-hover: oklch(63.8% 0.052 132);
 }

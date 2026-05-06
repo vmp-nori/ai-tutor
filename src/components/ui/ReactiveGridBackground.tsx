@@ -68,8 +68,8 @@ export function ReactiveGridBackground({ className = "" }: ReactiveGridBackgroun
       if (s.radiusFactor < 0.002) return;
 
       const dark = isDarkTheme();
-      const lineColor = dark ? "235, 242, 255" : "20, 24, 36";
-      const alpha = dark ? 0.20 : 0.14;
+      const lineColor = dark ? "206, 232, 226" : "64, 115, 105";
+      const alpha = dark ? 0.18 : 0.16;
 
       context.lineWidth = 0.5;
       context.strokeStyle = `rgba(${lineColor}, ${alpha})`;

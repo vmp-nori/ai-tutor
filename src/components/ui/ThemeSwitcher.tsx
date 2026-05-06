@@ -28,7 +28,7 @@ interface ThemeOption {
 const STORAGE_KEY = "pathwise-theme";
 const THEME_EVENT = "pathwise-theme-change";
 const DEFAULT_THEME_BY_MODE: Record<ThemeMode, Theme> = {
-  light: "paper",
+  light: "light",
   dark: "dark",
 };
 
@@ -36,9 +36,9 @@ const THEMES: ThemeOption[] = [
   {
     id: "light",
     mode: "light",
-    name: "Classic",
-    tone: "Bright white",
-    swatches: ["oklch(98.8% 0.004 100)", "oklch(99.4% 0.003 100)", "oklch(90.6% 0.008 100)", "oklch(78.4% 0.097 249)"],
+    name: "Pathwise",
+    tone: "Drafting paper",
+    swatches: ["oklch(96.8% 0.014 168)", "oklch(98.8% 0.009 168)", "oklch(82% 0.035 184)", "oklch(67% 0.145 164)"],
   },
   {
     id: "mist",
@@ -197,8 +197,8 @@ export function ThemeSwitcher() {
         title="Settings"
         onClick={() => setOpen((value) => !value)}
         style={{
-          width: 30,
-          height: 30,
+          width: 34,
+          height: 34,
           border: "1px solid var(--color-border)",
           borderRadius: 6,
           background: open ? "var(--color-accent-subtle)" : "var(--color-node)",

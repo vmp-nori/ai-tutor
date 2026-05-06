@@ -40,13 +40,13 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
       style={{
         position: "fixed",
         inset: "0 0 auto 0",
-        height: 48,
+        height: 58,
         background: "var(--color-chrome)",
         borderBottom: "1px solid var(--color-border)",
         display: "flex",
         alignItems: "center",
-        padding: "0 24px",
-        gap: 16,
+        padding: "0 28px",
+        gap: 18,
         zIndex: 200,
       }}
     >
@@ -65,8 +65,8 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           <div style={{ width: 8, height: 8, background: "var(--color-text-inverted)", borderRadius: "50%" }} />
         </div>
         <span style={{
-          fontSize: 14.5,
-          fontWeight: 700,
+          fontSize: 18,
+          fontWeight: 800,
           color: "var(--color-text-primary)",
           letterSpacing: 0,
         }}>
@@ -81,7 +81,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           type="button"
           onClick={onNewPath}
           style={{
-            height: 30,
+            height: 34,
             border: "1px solid var(--color-border)",
             borderRadius: 6,
             background: "var(--color-node)",
@@ -90,9 +90,9 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
             display: "inline-flex",
             alignItems: "center",
             gap: 5,
-            padding: "0 11px",
-            fontSize: 12,
-            fontWeight: 600,
+            padding: "0 13px",
+            fontSize: 13,
+            fontWeight: 700,
             whiteSpace: "nowrap",
             flexShrink: 0,
           }}
@@ -103,7 +103,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
         <a
           href="/generate"
           style={{
-            height: 30,
+            height: 34,
             border: "1px solid var(--color-border)",
             borderRadius: 6,
             background: "var(--color-node)",
@@ -112,9 +112,9 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
             display: "inline-flex",
             alignItems: "center",
             gap: 5,
-            padding: "0 11px",
-            fontSize: 12,
-            fontWeight: 600,
+            padding: "0 13px",
+            fontSize: 13,
+            fontWeight: 700,
             whiteSpace: "nowrap",
             textDecoration: "none",
             flexShrink: 0,
@@ -154,7 +154,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
               <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
               <a href={path.href ?? `/dashboard?treeId=${encodeURIComponent(path.id)}`} style={{
                 fontSize: 13,
-                fontWeight: 500,
+                fontWeight: 650,
                 color: "var(--color-text-secondary)",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -201,7 +201,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
             <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
             <span style={{
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 650,
               color: "var(--color-text-secondary)",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -217,22 +217,22 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
         {showProgress && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontVariantNumeric: "tabular-nums" }}>
-              <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>{completedCount}</span>
+              <span style={{ color: "var(--color-text-primary)", fontWeight: 750 }}>{completedCount}</span>
               {" of "}{totalCount} complete
             </span>
             <div style={{
-              width: 90,
+              width: 96,
               height: 4,
-              background: "var(--color-border)",
-              borderRadius: 999,
+              background: "color-mix(in srgb, var(--color-border) 70%, var(--color-panel))",
+              borderRadius: 4,
               overflow: "hidden",
             }}>
               <div style={{
                 width: `${Math.max(2, pct * 100)}%`,
                 height: "100%",
                 background: "var(--color-accent)",
-                borderRadius: 999,
-                transition: "width 400ms ease",
+                borderRadius: 4,
+                transition: "width 400ms cubic-bezier(0.16, 1, 0.3, 1)",
               }} />
             </div>
           </div>
@@ -243,7 +243,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
             type="button"
             onClick={onOpenJsonInput}
             style={{
-              height: 30,
+              height: 34,
               border: "1px solid var(--color-border)",
               borderRadius: 6,
               background: "var(--color-node)",
@@ -252,9 +252,9 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
               display: "inline-flex",
               alignItems: "center",
               gap: 5,
-              padding: "0 11px",
-              fontSize: 12,
-              fontWeight: 600,
+              padding: "0 13px",
+              fontSize: 13,
+              fontWeight: 700,
               whiteSpace: "nowrap",
             }}
           >
@@ -266,27 +266,27 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           </button>
         )}
 
-        {/* User avatar — dark circle */}
+        <ThemeSwitcher />
+
+        {/* Account action */}
           <button
           type="button"
           onClick={handleSignOut}
           style={{
-            height: 30,
+            height: 34,
             border: "none",
-            borderRadius: 6,
+            borderRadius: 8,
             background: "var(--color-button-primary)",
             color: "var(--color-button-primary-text)",
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: 700,
-            padding: "0 11px",
+            padding: "0 13px",
             cursor: "pointer",
             whiteSpace: "nowrap",
           }}
         >
           Sign out
         </button>
-
-        <ThemeSwitcher />
       </div>
     </header>
   );
