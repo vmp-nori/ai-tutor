@@ -7,6 +7,7 @@ import { BarChart } from "./BarChart";
 import { LineChart } from "./LineChart";
 import { StepSequence } from "./StepSequence";
 import { ComparisonTable } from "./ComparisonTable";
+import { ParameterizedSim } from "./ParameterizedSim";
 
 interface Props {
   diagram: LessonDiagram;
@@ -20,6 +21,7 @@ function DiagramBody({ diagram }: Props) {
     case "line_chart":       return <LineChart spec={diagram.spec} />;
     case "step_sequence":    return <StepSequence spec={diagram.spec} />;
     case "comparison_table": return <ComparisonTable spec={diagram.spec} />;
+    case "parameterized_sim": return <ParameterizedSim spec={diagram.spec} />;
   }
 }
 
