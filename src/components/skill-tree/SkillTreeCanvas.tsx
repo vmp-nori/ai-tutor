@@ -11,6 +11,8 @@ import { MiniMap } from "@/components/ui/MiniMap";
 import { ReactiveGridBackground } from "@/components/ui/ReactiveGridBackground";
 import { TopBar, type LearningPathNavItem } from "@/components/ui/TopBar";
 
+type LessonPromptCategory = "math_and_logic" | "systems_and_economics" | "technical_and_code";
+
 const CANVAS_W = 3000;
 const CANVAS_H = 820;
 const TOPBAR_H = 58;
@@ -87,6 +89,12 @@ function normalizeTeachingPlan(value: unknown): TeachingPlan | undefined {
   };
 }
 
+function lessonPromptCategory(value: unknown): LessonPromptCategory {
+  return value === "math_and_logic" || value === "systems_and_economics" || value === "technical_and_code"
+    ? value
+    : "technical_and_code";
+}
+
 function teachingPlanToSchema(plan: TeachingPlan | undefined) {
   if (!plan) return undefined;
 
@@ -147,6 +155,7 @@ function graphToSchema(graph: GraphState) {
       id: node.id,
       name: node.name,
       description: node.description,
+      category: node.category ?? "technical_and_code",
       teaching_brief: node.teachingBrief ?? "",
       teaching: teachingPlanToSchema(node.teachingPlan),
       difficulty_level: node.difficultyLevel ?? 1,
@@ -176,6 +185,7 @@ function graphFromSchema(value: unknown, schemaTreeId?: string): GraphState {
       id,
       name,
       description,
+      category: lessonPromptCategory(node.category),
       difficultyLevel: toNumber(node.difficulty_level, toNumber(node.difficultyLevel, 1)),
       isCheckpoint: typeof node.is_checkpoint === "boolean" ? node.is_checkpoint : node.isCheckpoint === true,
       zone: toString(node.zone, "Core"),
@@ -206,6 +216,7 @@ function graphFromSchema(value: unknown, schemaTreeId?: string): GraphState {
     treeId,
     name: node.name,
     description: node.description,
+    category: node.category,
     status: normalizeStatus(node.status, hasAnyStatus, index),
     x: xByColumn.get(node.coordX) ?? 96 + index * IMPORT_COLUMN_GAP,
     y: Math.max(112, Math.min(600, Math.round(356 - node.coordY * 8))),

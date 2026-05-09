@@ -43,11 +43,19 @@ const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/
 const DEFAULT_REGION = "us-east-1";
 const MAX_ID_LENGTH = 180;
 
-const PROMPT_PATHS: Record<string, string> = {
+type LessonPromptCategory = "math_and_logic" | "systems_and_economics" | "technical_and_code";
+
+const PROMPT_PATHS: Record<LessonPromptCategory, string> = {
   math_and_logic: join(process.cwd(), "prompts", "math_and_logic.txt"),
   systems_and_economics: join(process.cwd(), "prompts", "systems_and_economics.txt"),
   technical_and_code: join(process.cwd(), "prompts", "technical_and_code.txt"),
 };
+
+function lessonPromptCategory(value: unknown): LessonPromptCategory {
+  return value === "math_and_logic" || value === "systems_and_economics" || value === "technical_and_code"
+    ? value
+    : "technical_and_code";
+}
 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -223,13 +231,18 @@ function normalizeLesson(value: unknown, node: StoredNode): GeneratedLesson {
   }
 
   const sections = Array.isArray(value.sections)
-    ? value.sections.map((item, index) => lessonSection(item, `Part ${index + 1}`)).filter((item) => item.body)
+    ? value.sections.map((item, index) => lessonSection(item, `Part ${index + 1}`)).filter((item) => item.body).slice(0, 3)
     : [];
 
   const rawDiagrams = Array.isArray(value.diagrams)
     ? value.diagrams
     : value.diagram != null ? [value.diagram] : [];
-  const diagrams = rawDiagrams.map(lessonDiagram).filter((d): d is LessonDiagram => d !== undefined);
+  const sectionCount = sections.length > 0 ? sections.length : 1;
+  const diagrams = rawDiagrams
+    .map(lessonDiagram)
+    .filter((d): d is LessonDiagram => d !== undefined)
+    .filter((diagram) => diagram.sectionIndex === undefined || diagram.sectionIndex < sectionCount)
+    .slice(0, 3);
 
   return {
     title: trimString(value.title, 180) || node.name,
@@ -237,7 +250,7 @@ function normalizeLesson(value: unknown, node: StoredNode): GeneratedLesson {
       ? sections
       : [{ heading: node.name, body: node.description }],
     workedExample: lessonSection(value.worked_example ?? value.workedExample, "Worked example"),
-    misconceptions: stringArray(value.misconceptions, 4, 320),
+    misconceptions: stringArray(value.misconceptions, 2, 320),
     tryThis: trimString(value.try_this ?? value.tryThis, 800),
     ...(diagrams.length > 0 ? { diagrams } : {}),
   };
@@ -247,8 +260,12 @@ function isMissingNodeMetadataError(message: string) {
   return (
     message.includes("Could not find the 'teaching_brief' column of 'skill_nodes'") ||
     message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'category' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'generated_lesson' column of 'skill_nodes'") ||
     message.includes("column skill_nodes.teaching_brief does not exist") ||
-    message.includes("column skill_nodes.teaching_plan does not exist")
+    message.includes("column skill_nodes.teaching_plan does not exist") ||
+    message.includes("column skill_nodes.category does not exist") ||
+    message.includes("column skill_nodes.generated_lesson does not exist")
   );
 }
 
@@ -355,6 +372,8 @@ export async function POST(req: NextRequest) {
 
     const storedNode = node as StoredNode;
 
+    const category = lessonPromptCategory(storedNode.category);
+
     if (isRecord(storedNode.generated_lesson)) {
       try {
         const cached = normalizeLesson(storedNode.generated_lesson, storedNode);
@@ -383,8 +402,7 @@ export async function POST(req: NextRequest) {
           .in("id", prerequisiteIds)
       : { data: [] };
 
-    const category = typeof storedNode.category === "string" ? storedNode.category : "technical_and_code";
-    const promptPath = PROMPT_PATHS[category] ?? PROMPT_PATHS.technical_and_code;
+    const promptPath = PROMPT_PATHS[category];
     const systemPrompt = (await readFile(promptPath, "utf8")).trim();
     const teachingPlan = normalizeTeachingPlan(storedNode.teaching_plan, storedNode);
     const bedrockResponse = await getBedrockClient().send(
@@ -403,7 +421,7 @@ export async function POST(req: NextRequest) {
 
     await supabase
       .from("skill_nodes")
-      .update({ generated_lesson: parsed })
+      .update({ generated_lesson: lesson })
       .eq("id", storedNode.id);
 
     return NextResponse.json(lesson, {

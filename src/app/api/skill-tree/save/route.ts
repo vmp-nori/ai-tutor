@@ -6,6 +6,7 @@ interface GeneratedNode {
   id?: unknown;
   name?: unknown;
   description?: unknown;
+  category?: unknown;
   teaching_brief?: unknown;
   teaching?: unknown;
   difficulty_level?: unknown;
@@ -21,12 +22,20 @@ interface SaveRequest {
 }
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type LessonPromptCategory = "math_and_logic" | "systems_and_economics" | "technical_and_code";
+
+const LESSON_PROMPT_CATEGORIES = new Set<LessonPromptCategory>([
+  "math_and_logic",
+  "systems_and_economics",
+  "technical_and_code",
+]);
 
 interface NodeInsert {
   id: string;
   tree_id: string;
   name: string;
   description: string;
+  category: LessonPromptCategory;
   teaching_brief: string;
   teaching_plan: TeachingPlan | null;
   difficulty_level: number;
@@ -98,6 +107,10 @@ function prerequisiteIds(value: unknown) {
     : [];
 }
 
+function isLessonPromptCategory(value: unknown): value is LessonPromptCategory {
+  return typeof value === "string" && LESSON_PROMPT_CATEGORIES.has(value as LessonPromptCategory);
+}
+
 function cleanStringArray(value: unknown, maxItems: number, maxLength: number) {
   if (!Array.isArray(value)) return [];
   return value
@@ -162,6 +175,7 @@ function isMissingSkillNodesMetadataError(message: string) {
     "Could not find the 'zone_color' column of 'skill_nodes'",
     "Could not find the 'teaching_brief' column of 'skill_nodes'",
     "Could not find the 'teaching_plan' column of 'skill_nodes'",
+    "Could not find the 'category' column of 'skill_nodes'",
     "Could not find the 'position_z' column of 'skill_nodes'",
     "column skill_nodes.difficulty_level does not exist",
     "column skill_nodes.is_checkpoint does not exist",
@@ -169,6 +183,7 @@ function isMissingSkillNodesMetadataError(message: string) {
     "column skill_nodes.zone_color does not exist",
     "column skill_nodes.teaching_brief does not exist",
     "column skill_nodes.teaching_plan does not exist",
+    "column skill_nodes.category does not exist",
     "column skill_nodes.position_z does not exist",
   ];
 
@@ -354,17 +369,28 @@ export async function POST(req: NextRequest) {
   const subject = cleanString(parsed.subject, "Generated Learning Path", 140);
   const goal = cleanString(parsed.goal, subject, 1000);
   const rawNodes = parsed.nodes as GeneratedNode[];
+  const invalidCategoryIndex = rawNodes.findIndex((node) => !isRecord(node) || !isLessonPromptCategory(node.category));
+  if (invalidCategoryIndex >= 0) {
+    return NextResponse.json(
+      {
+        error: `node ${invalidCategoryIndex + 1} must include category as one of: math_and_logic, systems_and_economics, technical_and_code`,
+      },
+      { status: 400 },
+    );
+  }
+  const generatedNodes = rawNodes as Array<GeneratedNode & { category: LessonPromptCategory }>;
+
   const nodeIdMap = new Map<string, string>();
   const localIds: string[] = [];
   const seenLocalIds = new Set<string>();
 
-  rawNodes.forEach((node, index) => {
+  generatedNodes.forEach((node, index) => {
     const localId = uniqueLocalId(node.id, `node_${index + 1}`, seenLocalIds);
     localIds.push(localId);
     nodeIdMap.set(localId, `${treeId}_${localId}`);
   });
 
-  const nodeInserts: NodeInsert[] = rawNodes.map((node, index) => {
+  const nodeInserts: NodeInsert[] = generatedNodes.map((node, index) => {
     const localId = localIds[index];
     const description = cleanString(node.description, "", 1200);
     const teachingBrief = teachingBriefFromPlan(
@@ -376,6 +402,7 @@ export async function POST(req: NextRequest) {
       tree_id: treeId,
       name: cleanString(node.name, localId, 180),
       description,
+      category: node.category,
       teaching_brief: teachingBrief,
       teaching_plan: cleanTeachingPlan(node.teaching, teachingBrief, description),
       difficulty_level: Math.max(1, Math.min(10, integer(node.difficulty_level, 1))),
@@ -388,7 +415,7 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  const edgeInserts: EdgeInsert[] = rawNodes.flatMap((node, index) => {
+  const edgeInserts: EdgeInsert[] = generatedNodes.flatMap((node, index) => {
     const toLocalId = localIds[index];
     const toNodeId = nodeIdMap.get(toLocalId);
     if (!toNodeId) return [];

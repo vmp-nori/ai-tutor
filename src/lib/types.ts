@@ -13,6 +13,7 @@ export interface SkillNode {
   treeId: string;
   name: string;
   description: string;
+  category?: "math_and_logic" | "systems_and_economics" | "technical_and_code";
   status: NodeStatus;
   x: number;
   y: number;

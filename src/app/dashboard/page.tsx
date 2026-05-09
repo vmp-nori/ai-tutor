@@ -302,6 +302,7 @@ interface StoredNode {
   tree_id: string;
   name: string;
   description: string;
+  category?: "math_and_logic" | "systems_and_economics" | "technical_and_code" | null;
   teaching_brief?: string | null;
   teaching_plan?: unknown;
   position_x: number;
@@ -331,12 +332,14 @@ function isMissingSkillNodesMetadataError(message: string) {
     message.includes("Could not find the 'zone_color' column of 'skill_nodes'") ||
     message.includes("Could not find the 'teaching_brief' column of 'skill_nodes'") ||
     message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'category' column of 'skill_nodes'") ||
     message.includes("column skill_nodes.difficulty_level does not exist") ||
     message.includes("column skill_nodes.is_checkpoint does not exist") ||
     message.includes("column skill_nodes.zone does not exist") ||
     message.includes("column skill_nodes.zone_color does not exist") ||
     message.includes("column skill_nodes.teaching_brief does not exist") ||
-    message.includes("column skill_nodes.teaching_plan does not exist")
+    message.includes("column skill_nodes.teaching_plan does not exist") ||
+    message.includes("column skill_nodes.category does not exist")
   );
 }
 
@@ -389,7 +392,7 @@ async function fetchStoredNodes(
 ) {
   const richResult = await supabase
     .from("skill_nodes")
-    .select("id, tree_id, name, description, teaching_brief, teaching_plan, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+    .select("id, tree_id, name, description, category, teaching_brief, teaching_plan, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
     .eq("tree_id", treeId)
     .order("position_x", { ascending: true });
 
@@ -400,7 +403,7 @@ async function fetchStoredNodes(
   if (isMissingTeachingPlanError(richResult.error.message)) {
     const legacyTeachingResult = await supabase
       .from("skill_nodes")
-      .select("id, tree_id, name, description, teaching_brief, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+      .select("id, tree_id, name, description, category, teaching_brief, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
       .eq("tree_id", treeId)
       .order("position_x", { ascending: true });
 
@@ -437,6 +440,7 @@ function buildSchemaJson(
     id: strip(node.id),
     name: node.name,
     description: node.description,
+    category: node.category ?? "technical_and_code",
     teaching_brief: node.teaching_brief ?? "",
     teaching: node.teaching_plan ?? null,
     difficulty_level: node.difficulty_level ?? 1,
@@ -470,6 +474,7 @@ function buildStoredGraph(
     treeId: tree.id,
     name: node.name,
     description: node.description,
+    category: node.category ?? "technical_and_code",
     status: statusByNodeId.get(node.id) ?? (index === 0 ? "current" : "available"),
     x: xByCoordinate.get(node.position_x) ?? X_START + index * X_GAP,
     y: Y_BASE - node.position_y * 8,

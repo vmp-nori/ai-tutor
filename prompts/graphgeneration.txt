@@ -24,19 +24,20 @@ Return ONLY valid, raw JSON matching the exact schema below. Do not include mark
 - Each node should be a singular skill needed to achieve the final goal.
 
 ## ZONE AND LAYOUT RULES
-- Zones are sequential chapters. Each zone should represent a meaningful phase/overarching concept in the learning path that contains the indivudal skills needed.
+- Zones are sequential chapters. Each zone should represent a meaningful phase or overarching concept in the learning path that contains the individual skills needed.
 - Assign zone colors from this palette in order: #3B82F6, #10B981, #8B5CF6, #EC4899, #EF4444, #F59E0B.
 - Every node in the same zone must use the same zone_color.
 - No two zones should share the same zone_color.
 - coordinates.x must increase by about 15 for each learning layer.
 - coordinates.y should usually be 0. Use a small offset only if it improves graph readability.
 
-## CATEGORY RULES
-- Every node must include a `category` field.
-- Assign exactly one of these three values based on the concept's domain:
-  - `math_and_logic` — mathematics, statistics, logic, algorithms, proofs, formal reasoning
-  - `systems_and_economics` — systems thinking, economics, game theory, feedback loops, incentives, organisations
-  - `technical_and_code` — software engineering, coding, architecture, infrastructure, tooling, applied computer science
+## LESSON PROMPT TAG RULES
+- Every node must include a `category` field. This is the lesson prompt tag used later to choose the teaching system prompt.
+- The value must be exactly one of these three prompt tags:
+  - `math_and_logic` — use for mathematics, statistics, logic, algorithms, proofs, formal reasoning
+  - `systems_and_economics` — use for systems thinking, economics, game theory, feedback loops, incentives, organisations
+  - `technical_and_code` — use for software engineering, coding, architecture, infrastructure, tooling, applied computer science
+- Choose the tag that would produce the most relevant lesson style for that node, not just the broad subject of the whole path.
 - When in doubt, use `technical_and_code`.
 
 ## TEACHING PLAN RULES
