@@ -38,7 +38,7 @@ function buildUserPrompt(goal: string, subject: string) {
   return `${subjectLine}
 End goal: ${goal}
 
-Return a complete Pathwise skill tree JSON object for this end goal.`;
+Return a complete pathwise skill tree JSON object for this end goal.`;
 }
 
 async function readSystemPrompt() {

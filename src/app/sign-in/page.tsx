@@ -110,8 +110,9 @@ export default function SignInPage() {
 function AuthLogo() {
   return (
     <Link href="/" style={logoStyle}>
-      <span style={markStyle}><span style={dotStyle} /></span>
-      <span>Pathwise</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-mark.svg" alt="" aria-hidden="true" width={24} height={24} style={{ borderRadius: 6, flexShrink: 0, display: "block" }} />
+      <span>pathwise</span>
     </Link>
   );
 }
@@ -134,25 +135,10 @@ const logoStyle: React.CSSProperties = {
   textDecoration: "none",
   color: "var(--color-text-primary)",
   fontSize: 14.5,
-  fontWeight: 700,
+  fontFamily: "var(--font-display), 'Bricolage Grotesque', sans-serif",
+  fontWeight: 800,
 };
 
-const markStyle: React.CSSProperties = {
-  width: 22,
-  height: 22,
-  borderRadius: 6,
-  background: "var(--color-goal)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const dotStyle: React.CSSProperties = {
-  width: 8,
-  height: 8,
-  background: "var(--color-text-inverted)",
-  borderRadius: "50%",
-};
 
 const panelStyle: React.CSSProperties = {
   width: "100%",

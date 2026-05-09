@@ -36,7 +36,7 @@ const THEMES: ThemeOption[] = [
   {
     id: "light",
     mode: "light",
-    name: "Pathwise",
+    name: "pathwise",
     tone: "Drafting paper",
     swatches: ["oklch(96.8% 0.014 168)", "oklch(98.8% 0.009 168)", "oklch(82% 0.035 184)", "oklch(67% 0.145 164)"],
   },

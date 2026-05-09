@@ -160,22 +160,10 @@ export function LessonPageClient({
           }}
         >
           <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
-            <span
-              aria-hidden="true"
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                background: "var(--color-goal)",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <span style={{ width: 8, height: 8, background: "var(--color-text-inverted)", borderRadius: "50%" }} />
-            </span>
-            <span style={{ fontSize: 14.5, fontWeight: 750, color: "var(--color-text-primary)", letterSpacing: 0 }}>
-              Pathwise
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-mark.svg" alt="" aria-hidden="true" width={24} height={24} style={{ borderRadius: 6, flexShrink: 0, display: "block" }} />
+            <span style={{ fontFamily: "var(--font-display), 'Bricolage Grotesque', sans-serif", fontSize: 14.5, fontWeight: 800, color: "var(--color-text-primary)", letterSpacing: "-0.02em" }}>
+              pathwise
             </span>
           </a>
 

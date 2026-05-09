@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pathwise — Learn anything, one concept at a time",
+  title: "pathwise — Learn anything, one concept at a time",
   description:
     "AI-generated skill trees for any subject. Follow a clear, atomic path from foundational primitives to your goal.",
   icons: {

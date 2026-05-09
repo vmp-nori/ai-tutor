@@ -495,7 +495,7 @@ export default function LandingPage() {
     <>
       <style>{`
         .lp-root {
-          /* Brand hex tokens — matches Pathwise Design System v1.0 */
+          /* Brand hex tokens — matches pathwise Design System v1.0 */
           --lp-paper:      #E8F5EE;
           --lp-paper-deep: #D4E8DD;
           --lp-ink:        #0F1411;
@@ -555,6 +555,7 @@ export default function LandingPage() {
         }
 
         .lp-wordmark {
+          font-family: var(--font-display), 'Bricolage Grotesque', sans-serif;
           color: var(--lp-ink);
           font-size: 18px;
           font-weight: 800;
@@ -1809,7 +1810,7 @@ export default function LandingPage() {
           <a className="lp-wordmark" href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.svg" alt="" aria-hidden="true" width={28} height={28} style={{ borderRadius: 7, display: "block", flexShrink: 0 }} />
-            Pathwise
+            pathwise
           </a>
           <span className="lp-status-chip">Early access</span>
           <div className="lp-nav-actions">
@@ -1909,7 +1910,7 @@ export default function LandingPage() {
         <footer className="lp-footer">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.svg" alt="" aria-hidden="true" width={22} height={22} style={{ borderRadius: 5, display: "block", opacity: 0.7 }} />
-          <span>Pathwise</span>
+          <span>pathwise</span>
           <a href="mailto:norinheng86@gmail.com">Contact</a>
         </footer>
       </main>

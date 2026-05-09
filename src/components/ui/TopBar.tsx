@@ -51,7 +51,18 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
       }}
     >
       {/* Logo */}
-      <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+      <a href="/" style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        textDecoration: "none",
+        fontFamily: "var(--font-display), 'Bricolage Grotesque', sans-serif",
+        fontSize: 18,
+        fontWeight: 800,
+        lineHeight: 1,
+        color: "var(--color-text-primary)",
+        letterSpacing: "-0.02em",
+      }}>
         <img
           src="/logo-mark.svg"
           alt=""
@@ -60,14 +71,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           height={28}
           style={{ borderRadius: 7, flexShrink: 0, display: "block" }}
         />
-        <span style={{
-          fontSize: 18,
-          fontWeight: 800,
-          color: "var(--color-text-primary)",
-          letterSpacing: "-0.02em",
-        }}>
-          Pathwise
-        </span>
+        pathwise
       </a>
 
       <div style={{ width: 1, height: 18, background: "var(--color-border)", flexShrink: 0 }} />
