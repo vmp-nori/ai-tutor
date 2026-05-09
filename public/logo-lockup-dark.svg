@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 80" width="380" height="80" role="img" aria-label="Pathwise logo, dark">
+  <g transform="translate(0,8)">
+    <rect width="64" height="64" rx="14" fill="#E8F5EE"></rect>
+    <path d="M 16 44 L 32 28 L 48 36" stroke="#0F1411" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="16" cy="44" r="4" fill="#0F1411"></circle>
+    <circle cx="32" cy="28" r="4" fill="#0F1411"></circle>
+    <circle cx="48" cy="36" r="6" fill="#1F8755"></circle>
+  </g>
+  <text x="82" y="58" font-family="&#39;Bricolage Grotesque&#39;, system-ui, sans-serif" font-weight="800" font-size="52" letter-spacing="-2.2" fill="#E8F5EE">Pathwise</text>
+</svg>

@@ -2,8 +2,30 @@
 
 @theme {
   /* Font */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+  --font-sans: var(--font-display), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: var(--font-mono-brand), "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ── Pathwise Brand Tokens (hex, color-scheme-agnostic) ── */
+:root {
+  --brand-ink:        #0F1411;
+  --brand-ink-soft:   #1F2A23;
+  --brand-ink-mid:    #3D4A42;
+  --brand-ink-dim:    #5C7066;
+  --brand-ink-faint:  #94A89E;
+  --brand-paper:      #FBFEFC;
+  --brand-sage-50:    #EEF7F1;
+  --brand-sage-100:   #E8F5EE;
+  --brand-sage-200:   #D4E8DD;
+  --brand-sage-300:   #B8D6C4;
+  --brand-sage-600:   #1F8755;
+  --brand-sage-700:   #176544;
+  --brand-sage-900:   #0F2419;
+  --brand-mint:       #5EE2A8;
+  --brand-clay:       #C44536;
+  --brand-clay-soft:  #E8C4BD;
+  --brand-line:       #DCE8E0;
+  --brand-line-strong:#B8C9BE;
 }
 
 :root {

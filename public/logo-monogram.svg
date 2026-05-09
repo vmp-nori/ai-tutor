@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Pathwise monogram">
+  <rect width="64" height="64" rx="14" fill="#0F1411"></rect>
+  <text x="32" y="46" text-anchor="middle" font-family="&#39;Bricolage Grotesque&#39;, system-ui, sans-serif" font-weight="800" font-size="44" letter-spacing="-2" fill="#E8F5EE">P</text>
+  <circle cx="44" cy="46" r="3" fill="#5EE2A8"></circle>
+</svg>

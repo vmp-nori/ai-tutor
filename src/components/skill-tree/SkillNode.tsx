@@ -122,45 +122,65 @@ export function SkillNode({
         </>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+            {/* Status pill badge */}
             <span style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: dotColor,
-              flexShrink: 0,
-            }} />
-            <span style={{
-              fontSize: 9.5,
-              fontWeight: 800,
-              letterSpacing: "0.10em",
-              textTransform: "uppercase" as const,
-              color: isCurrent ? "var(--color-text-accent)" : isDone ? "var(--color-success)" : "var(--color-text-muted)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "2px 7px",
+              borderRadius: 999,
+              fontSize: 10.5,
+              fontWeight: 600,
+              letterSpacing: "-0.005em",
+              border: "1px solid transparent",
+              background: isCurrent
+                ? "rgba(31,135,85,0.10)"
+                : isDone
+                ? "rgba(15,20,17,0.06)"
+                : node.status === "available"
+                ? "transparent"
+                : "transparent",
+              color: isCurrent
+                ? "var(--brand-sage-700, #176544)"
+                : isDone
+                ? "var(--color-text-primary)"
+                : node.status === "locked"
+                ? "var(--color-text-muted)"
+                : "var(--color-text-muted)",
+              borderColor: node.status === "locked" ? "var(--color-border)" : "transparent",
             }}>
+              <span style={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: dotColor,
+                flexShrink: 0,
+              }} />
               {STATUS_LABELS[node.status]}
             </span>
             {node.isCheckpoint && (
               <span style={{
-                fontSize: 9,
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                color: "var(--color-text-primary)",
-                border: "1px solid color-mix(in srgb, var(--color-warning-soft) 70%, var(--color-border))",
-                background: "var(--color-warning-soft)",
-                borderRadius: 3,
-                padding: "1px 5px",
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                color: "var(--brand-clay, #C44536)",
+                background: "rgba(196,69,54,0.10)",
+                borderRadius: 999,
+                padding: "2px 7px",
                 textTransform: "uppercase" as const,
               }}>
-                Checkpoint
+                Check
               </span>
             )}
             <span style={{ flex: 1 }} />
             {typeof node.difficultyLevel === "number" && (
               <span style={{
-                fontSize: 10.5,
+                fontSize: 10,
                 color: "var(--color-text-muted)",
                 fontVariantNumeric: "tabular-nums",
-                fontWeight: 650,
+                fontWeight: 500,
+                fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
               }}>
                 L{node.difficultyLevel}
               </span>

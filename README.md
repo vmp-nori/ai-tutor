@@ -57,7 +57,7 @@ Finishing a lesson unlocks the next. Your progress is saved. The path is always 
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 16 (App Router), React 19, TypeScript |
-| Styling | Tailwind CSS v4, OKLCH design tokens |
+| Styling | Tailwind CSS v4, OKLCH design tokens, Bricolage Grotesque + JetBrains Mono |
 | Auth + Database | Supabase (PostgreSQL, Row Level Security) |
 | AI | AWS Bedrock: Claude Opus 4.7 (graph), Claude Sonnet 4.6 (lessons) |
 | Deployment | Vercel |
@@ -102,13 +102,30 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## API Routes
+
+<!-- AUTO-GENERATED from src/app/api/**/route.ts -->
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/skill-tree/generate` | Optional | Streams a skill-tree JSON from Bedrock (Claude Opus 4.7). Accepts `{ goal, subject }`. Returns a streaming plain-text response. |
+| `POST` | `/api/skill-tree/save` | Required | Validates and persists a generated tree schema via the `create_skill_tree_with_graph` Postgres RPC. |
+| `DELETE` | `/api/skill-tree/[treeId]` | Required | Deletes the user's skill tree by ID. |
+| `POST` | `/api/lessons/generate` | Required | Returns a cached lesson or generates a new one via Bedrock (Claude Sonnet 4.6). Accepts `{ treeId, nodeId }`. Writes lesson back to `skill_nodes.generated_lesson`. |
+| `POST` | `/api/progress/complete` | Required | Marks a node complete and advances progress to the next node. Accepts `{ treeId, nodeId }`. |
+| `POST` | `/api/waitlist` | None | Records a waitlist signup. Accepts `{ email }`. |
+
+<!-- END AUTO-GENERATED -->
+
+---
+
 ## Design
 
 Pathwise is built around a single conviction: the interface should disappear. The graph is the product. The lesson is a reading experience. Every element earns its place.
 
-The visual system uses a restrained mineral palette (near-zero chroma neutrals, one periwinkle-slate accent), Inter at high weights for structural hierarchy, and a flat-by-default elevation model. Full light and dark mode.
+The visual system uses a restrained sage-and-ink palette (OKLCH design tokens, 12 light/dark theme variants), Bricolage Grotesque at heavy weights for structural hierarchy, JetBrains Mono for metadata and code, and a flat-by-default elevation model. Full light and dark mode. Brand assets (logo, favicon, app-icon) live in `/public/` as SVGs.
 
-See [`DESIGN.md`](DESIGN.md) for the complete design system and [`PRODUCT.md`](PRODUCT.md) for brand principles.
+See [`DESIGN.md`](DESIGN.md) for the complete design system (including brand identity §7) and [`PRODUCT.md`](PRODUCT.md) for brand principles.
 
 ---
 

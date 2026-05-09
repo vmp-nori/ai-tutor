@@ -52,23 +52,19 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
     >
       {/* Logo */}
       <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-        <div style={{
-          width: 22,
-          height: 22,
-          borderRadius: 6,
-          background: "var(--color-goal)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <div style={{ width: 8, height: 8, background: "var(--color-text-inverted)", borderRadius: "50%" }} />
-        </div>
+        <img
+          src="/logo-mark.svg"
+          alt=""
+          aria-hidden="true"
+          width={28}
+          height={28}
+          style={{ borderRadius: 7, flexShrink: 0, display: "block" }}
+        />
         <span style={{
           fontSize: 18,
           fontWeight: 800,
           color: "var(--color-text-primary)",
-          letterSpacing: 0,
+          letterSpacing: "-0.02em",
         }}>
           Pathwise
         </span>

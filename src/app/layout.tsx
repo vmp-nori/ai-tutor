@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["300", "400", "600", "800"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   variable: "--font-display",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono-brand",
   display: "swap",
 });
 
@@ -13,6 +20,10 @@ export const metadata: Metadata = {
   title: "Pathwise — Learn anything, one concept at a time",
   description:
     "AI-generated skill trees for any subject. Follow a clear, atomic path from foundational primitives to your goal.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/app-icon.svg",
+  },
 };
 
 const themeScript = `
@@ -50,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={bricolage.variable}>
+    <html lang="en" suppressHydrationWarning className={`${bricolage.variable} ${jetbrainsMono.variable}`}>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}

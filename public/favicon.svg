@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Pathwise favicon">
+  <rect width="32" height="32" rx="7" fill="#0F1411"></rect>
+  <path d="M 8 22 L 16 14 L 24 18" stroke="#E8F5EE" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  <circle cx="8" cy="22" r="2.4" fill="#E8F5EE"></circle>
+  <circle cx="16" cy="14" r="2.4" fill="#E8F5EE"></circle>
+  <circle cx="24" cy="18" r="3.4" fill="#5EE2A8"></circle>
+</svg>
