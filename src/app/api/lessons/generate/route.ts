@@ -49,65 +49,6 @@ const PROMPT_PATHS: Record<string, string> = {
   technical_and_code: join(process.cwd(), "prompts", "technical_and_code.txt"),
 };
 
-const lessonJsonSchema = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    title: { type: "string" },
-    sections: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          heading: { type: "string" },
-          body: { type: "string" },
-        },
-        required: ["heading", "body"],
-      },
-    },
-    worked_example: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        heading: { type: "string" },
-        body: { type: "string" },
-      },
-      required: ["heading", "body"],
-    },
-    misconceptions: {
-      type: "array",
-      items: { type: "string" },
-    },
-    try_this: { type: "string" },
-    diagrams: {
-      type: "array",
-      description: "Zero or more diagrams to render alongside the lesson. Include one per concept or section that benefits from visualization.",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          type: {
-            type: "string",
-            enum: ["function_plot", "number_line", "bar_chart", "line_chart", "step_sequence", "comparison_table"],
-          },
-          title: { type: "string" },
-          section_index: {
-            type: "integer",
-            description: "0-based index of the lesson section this diagram should appear after. Omit to place at the end.",
-          },
-          spec: {
-            type: "string",
-            description: "Valid JSON string containing the diagram spec for the chosen type.",
-          },
-        },
-        required: ["type", "title", "spec"],
-      },
-    },
-  },
-  required: ["title", "sections", "worked_example", "misconceptions", "try_this"],
-};
-
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -217,18 +158,6 @@ function buildBedrockCommand(prompt: string, systemPrompt: string) {
     inferenceConfig: {
       maxTokens: 10000,
       temperature: 0.45,
-    },
-    outputConfig: {
-      textFormat: {
-        type: "json_schema",
-        structure: {
-          jsonSchema: {
-            name: "pathwise_lesson",
-            description: "A short Pathwise lesson for one concept.",
-            schema: JSON.stringify(lessonJsonSchema),
-          },
-        },
-      },
     },
   });
 }
@@ -465,7 +394,7 @@ export async function POST(req: NextRequest) {
         teachingPlan,
         prerequisites: (prerequisites ?? []) as StoredPrerequisite[],
       }), systemPrompt),
-      { abortSignal: AbortSignal.timeout(45_000) },
+      { abortSignal: AbortSignal.timeout(120_000) },
     );
 
     const lessonText = responseText(bedrockResponse);

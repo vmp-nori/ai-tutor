@@ -78,6 +78,7 @@ export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientPro
       }
 
       nextSchema += decoder.decode();
+      nextSchema = nextSchema.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
       JSON.parse(nextSchema);
       const saveRes = await fetch("/api/skill-tree/save", {
         method: "POST",

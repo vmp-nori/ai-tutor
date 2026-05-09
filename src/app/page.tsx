@@ -558,7 +558,7 @@ export default function LandingPage() {
           color: var(--lp-ink);
           font-size: 18px;
           font-weight: 800;
-          letter-spacing: 0;
+          letter-spacing: -0.02em;
           line-height: 1;
           text-decoration: none;
         }

@@ -306,6 +306,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
   const zoomRef = useRef(zoom);
   const dragRef    = useRef<{ id: string; ox: number; oy: number } | null>(null);
   const didDragRef = useRef(false);
+  const canvasPanRef = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number } | null>(null);
+  const didCanvasPanRef = useRef(false);
   const rafRef     = useRef<number | null>(null);
 
   const nodeMap = useMemo(() => new Map(nodes.map(n => [n.id, n])), [nodes]);
@@ -606,6 +608,39 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
     document.addEventListener("pointercancel", onUp, { once: true });
   }, [edges, applyPos, refreshEdgePath, startSpring, zoom]);
 
+  const handleCanvasPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const scroll = scrollRef.current!;
+    canvasPanRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: scroll.scrollLeft,
+      scrollTop: scroll.scrollTop,
+    };
+    didCanvasPanRef.current = false;
+    scroll.style.cursor = "grabbing";
+    scroll.setPointerCapture(e.pointerId);
+
+    const onMove = (ev: PointerEvent) => {
+      if (!canvasPanRef.current) return;
+      const dx = ev.clientX - canvasPanRef.current.startX;
+      const dy = ev.clientY - canvasPanRef.current.startY;
+      scroll.scrollLeft = canvasPanRef.current.scrollLeft - dx;
+      scroll.scrollTop = canvasPanRef.current.scrollTop - dy;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didCanvasPanRef.current = true;
+    };
+
+    const onUp = () => {
+      canvasPanRef.current = null;
+      scroll.style.cursor = "";
+      document.removeEventListener("pointermove", onMove);
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+    document.addEventListener("pointercancel", onUp, { once: true });
+  }, []);
+
   const handleNodeClick = useCallback((node: SkillNodeType) => {
     if (didDragRef.current) { didDragRef.current = false; return; }
     setSelectedNode(prev => prev?.id === node.id ? null : node);
@@ -824,11 +859,13 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
 
       <div
         ref={scrollRef}
-        onClick={() => setSelectedNode(null)}
+        onClick={() => { if (!didCanvasPanRef.current) setSelectedNode(null); didCanvasPanRef.current = false; }}
+        onPointerDown={handleCanvasPointerDown}
         style={{
           position: "fixed",
           inset: `${CANVAS_TOP}px 0 0 0`,
           overflow: "auto",
+          cursor: "grab",
           background: `
             linear-gradient(90deg, color-mix(in srgb, var(--color-border) 48%, transparent) 1px, transparent 1px),
             linear-gradient(0deg, color-mix(in srgb, var(--color-border) 48%, transparent) 1px, transparent 1px),
@@ -937,7 +974,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
                   if (el) nodeEls.current.set(node.id, el);
                   else nodeEls.current.delete(node.id);
                 }}
-                onPointerDown={e => handlePointerDown(e, node.id)}
+                onPointerDown={e => { e.stopPropagation(); handlePointerDown(e, node.id); }}
                 onClick={handleNodeClick}
               />
             ))}
@@ -1027,6 +1064,7 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
   return (
     <div
       onClick={e => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()}
       style={{
         position: "absolute",
         left,

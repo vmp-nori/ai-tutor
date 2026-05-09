@@ -15,137 +15,12 @@ interface GenerateRequest {
   subject?: unknown;
 }
 
-const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/global.anthropic.claude-opus-4-7";
+const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/global.anthropic.claude-sonnet-4-6";
 const DEFAULT_REGION = "us-east-1";
 const MAX_GOAL_LENGTH = 800;
 const MAX_SUBJECT_LENGTH = 140;
 const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "graphgeneration.txt");
 
-const responseJsonSchema = {
-  type: "object",
-  description: "A compact Pathwise learning graph for one learner goal.",
-  additionalProperties: false,
-  properties: {
-    subject: {
-      type: "string",
-      description: "A concise subject label inferred from the learner's goal.",
-    },
-    goal: {
-      type: "string",
-      description: "The learner's final goal, cleaned up for readability without changing intent.",
-    },
-    nodes: {
-      type: "array",
-      description: "Atomic prerequisite concepts ordered from foundation to final goal readiness.",
-      items: {
-        type: "object",
-        description: "One teachable prerequisite concept in the learning graph.",
-        additionalProperties: false,
-        properties: {
-          id: {
-            type: "string",
-            description: "Stable lowercase snake_case concept id.",
-          },
-          name: {
-            type: "string",
-            description: "Short human-readable concept name.",
-          },
-          description: {
-            type: "string",
-            description: "One sentence explaining what the learner must understand.",
-          },
-          teaching: {
-            type: "object",
-            description: "Instructions for a later teaching agent to teach this concept in context.",
-            additionalProperties: false,
-            properties: {
-              objective: {
-                type: "string",
-                description: "The concrete capability the learner should gain from this lesson.",
-              },
-              goal_context: {
-                type: "string",
-                description: "Why this concept matters for the learner's final goal.",
-              },
-              focus_points: {
-                type: "array",
-                description: "Specific lesson priorities to cover.",
-                items: { type: "string" },
-              },
-              avoid: {
-                type: "array",
-                description: "Detours, over-advanced details, or irrelevant theories to skip.",
-                items: { type: "string" },
-              },
-              interactive_hint: {
-                type: "string",
-                description: "A useful interactive visual idea, or an empty string when none is useful.",
-              },
-            },
-            required: [
-              "objective",
-              "goal_context",
-              "focus_points",
-              "avoid",
-              "interactive_hint",
-            ],
-          },
-          difficulty_level: {
-            type: "integer",
-            description: "Relative concept difficulty from 1 to 10.",
-          },
-          zone: {
-            type: "string",
-            description: "Sequential chapter name for this concept.",
-          },
-          zone_color: {
-            type: "string",
-            description: "Hex color assigned to this node's zone.",
-          },
-          category: {
-            type: "string",
-            description: "Learning category for this concept. Must be one of: math_and_logic, systems_and_economics, technical_and_code.",
-            enum: ["math_and_logic", "systems_and_economics", "technical_and_code"],
-          },
-          prerequisite_ids: {
-            type: "array",
-            description: "Zero or one earlier node id that must be learned before this concept.",
-            items: { type: "string" },
-          },
-          coordinates: {
-            type: "object",
-            description: "Graph layout coordinates for rendering the learning path.",
-            additionalProperties: false,
-            properties: {
-              x: {
-                type: "number",
-                description: "Horizontal learning layer. Increase by about 20 each layer.",
-              },
-              y: {
-                type: "number",
-                description: "Small vertical offset for readability. Usually 0.",
-              },
-            },
-            required: ["x", "y"],
-          },
-        },
-        required: [
-          "id",
-          "name",
-          "description",
-          "teaching",
-          "difficulty_level",
-          "zone",
-          "zone_color",
-          "category",
-          "prerequisite_ids",
-          "coordinates",
-        ],
-      },
-    },
-  },
-  required: ["subject", "goal", "nodes"],
-};
 
 function isAwsServiceError(error: unknown): error is Error & {
   $metadata?: { httpStatusCode?: number };
@@ -202,20 +77,8 @@ function buildBedrockCommand(goal: string, subject: string, systemPrompt: string
       },
     ],
     inferenceConfig: {
-      maxTokens: 8192,
+      maxTokens: 16000,
       temperature: 0.35,
-    },
-    outputConfig: {
-      textFormat: {
-        type: "json_schema",
-        structure: {
-          jsonSchema: {
-            name: "pathwise_skill_tree",
-            description: "Pathwise skill tree JSON for a learner's end goal.",
-            schema: JSON.stringify(responseJsonSchema),
-          },
-        },
-      },
     },
   });
 }
@@ -269,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = await readSystemPrompt();
     const bedrockResponse = await getBedrockClient().send(buildBedrockCommand(goal, subject, systemPrompt), {
-      abortSignal: AbortSignal.timeout(45_000),
+      abortSignal: AbortSignal.timeout(120_000),
     });
 
     if (!bedrockResponse.stream) {
