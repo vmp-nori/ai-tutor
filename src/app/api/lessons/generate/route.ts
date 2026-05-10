@@ -434,6 +434,45 @@ function clampParameterizedSpec(spec: Record<string, unknown>) {
   };
 }
 
+function clampComparisonTableSpec(spec: Record<string, unknown>) {
+  const columns = Array.isArray(spec.columns) ? spec.columns.filter((c): c is string => typeof c === "string").map((c) => trimString(c, 60)).filter(Boolean) : [];
+  const rows = Array.isArray(spec.rows)
+    ? spec.rows
+        .map((item) => {
+          if (!isRecord(item)) return null;
+          const label = trimString(item.label, 100);
+          const values = Array.isArray(item.values)
+            ? item.values.filter((v): v is string => typeof v === "string").map((v) => trimString(v, 160)).slice(0, columns.length)
+            : [];
+          return label && values.length > 0 ? { label, values } : null;
+        })
+        .filter((item): item is { label: string; values: string[] } => item !== null)
+        .slice(0, 8)
+    : [];
+
+  if (columns.length < 2 || rows.length < 2) return null;
+  return { columns, rows };
+}
+
+function clampStepSequenceSpec(spec: Record<string, unknown>) {
+  const steps = Array.isArray(spec.steps)
+    ? spec.steps
+        .map((item) => {
+          if (!isRecord(item)) return null;
+          const label = trimString(item.label, 100);
+          if (!label) return null;
+          const description = trimString(item.description, 200);
+          const highlight = typeof item.highlight === "boolean" ? item.highlight : false;
+          return { label, ...(description ? { description } : {}), ...(highlight ? { highlight } : {}) };
+        })
+        .filter((item): item is { label: string; description?: string; highlight?: true } => item !== null)
+        .slice(0, 8)
+    : [];
+
+  if (steps.length < 2) return null;
+  return { steps };
+}
+
 function clampDiagram(value: unknown): LessonDiagram | undefined {
   if (!isRecord(value)) return undefined;
   const type = trimString(value.type, 40);
@@ -454,7 +493,14 @@ function clampDiagram(value: unknown): LessonDiagram | undefined {
     return undefined;
   }
 
-  const clampedSpec = type === "parameterized_sim" ? clampParameterizedSpec(spec) : spec;
+  let clampedSpec: Record<string, unknown> | null = spec;
+  if (type === "parameterized_sim") {
+    clampedSpec = clampParameterizedSpec(spec);
+  } else if (type === "comparison_table") {
+    clampedSpec = clampComparisonTableSpec(spec);
+  } else if (type === "step_sequence") {
+    clampedSpec = clampStepSequenceSpec(spec);
+  }
   if (!clampedSpec) return undefined;
 
   return {

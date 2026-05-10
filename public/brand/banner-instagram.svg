@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" width="1080" height="1080" role="img" aria-label="Pathwise — Don't know where to start? Start here.">
+  <defs>
+    <pattern id="grid-ig" width="54" height="54" patternUnits="userSpaceOnUse">
+      <path d="M54 0L0 0 0 54" fill="none" stroke="rgba(232,245,238,0.045)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="1080" fill="#0F1411"/>
+  <rect width="1080" height="1080" fill="url(#grid-ig)"/>
+
+  <!-- Decorative background graph — large, faded, centered-bottom -->
+  <!-- Edges -->
+  <line x1="200" y1="860" x2="380" y2="720" stroke="#1F2A23" stroke-width="2.5"/>
+  <line x1="380" y1="720" x2="540" y2="790" stroke="#1F2A23" stroke-width="2.5"/>
+  <line x1="540" y1="790" x2="700" y2="660" stroke="#1F2A23" stroke-width="2.5"/>
+  <line x1="700" y1="660" x2="880" y2="700" stroke="#1F2A23" stroke-width="2.5"/>
+  <!-- Faint secondary edges -->
+  <line x1="380" y1="720" x2="460" y2="870" stroke="#1A2420" stroke-width="1.5"/>
+  <line x1="700" y1="660" x2="760" y2="820" stroke="#1A2420" stroke-width="1.5"/>
+
+  <!-- Nodes — faint rings -->
+  <circle cx="200" cy="860" r="22" fill="#151D18" stroke="#1F2A23" stroke-width="2"/>
+  <circle cx="380" cy="720" r="22" fill="#151D18" stroke="#1F2A23" stroke-width="2"/>
+  <circle cx="460" cy="870" r="16" fill="#151D18" stroke="#1A2420" stroke-width="1.5"/>
+  <circle cx="540" cy="790" r="22" fill="#151D18" stroke="#1F2A23" stroke-width="2"/>
+  <circle cx="700" cy="660" r="22" fill="#151D18" stroke="#1F2A23" stroke-width="2"/>
+  <circle cx="760" cy="820" r="16" fill="#151D18" stroke="#1A2420" stroke-width="1.5"/>
+  <!-- Goal node — mint glow -->
+  <circle cx="880" cy="700" r="30" fill="rgba(94,226,168,0.08)" stroke="rgba(94,226,168,0.2)" stroke-width="1.5"/>
+  <circle cx="880" cy="700" r="20" fill="#5EE2A8" stroke="none"/>
+
+  <!-- Clay checkpoint ring on mid node -->
+  <circle cx="540" cy="790" r="32" fill="none" stroke="rgba(196,69,54,0.25)" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+  <!-- Center mark — large -->
+  <g transform="translate(412, 288) scale(4)">
+    <rect width="64" height="64" rx="14" fill="#1F2A23"/>
+    <path d="M16 44 L32 28 L48 36" stroke="#E8F5EE" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="44" r="4" fill="#E8F5EE"/>
+    <circle cx="32" cy="28" r="4" fill="#E8F5EE"/>
+    <circle cx="48" cy="36" r="6" fill="#5EE2A8"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="540" y="620"
+    text-anchor="middle"
+    font-family="'Bricolage Grotesque', system-ui, sans-serif"
+    font-weight="800"
+    font-size="88"
+    letter-spacing="-4"
+    fill="#E8F5EE">pathwise</text>
+
+  <!-- Divider -->
+  <line x1="240" y1="652" x2="840" y2="652" stroke="#1F2A23" stroke-width="1.5"/>
+
+  <!-- Tagline -->
+  <text x="540" y="696"
+    text-anchor="middle"
+    font-family="system-ui, sans-serif"
+    font-weight="400"
+    font-size="24"
+    fill="#5C7066"
+    letter-spacing="0.02em">Don't know where to start? Start here.</text>
+</svg>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { ScreenSelectionOverlay } from "@/components/ui/ScreenSelectionOverlay";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -65,6 +66,7 @@ export default function RootLayout({
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
+        <ScreenSelectionOverlay />
       </body>
     </html>
   );

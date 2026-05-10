@@ -1,6 +1,7 @@
 "use client";
 
 import { Mafs, Coordinates, Plot } from "mafs";
+import type { CSSProperties } from "react";
 import "mafs/core.css";
 
 interface FunctionEntry {
@@ -40,7 +41,14 @@ export function FunctionPlot({ spec }: { spec: Record<string, unknown> }) {
   if (compiled.length === 0) return null;
 
   return (
-    <div>
+    <div
+      style={{
+        "--mafs-bg": "var(--color-panel)",
+        "--mafs-fg": "var(--color-text-primary)",
+        "--mafs-line-color": "var(--color-border)",
+        "--mafs-origin-color": "var(--color-border-accent)",
+      } as CSSProperties}
+    >
       <Mafs
         viewBox={{ x: xRange as [number, number], y: yRange as [number, number] }}
         preserveAspectRatio={false}

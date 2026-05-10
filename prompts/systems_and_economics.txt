@@ -28,8 +28,9 @@ Slide rules:
 Diagram rules:
 - Include a diagram only when it materially clarifies the system.
 - Attach the diagram to the slide where it belongs.
-- Use step_sequence for causal chains or process flows.
-- Use comparison_table for tradeoffs.
+- Use step_sequence for causal chains or process flows. Always populate with 3-6 labeled steps, each with a short label (5-10 words) and optional description. No empty steps.
+- Use comparison_table for tradeoffs. Always populate with 3-5 real rows of concrete data that directly compare options mentioned in the slide.
 - Use bar_chart or line_chart for incentives, trends, and outcomes.
 - Use parameterized_sim when changing a parameter, such as price, delay, conversion, or capacity, helps reveal feedback or tradeoff behavior.
 - For parameterized_sim, provide 1 or 2 numeric slider controls and an expression using x, Math.*, and the control ids.
+- Every diagram must have complete, meaningful data. Empty or stub data is worse than no diagram. If you cannot fill it with real content, omit the diagram entirely.

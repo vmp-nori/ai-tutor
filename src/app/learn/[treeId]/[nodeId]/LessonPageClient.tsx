@@ -126,18 +126,26 @@ const CSS = `
   /* ── LAYOUT ── */
   .lp-app {
     display: grid;
-    grid-template-columns: 300px 1fr;
-    height: 100vh; padding-top: 60px;
-    transition: grid-template-columns .25s cubic-bezier(.4,0,.2,1);
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 12px;
+    height: 100vh;
+    padding: 72px 12px 12px;
+    box-sizing: border-box;
+    transition:
+      grid-template-columns .25s cubic-bezier(.4,0,.2,1),
+      padding-right 360ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .lp-app--collapsed { grid-template-columns: 52px 1fr; }
 
   /* ── SIDEBAR ── */
   .lp-sidebar {
-    border-right: 1px solid var(--lp-line);
+    min-height: 0;
+    border: 1px solid var(--lp-line);
+    border-radius: 16px;
     background: rgba(238,247,241,0.7);
     overflow-y: auto; overflow-x: hidden;
     display: flex; flex-direction: column;
+    box-shadow: 0 14px 42px oklch(16.8% 0.018 238 / 0.10);
   }
   .lp-sidebar::-webkit-scrollbar { width: 6px; }
   .lp-sidebar::-webkit-scrollbar-thumb { background: var(--lp-line-strong); border-radius: 99px; }
@@ -257,11 +265,18 @@ const CSS = `
   }
 
   /* ── MAIN ── */
-  .lp-main { position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .lp-main {
+    position: relative; overflow: hidden; display: flex; flex-direction: column;
+    min-width: 0; min-height: 0;
+    border: 1px solid var(--lp-line);
+    border-radius: 16px;
+    box-shadow: 0 18px 54px oklch(16.8% 0.018 238 / 0.14);
+  }
   .lp-stage {
     flex: 1; overflow-y: auto; overflow-x: hidden;
     display: flex; align-items: stretch; justify-content: stretch;
     background: var(--lp-paper);
+    min-height: 0;
   }
   .lp-stage::-webkit-scrollbar { width: 10px; }
   .lp-stage::-webkit-scrollbar-thumb { background: var(--lp-line-strong); border-radius: 99px; }
@@ -380,7 +395,8 @@ const CSS = `
   /* Generating skeleton */
   .lp-gen-slide {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100%; padding: 60px 80px;
+    flex: 1; width: 100%; min-height: 100%; padding: 60px 80px;
+    box-sizing: border-box;
     gap: 28px; text-align: center;
   }
   .lp-gen-spinner {
@@ -635,7 +651,8 @@ export function LessonPageClient({
 
   const slides = useMemo<SlideItem[]>(() => {
     if (!lesson) return [];
-    return lesson.slides.map((slide, index) => ({
+    const contentSlides = lesson.slides.filter((slide) => slide.kind !== "cover");
+    return contentSlides.map((slide, index) => ({
       slide,
       num: String(index + 1).padStart(2, "0"),
       meta: slideMeta(slide),
@@ -680,6 +697,12 @@ export function LessonPageClient({
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "ArrowRight") goTo(current + 1);
       if (e.key === "ArrowLeft") goTo(current - 1);
+      if (e.key === "ArrowUp") goTo(current - 1);
+      if (e.key === "ArrowDown") goTo(current + 1);
+      if (e.key === " ") {
+        e.preventDefault();
+        goTo(current + 1);
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -760,24 +783,6 @@ export function LessonPageClient({
     if (!lesson || !activeSlide) return null;
 
     const slide = activeSlide.slide;
-
-    if (slide.kind === "cover") {
-      return (
-        <div className="lp-slide lp-slide--active" key="cover">
-          <div className="lp-slide-inner">
-            <div className="lp-cover-super">LESSON · {String(slideCount).padStart(2, "0")} SLIDES</div>
-            <h2 className="lp-cover-h2">{slide.title}.</h2>
-            <p className="lp-lede">{slide.lede}</p>
-            <div className="lp-cover-meta">
-              <div className="lp-cover-meta-item"><div className="k">Subject</div><div className="v">{subject}</div></div>
-              <div className="lp-cover-meta-item"><div className="k">Time</div><div className="v">{slide.meta.estTime}</div></div>
-              <div className="lp-cover-meta-item"><div className="k">Difficulty</div><div className="v">{slide.meta.difficulty}</div></div>
-              <div className="lp-cover-meta-item"><div className="k">Concept</div><div className="v">{nodeName}</div></div>
-            </div>
-          </div>
-        </div>
-      );
-    }
 
     if (slide.kind === "concept") {
       return (
@@ -930,26 +935,13 @@ export function LessonPageClient({
               )}
             </div>
 
-            <div className="lp-wrap-actions">
-              <button
-                type="button"
-                className={`lp-btn ${completeState === "done" ? "lp-btn-ghost" : "lp-btn-mint"}`}
-                onClick={handleComplete}
-                disabled={completeState === "saving" || completeState === "done"}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                {completeState === "saving" ? "Saving…" : completeState === "done" ? "Marked complete" : "Mark complete"}
-              </button>
-
-              {completion?.nextNode && (
+            {completion?.nextNode && (
+              <div className="lp-wrap-actions">
                 <a href={completion.nextNode.href} className="lp-btn lp-btn-secondary">
                   Next: {completion.nextNode.name} →
                 </a>
-              )}
-              <a href={dashboardHref} className="lp-btn lp-btn-ghost">← Back to graph</a>
-            </div>
+              </div>
+            )}
 
             {completeError && (
               <p style={{ marginTop: 10, fontSize: 12.5, color: "var(--lp-clay)" }}>{completeError}</p>
@@ -1016,6 +1008,29 @@ export function LessonPageClient({
               <p>{nodeDescription}</p>
             </div>
 
+            {lesson?.slides[0]?.kind === "cover" && (
+              <div className="lp-concept-block">
+                <div className="lp-eyebrow">DETAILS</div>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--lp-ink-mid)", marginBottom: 10 }}>
+                  {(lesson.slides[0] as any).lede}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 11 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--lp-ink-dim)" }}>TIME</span>
+                    <span style={{ color: "var(--lp-ink)", fontWeight: 500 }}>{(lesson.slides[0] as any).meta?.estTime || "~6 min"}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--lp-ink-dim)" }}>DIFFICULTY</span>
+                    <span style={{ color: "var(--lp-ink)", fontWeight: 500 }}>{(lesson.slides[0] as any).meta?.difficulty || "Intermediate"}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "var(--lp-ink-dim)" }}>SUBJECT</span>
+                    <span style={{ color: "var(--lp-ink)", fontWeight: 500 }}>{subject}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="lp-progress-block">
               <div className="lp-progress-meta lp-mono">
                 <span>{Math.min(current + 1, slideCount)} / {slideCount || "—"}</span>
@@ -1062,7 +1077,26 @@ export function LessonPageClient({
 
             <div className="lp-sidebar-goal">
               <div className="lp-eyebrow lp-mono" style={{ marginBottom: 8 }}>END GOAL</div>
-              <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--lp-ink-mid)" }}>{goal}</div>
+              <div style={{ fontSize: 12, lineHeight: 1.5, color: "var(--lp-ink-mid)", marginBottom: activeSlide?.slide.kind === "wrapUp" ? 16 : 0 }}>{goal}</div>
+              {activeSlide?.slide.kind === "wrapUp" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button
+                    type="button"
+                    className={`lp-btn ${completeState === "done" ? "lp-btn-ghost" : "lp-btn-mint"}`}
+                    onClick={handleComplete}
+                    disabled={completeState === "saving" || completeState === "done"}
+                    style={{ width: "100%", height: 34, fontSize: 12.5 }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {completeState === "saving" ? "Saving…" : completeState === "done" ? "Marked complete" : "Mark complete"}
+                  </button>
+                  <a href={dashboardHref} className="lp-btn lp-btn-ghost" style={{ width: "100%", height: 34, fontSize: 12.5, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    ← Back to graph
+                  </a>
+                </div>
+              )}
             </div>
           </aside>
 

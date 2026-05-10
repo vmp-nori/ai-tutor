@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
@@ -27,6 +27,14 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
   const hasLearningPaths = learningPaths.length > 0;
   const router = useRouter();
   const [hoveredPathId, setHoveredPathId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? undefined);
+    });
+  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -238,55 +246,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
           </div>
         )}
 
-        {onOpenJsonInput && (
-          <button
-            type="button"
-            onClick={onOpenJsonInput}
-            style={{
-              height: 34,
-              border: "1px solid var(--color-border)",
-              borderRadius: 6,
-              background: "var(--color-node)",
-              color: "var(--color-text-primary)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "0 13px",
-              fontSize: 13,
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-            }}
-          >
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-              <path d="M2.75 5.5H8.25M5.5 2.75V8.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="0.75" opacity="0.4" />
-            </svg>
-            JSON
-          </button>
-        )}
-
-        <ThemeSwitcher />
-
-        {/* Account action */}
-          <button
-          type="button"
-          onClick={handleSignOut}
-          style={{
-            height: 34,
-            border: "none",
-            borderRadius: 8,
-            background: "var(--color-button-primary)",
-            color: "var(--color-button-primary-text)",
-            fontSize: 13,
-            fontWeight: 700,
-            padding: "0 13px",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Sign out
-        </button>
+        <ThemeSwitcher onSignOut={handleSignOut} userEmail={userEmail} />
       </div>
     </header>
   );

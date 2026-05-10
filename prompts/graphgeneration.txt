@@ -18,7 +18,7 @@ Return ONLY valid, raw JSON matching the exact schema below. Do not include mark
 - Do not create a node for the final goal. The final goal belongs only in the top-level goal field.
 - Use stable lowercase snake_case ids that describe the concept, not its position.
 - Use concise names. A node name should be a teachable concept, not a task list item.
-- Use one-sentence descriptions that state what the learner must understand.
+- Write descriptions as a single factual sentence about the concept and why it matters for the end goal. No learner framing. Do not use "the learner", "you will", "must understand", or any instructional voice. Write as if describing the concept itself: what it is and what it controls or enables.
 - Avoid broad nodes like "Advanced Topics", "Practice", "Projects", "Tools", or "Overview" unless the user's goal specifically requires that exact concept.
 - Avoid tiny procedural steps that are not conceptual prerequisites.
 - Each node should be a singular skill needed to achieve the final goal.

@@ -33,7 +33,8 @@ Diagram rules:
 - Use function_plot for static functions.
 - Use number_line for intervals, thresholds, and ordering.
 - Use bar_chart or line_chart for numerical comparisons or trends.
-- Use step_sequence for algorithms or proof steps.
-- Use comparison_table for compact contrasts.
+- Use step_sequence for algorithms or proof steps. Always populate with 3-6 labeled steps, each with a short label (5-10 words) and optional description. No empty steps.
+- Use comparison_table for compact contrasts. Always populate with 3-5 real rows of concrete data that directly compare options mentioned in the slide.
 - Use parameterized_sim when changing a value with a slider reveals the concept better than static text.
 - For parameterized_sim, provide 1 or 2 numeric slider controls and an expression using x, Math.*, and the control ids.
+- Every diagram must have complete, meaningful data. Empty or stub data is worse than no diagram. If you cannot fill it with real content, omit the diagram entirely.

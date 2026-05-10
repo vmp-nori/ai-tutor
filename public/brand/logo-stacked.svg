@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" width="240" height="200" role="img" aria-label="Pathwise stacked logo">
+  <g transform="translate(88,16)">
+    <rect width="64" height="64" rx="14" fill="#0F1411"></rect>
+    <path d="M 16 44 L 32 28 L 48 36" stroke="#E8F5EE" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="16" cy="44" r="4" fill="#E8F5EE"></circle>
+    <circle cx="32" cy="28" r="4" fill="#E8F5EE"></circle>
+    <circle cx="48" cy="36" r="6" fill="#5EE2A8"></circle>
+  </g>
+  <text x="120" y="140" text-anchor="middle" font-family="&#39;Bricolage Grotesque&#39;, system-ui, sans-serif" font-weight="800" font-size="44" letter-spacing="-1.8" fill="#0F1411">Pathwise</text>
+  <text x="120" y="170" text-anchor="middle" font-family="&#39;Bricolage Grotesque&#39;, system-ui, sans-serif" font-weight="500" font-size="13" letter-spacing="2.5" fill="#5C7066">SKILLMAXXING, MADE EASY</text>
+</svg>

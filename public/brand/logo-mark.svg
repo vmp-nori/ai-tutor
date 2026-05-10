@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Pathwise mark">
+  <rect width="64" height="64" rx="14" fill="#0F1411"></rect>
+  
+  <path d="M 16 44 L 32 28 L 48 36" stroke="#E8F5EE" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  <circle cx="16" cy="44" r="4" fill="#E8F5EE"></circle>
+  <circle cx="32" cy="28" r="4" fill="#E8F5EE"></circle>
+  <circle cx="48" cy="36" r="6" fill="#5EE2A8"></circle>
+</svg>

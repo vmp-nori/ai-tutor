@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" width="1500" height="500" role="img" aria-label="Pathwise — Don't know where to start? Start here.">
+  <defs>
+    <pattern id="grid-tw" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0L0 0 0 60" fill="none" stroke="rgba(15,20,17,0.045)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1500" height="500" fill="#E8F5EE"/>
+  <rect width="1500" height="500" fill="url(#grid-tw)"/>
+
+  <!-- Decorative graph — right side, large faded nodes -->
+  <!-- Edges -->
+  <line x1="940" y1="380" x2="1060" y2="260" stroke="#B8C9BE" stroke-width="2"/>
+  <line x1="1060" y1="260" x2="1190" y2="310" stroke="#B8C9BE" stroke-width="2"/>
+  <line x1="1190" y1="310" x2="1320" y2="200" stroke="#B8C9BE" stroke-width="2"/>
+  <line x1="1320" y1="200" x2="1450" y2="240" stroke="#B8C9BE" stroke-width="2"/>
+  <!-- Extra decorative off-path lines -->
+  <line x1="1060" y1="260" x2="1140" y2="400" stroke="#D4E8DD" stroke-width="1.5"/>
+  <line x1="1190" y1="310" x2="1260" y2="430" stroke="#D4E8DD" stroke-width="1.5"/>
+
+  <!-- Nodes -->
+  <circle cx="940" cy="380" r="14" fill="#FBFEFC" stroke="#B8C9BE" stroke-width="1.5"/>
+  <circle cx="1060" cy="260" r="14" fill="#FBFEFC" stroke="#B8C9BE" stroke-width="1.5"/>
+  <circle cx="1140" cy="400" r="10" fill="#FBFEFC" stroke="#D4E8DD" stroke-width="1.5"/>
+  <circle cx="1190" cy="310" r="14" fill="#FBFEFC" stroke="#B8C9BE" stroke-width="1.5"/>
+  <circle cx="1260" cy="430" r="10" fill="#FBFEFC" stroke="#D4E8DD" stroke-width="1.5"/>
+  <circle cx="1320" cy="200" r="14" fill="#FBFEFC" stroke="#B8C9BE" stroke-width="1.5"/>
+  <!-- Goal node — mint -->
+  <circle cx="1450" cy="240" r="20" fill="#5EE2A8" stroke="#1F8755" stroke-width="2"/>
+
+  <!-- Checkpoint node — clay ring -->
+  <circle cx="1060" cy="260" r="20" fill="none" stroke="#C44536" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+
+  <!-- Left content -->
+  <!-- Mark — vertically centered on 500px canvas: (500-208)/2 = 146 -->
+  <g transform="translate(80, 146) scale(3.25)">
+    <rect width="64" height="64" rx="14" fill="#0F1411"/>
+    <path d="M16 44 L32 28 L48 36" stroke="#E8F5EE" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="44" r="4" fill="#E8F5EE"/>
+    <circle cx="32" cy="28" r="4" fill="#E8F5EE"/>
+    <circle cx="48" cy="36" r="6" fill="#5EE2A8"/>
+  </g>
+
+  <!-- Right-side text block: centered on mark (mark center y=250, block height≈117px, so top at 192) -->
+
+  <!-- Wordmark — baseline at 265, cap-top ≈ 193 -->
+  <text x="310" y="265"
+    font-family="'Bricolage Grotesque', system-ui, sans-serif"
+    font-weight="800"
+    font-size="100"
+    letter-spacing="-5"
+    fill="#0F1411">pathwise</text>
+
+  <!-- Divider — starts at wordmark x, below wordmark baseline -->
+  <line x1="310" y1="282" x2="840" y2="282" stroke="#DCE8E0" stroke-width="1.5"/>
+
+  <!-- Tagline -->
+  <text x="310" y="316"
+    font-family="system-ui, sans-serif"
+    font-weight="400"
+    font-size="22"
+    fill="#5C7066"
+    letter-spacing="0.01em">Don't know where to start? Start here.</text>
+</svg>

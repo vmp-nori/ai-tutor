@@ -145,9 +145,18 @@ function applyTheme(theme: Theme) {
   window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { theme } }));
 }
 
-export function ThemeSwitcher() {
+interface ThemeSwitcherProps {
+  onSignOut?: () => void;
+  userEmail?: string;
+}
+
+type SettingsPage = "root" | "account";
+
+export function ThemeSwitcher({ onSignOut, userEmail }: ThemeSwitcherProps = {}) {
   const [theme, setTheme] = useState<Theme>(getPreferredTheme);
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState<SettingsPage>("root");
+  const [themesExpanded, setThemesExpanded] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -159,7 +168,11 @@ export function ThemeSwitcher() {
     if (!open) return;
 
     function handlePointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setPage("root");
+        setThemesExpanded(false);
+      }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -218,100 +231,209 @@ export function ThemeSwitcher() {
       {open && (
         <div
           role="dialog"
-          aria-label="Settings menu"
+          aria-label="Settings"
           style={{
             position: "absolute",
             right: 0,
             top: 38,
-            width: 344,
-            maxHeight: "min(560px, calc(100vh - 64px))",
-            overflowY: "auto",
+            width: 300,
             background: "var(--color-panel)",
             border: "1px solid var(--color-border-mid)",
-            borderRadius: 8,
+            borderRadius: 10,
             boxShadow: "var(--shadow-popover)",
-            padding: 12,
+            overflow: "hidden",
             zIndex: 260,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 750, color: "var(--color-text-primary)", lineHeight: 1.2 }}>
-                Settings
-              </div>
-              <div style={{ marginTop: 3, fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.2 }}>
-                Workspace preferences
-              </div>
-            </div>
+          {/* ── Header ── */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 12px",
+            borderBottom: "1px solid var(--color-border)",
+          }}>
+            {page === "account" && (
+              <button
+                type="button"
+                aria-label="Back"
+                onClick={() => setPage("root")}
+                style={{
+                  width: 26, height: 26, border: "none", borderRadius: 5,
+                  background: "var(--color-node)", color: "var(--color-text-muted)",
+                  cursor: "pointer", display: "inline-flex", alignItems: "center",
+                  justifyContent: "center", padding: 0, flexShrink: 0,
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+            )}
+            <span style={{ fontSize: 13, fontWeight: 750, color: "var(--color-text-primary)", flex: 1 }}>
+              {page === "root" ? "Settings" : "Account"}
+            </span>
             <button
               type="button"
               aria-label="Close settings"
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); setPage("root"); setThemesExpanded(false); }}
               style={{
-                width: 28,
-                height: 28,
-                border: "1px solid transparent",
-                borderRadius: 6,
-                background: "transparent",
-                color: "var(--color-text-muted)",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
+                width: 26, height: 26, border: "none", borderRadius: 5,
+                background: "transparent", color: "var(--color-text-muted)",
+                cursor: "pointer", display: "inline-flex", alignItems: "center",
+                justifyContent: "center", padding: 0,
               }}
             >
               <CloseIcon />
             </button>
           </div>
 
-          <section
-            aria-labelledby="settings-theme-title"
-            style={{
-              borderTop: "1px solid var(--color-border)",
-              paddingTop: 12,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-              <div>
-                <h2
-                  id="settings-theme-title"
-                  style={{
-                    margin: 0,
-                    fontSize: 12,
-                    fontWeight: 750,
-                    color: "var(--color-text-primary)",
-                    lineHeight: 1.2,
-                  }}
+          {/* ── Root page ── */}
+          {page === "root" && (
+            <div>
+              {/* Account row */}
+              <button
+                type="button"
+                onClick={() => setPage("account")}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  padding: "0 14px", height: 46, border: "none",
+                  background: "transparent", color: "var(--color-text-primary)",
+                  cursor: "pointer", textAlign: "left",
+                  borderBottom: "1px solid var(--color-border)",
+                  transition: "background 120ms ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-node)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{
+                  width: 28, height: 28, borderRadius: 6, flexShrink: 0,
+                  background: "var(--color-node)", border: "1px solid var(--color-border)",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  color: "var(--color-text-muted)",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                  </svg>
+                </span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Account</span>
+                  {userEmail && <span style={{ display: "block", fontSize: 11, color: "var(--color-text-muted)", marginTop: 1 }}>{userEmail}</span>}
+                </span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-text-muted)", flexShrink: 0 }}>
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+
+              {/* Themes row */}
+              <button
+                type="button"
+                aria-expanded={themesExpanded}
+                onClick={() => setThemesExpanded((v) => !v)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  padding: "0 14px", height: 46, border: "none",
+                  background: themesExpanded ? "var(--color-node)" : "transparent",
+                  color: "var(--color-text-primary)",
+                  cursor: "pointer", textAlign: "left",
+                  borderBottom: themesExpanded ? "1px solid var(--color-border)" : "none",
+                  transition: "background 120ms ease",
+                }}
+                onMouseEnter={(e) => { if (!themesExpanded) e.currentTarget.style.background = "var(--color-node)"; }}
+                onMouseLeave={(e) => { if (!themesExpanded) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{
+                  width: 28, height: 28, borderRadius: 6, flexShrink: 0,
+                  background: "var(--color-node)", border: "1px solid var(--color-border)",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  color: "var(--color-text-muted)",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                  </svg>
+                </span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Themes</span>
+                  <span style={{ display: "block", fontSize: 11, color: "var(--color-text-muted)", marginTop: 1 }}>
+                    {THEMES.find((t) => t.id === theme)?.name ?? "—"}
+                  </span>
+                </span>
+                <svg
+                  width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ color: "var(--color-text-muted)", flexShrink: 0, transform: themesExpanded ? "rotate(90deg)" : "none", transition: "transform 150ms ease" }}
                 >
-                  Theme
-                </h2>
-                <div style={{ marginTop: 3, fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.25 }}>
-                  Choose a mode, then a palette.
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+
+              {/* Themes dropdown */}
+              {themesExpanded && (
+                <div style={{ padding: "12px 14px 14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)" }}>
+                      Mode
+                    </span>
+                    <ModeSwitch mode={activeMode} onSelect={handleModeSelect} />
+                  </div>
+                  <div role="radiogroup" aria-label="Themes" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                    {visibleThemes.map((option) => (
+                      <ThemeChoice
+                        key={option.id}
+                        option={option}
+                        active={option.id === theme}
+                        onSelect={() => handleSelect(option.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Account page ── */}
+          {page === "account" && (
+            <div style={{ padding: "12px 14px 16px", display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)" }}>
+                  Email
+                </span>
+                <div style={{
+                  padding: "10px 12px",
+                  background: "var(--color-node)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 7,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "var(--color-text-primary)",
+                  wordBreak: "break-all",
+                }}>
+                  {userEmail ?? "—"}
                 </div>
               </div>
-              <ModeSwitch mode={activeMode} onSelect={handleModeSelect} />
-            </div>
 
-            <div
-              role="radiogroup"
-              aria-label={`${activeMode === "light" ? "Light" : "Dark"} themes`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 8,
-              }}
-            >
-              {visibleThemes.map((option) => (
-                <ThemeChoice
-                  key={option.id}
-                  option={option}
-                  active={option.id === theme}
-                  onSelect={() => handleSelect(option.id)}
-                />
-              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)" }}>
+                  Session
+                </span>
+                {onSignOut && (
+                  <button
+                    type="button"
+                    onClick={() => { onSignOut(); setOpen(false); setPage("root"); }}
+                    style={{
+                      width: "100%", height: 36, border: "1px solid var(--color-border)",
+                      borderRadius: 7, background: "var(--color-node)",
+                      color: "var(--color-text-primary)", fontSize: 13, fontWeight: 650,
+                      cursor: "pointer", transition: "background 150ms ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-border)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-node)"; }}
+                  >
+                    Sign out
+                  </button>
+                )}
+              </div>
             </div>
-          </section>
+          )}
         </div>
       )}
     </div>

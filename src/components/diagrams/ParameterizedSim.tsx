@@ -1,6 +1,7 @@
 "use client";
 
 import { Coordinates, Mafs, Plot } from "mafs";
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import "mafs/core.css";
 
@@ -86,6 +87,45 @@ function captionText(template: string | undefined, values: Record<string, number
   });
 }
 
+function hasMeaningfulCurve(
+  evaluator: (x: number, values: Record<string, number>) => number,
+  values: Record<string, number>,
+  xRange: [number, number],
+) {
+  const samples = Array.from({ length: 24 }, (_, index) => {
+    const t = index / 23;
+    const x = xRange[0] + (xRange[1] - xRange[0]) * t;
+    return evaluator(x, values);
+  }).filter(Number.isFinite);
+
+  if (samples.length < 12) return false;
+
+  const min = Math.min(...samples);
+  const max = Math.max(...samples);
+  return Math.abs(max - min) > 0.001;
+}
+
+function respondsToControls(
+  evaluator: (x: number, values: Record<string, number>) => number,
+  controls: ControlSpec[],
+  values: Record<string, number>,
+) {
+  const sampleX = 1;
+  const baseline = evaluator(sampleX, values);
+  if (!Number.isFinite(baseline)) return false;
+
+  return controls.some((control) => {
+    const alternate = {
+      ...values,
+      [control.id]: Math.abs((values[control.id] ?? control.default) - control.min) > Math.abs(control.max - control.min) / 2
+        ? control.min
+        : control.max,
+    };
+    const result = evaluator(sampleX, alternate);
+    return Number.isFinite(result) && Math.abs(result - baseline) > 0.001;
+  });
+}
+
 export function ParameterizedSim({ spec }: { spec: Record<string, unknown> }) {
   const s = spec as Partial<Spec>;
   const controls = Array.isArray(s.controls) ? s.controls.filter(isControl).slice(0, 2) : [];
@@ -103,12 +143,22 @@ export function ParameterizedSim({ spec }: { spec: Record<string, unknown> }) {
   );
 
   if (controls.length === 0 || !expression || !evaluator) return null;
+  if (!hasMeaningfulCurve(evaluator, values, xRange) || !respondsToControls(evaluator, controls, values)) return null;
 
   const resultAtZero = evaluator(0, values);
   const caption = captionText(typeof s.captionTemplate === "string" ? s.captionTemplate : undefined, values, resultAtZero);
 
   return (
-    <div style={{ display: "grid", gap: 18 }}>
+    <div
+      style={{
+        "--mafs-bg": "var(--color-panel)",
+        "--mafs-fg": "var(--color-text-primary)",
+        "--mafs-line-color": "var(--color-border)",
+        "--mafs-origin-color": "var(--color-border-accent)",
+        display: "grid",
+        gap: 18,
+      } as CSSProperties}
+    >
       <Mafs viewBox={{ x: xRange, y: yRange }} preserveAspectRatio={false} height={300}>
         <Coordinates.Cartesian />
         <Plot.OfX y={(x) => evaluator(x, values)} color="var(--color-accent)" />

@@ -49,36 +49,39 @@ export function ComparisonTable({ spec }: { spec: Record<string, unknown> }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, ri) => (
-            <tr key={ri}>
-              <td
-                style={{
-                  padding: "10px 14px",
-                  fontWeight: 650,
-                  color: "var(--color-text-primary)",
-                  borderBottom: ri < rows.length - 1 ? "1px solid var(--color-border)" : "none",
-                  background: "var(--color-panel)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {row.label}
-              </td>
-              {row.values.map((val, vi) => (
+          {rows.map((row, ri) => {
+            const values = Array.isArray(row.values) ? row.values : [];
+            return (
+              <tr key={ri}>
                 <td
-                  key={vi}
                   style={{
                     padding: "10px 14px",
-                    textAlign: "center",
-                    color: "var(--color-text-secondary)",
+                    fontWeight: 650,
+                    color: "var(--color-text-primary)",
                     borderBottom: ri < rows.length - 1 ? "1px solid var(--color-border)" : "none",
-                    borderLeft: "1px solid var(--color-border)",
+                    background: "var(--color-panel)",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  {val}
+                  {row.label}
                 </td>
-              ))}
-            </tr>
-          ))}
+                {values.map((val, vi) => (
+                  <td
+                    key={vi}
+                    style={{
+                      padding: "10px 14px",
+                      textAlign: "center",
+                      color: "var(--color-text-secondary)",
+                      borderBottom: ri < rows.length - 1 ? "1px solid var(--color-border)" : "none",
+                      borderLeft: "1px solid var(--color-border)",
+                    }}
+                  >
+                    {val}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
