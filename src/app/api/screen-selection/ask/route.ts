@@ -3,24 +3,21 @@ import {
   ConverseStreamCommand,
   type ConverseStreamResponse,
 } from "@aws-sdk/client-bedrock-runtime";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-interface GenerateRequest {
-  goal?: unknown;
-  subject?: unknown;
+interface AskSelectionRequest {
+  prompt?: unknown;
+  selectedText?: unknown;
+  rect?: unknown;
 }
 
 const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/global.anthropic.claude-sonnet-4-6";
 const DEFAULT_REGION = "us-east-1";
-const MAX_GOAL_LENGTH = 800;
-const MAX_SUBJECT_LENGTH = 140;
-const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "graphgeneration.txt");
-
+const MAX_PROMPT_LENGTH = 1200;
+const MAX_SELECTION_LENGTH = 6000;
 
 function isAwsServiceError(error: unknown): error is Error & {
   $metadata?: { httpStatusCode?: number };
@@ -31,23 +28,6 @@ function isAwsServiceError(error: unknown): error is Error & {
 function trimString(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, maxLength);
-}
-
-function buildUserPrompt(goal: string, subject: string) {
-  const subjectLine = subject ? `Suggested subject label: ${subject}` : "Infer a concise subject label.";
-  return `${subjectLine}
-End goal: ${goal}
-
-Return a complete pathwise skill tree JSON object for this end goal.`;
-}
-
-async function readSystemPrompt() {
-  const prompt = (await readFile(SYSTEM_PROMPT_PATH, "utf8")).trim();
-  if (!prompt) {
-    throw new Error("Skill tree system prompt file is empty");
-  }
-
-  return prompt;
 }
 
 function getBedrockClient() {
@@ -64,20 +44,37 @@ function getBedrockClient() {
   return new BedrockRuntimeClient({ region });
 }
 
-function buildBedrockCommand(goal: string, subject: string, systemPrompt: string) {
-  const modelId = process.env.BEDROCK_MODEL_ID?.trim() || DEFAULT_MODEL;
+function buildUserPrompt(prompt: string, selectedText: string) {
+  return `The learner selected this on screen:
 
+${selectedText || "[No readable text was captured from the selected area.]"}
+
+Question:
+${prompt}`;
+}
+
+function buildBedrockCommand(prompt: string, selectedText: string) {
   return new ConverseStreamCommand({
-    modelId,
-    system: [{ text: systemPrompt }],
+    modelId: DEFAULT_MODEL,
+    system: [
+      {
+        text: [
+          "You are Pathwise's contextual tutor.",
+          "Answer using the selected on-screen context first.",
+          "Be concise, concrete, and educational.",
+          "If the selected context is not enough, say what is missing and answer from general principles only when useful.",
+          "Do not create a new learning path yet. This feature will be wired later.",
+        ].join(" "),
+      },
+    ],
     messages: [
       {
         role: "user",
-        content: [{ text: buildUserPrompt(goal, subject) }],
+        content: [{ text: buildUserPrompt(prompt, selectedText) }],
       },
     ],
     inferenceConfig: {
-      maxTokens: 16000,
+      maxTokens: 1600,
       temperature: 0.35,
     },
   });
@@ -119,25 +116,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await req.json()) as GenerateRequest;
-    const goal = trimString(body.goal, MAX_GOAL_LENGTH);
-    const subject = trimString(body.subject, MAX_SUBJECT_LENGTH);
+    const body = (await req.json()) as AskSelectionRequest;
+    const prompt = trimString(body.prompt, MAX_PROMPT_LENGTH);
+    const selectedText = trimString(body.selectedText, MAX_SELECTION_LENGTH);
 
-    if (!goal) {
+    if (!prompt) {
       return NextResponse.json(
-        { error: "goal is required" },
+        { error: "prompt is required" },
         { status: 400 },
       );
     }
 
-    const systemPrompt = await readSystemPrompt();
-    const bedrockResponse = await getBedrockClient().send(buildBedrockCommand(goal, subject, systemPrompt), {
-      abortSignal: AbortSignal.timeout(120_000),
+    const bedrockResponse = await getBedrockClient().send(buildBedrockCommand(prompt, selectedText), {
+      abortSignal: AbortSignal.timeout(90_000),
     });
 
     if (!bedrockResponse.stream) {
       return NextResponse.json(
-        { error: "Bedrock generation stream did not start" },
+        { error: "Bedrock answer stream did not start" },
         { status: 502 },
       );
     }
@@ -155,15 +151,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (isAwsServiceError(error)) {
-      console.error("Bedrock skill tree generation failed", error);
+      console.error("Bedrock screen selection answer failed", error);
       const status = error.$metadata?.httpStatusCode;
       return NextResponse.json(
-        { error: error.message || "Generation service rejected the request" },
+        { error: error.message || "Answer service rejected the request" },
         { status: status && status >= 400 && status < 500 ? 502 : 503 },
       );
     }
 
-    console.error("Skill tree generation failed", error);
+    console.error("Screen selection answer failed", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

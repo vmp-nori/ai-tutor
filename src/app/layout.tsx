@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { ScreenSelectionOverlay } from "@/components/ui/ScreenSelectionOverlay";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -17,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pathwise — Learn anything, one concept at a time",
+  title: "pathwise — Learn anything, one concept at a time",
   description:
     "AI-generated skill trees for any subject. Follow a clear, atomic path from foundational primitives to your goal.",
   icons: {
@@ -65,6 +66,7 @@ export default function RootLayout({
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
+        <ScreenSelectionOverlay />
       </body>
     </html>
   );

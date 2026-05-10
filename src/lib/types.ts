@@ -13,7 +13,6 @@ export interface SkillNode {
   treeId: string;
   name: string;
   description: string;
-  category?: "math_and_logic" | "systems_and_economics" | "technical_and_code";
   status: NodeStatus;
   x: number;
   y: number;
@@ -56,20 +55,99 @@ export type DiagramType =
   | "bar_chart"
   | "line_chart"
   | "step_sequence"
-  | "comparison_table";
+  | "comparison_table"
+  | "parameterized_sim";
 
 export interface LessonDiagram {
   type: DiagramType;
   title: string;
   spec: Record<string, unknown>;
-  sectionIndex?: number;
 }
 
-export interface GeneratedLesson {
+export interface CoverSlide {
+  kind: "cover";
   title: string;
-  sections: LessonSection[];
-  workedExample: LessonSection;
-  misconceptions: string[];
-  tryThis: string;
-  diagrams?: LessonDiagram[];
+  lede: string;
+  meta: {
+    estTime: string;
+    difficulty: string;
+  };
+}
+
+export interface ConceptSlide {
+  kind: "concept";
+  eyebrow: string;
+  heading: string;
+  lede?: string;
+  body: string;
+  diagram?: LessonDiagram;
+}
+
+export interface CompareSlide {
+  kind: "compare";
+  eyebrow: string;
+  heading: string;
+  lede?: string;
+  left: {
+    label: string;
+    body: string;
+  };
+  right: {
+    label: string;
+    body: string;
+  };
+  summary?: string;
+}
+
+export interface WorkedExampleSlide {
+  kind: "workedExample";
+  eyebrow: string;
+  heading: string;
+  problem: string;
+  solution: string;
+  diagram?: LessonDiagram;
+}
+
+export interface MisconceptionsSlide {
+  kind: "misconceptions";
+  eyebrow: string;
+  heading: string;
+  items: Array<{
+    wrong: string;
+    right: string;
+  }>;
+}
+
+export interface TryThisSlide {
+  kind: "tryThis";
+  eyebrow: string;
+  heading: string;
+  prompt: string;
+  hint?: string;
+}
+
+export interface WrapUpSlide {
+  kind: "wrapUp";
+  eyebrow: string;
+  heading: string;
+  keyIdeas: string[];
+  nextHook?: string;
+}
+
+export type LessonSlide =
+  | CoverSlide
+  | ConceptSlide
+  | CompareSlide
+  | WorkedExampleSlide
+  | MisconceptionsSlide
+  | TryThisSlide
+  | WrapUpSlide;
+
+export type LessonSlideKind = LessonSlide["kind"];
+
+export interface GeneratedLesson {
+  schemaVersion: 2;
+  styleVersion: 1;
+  title: string;
+  slides: LessonSlide[];
 }

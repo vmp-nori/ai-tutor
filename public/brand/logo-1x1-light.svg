@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="Pathwise">
+  <defs>
+    <pattern id="grid-l" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0L0 0 0 40" fill="none" stroke="rgba(15,20,17,0.045)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#E8F5EE"/>
+  <rect width="400" height="400" fill="url(#grid-l)"/>
+
+  <!-- Mark — centered: (400-120)/2=140, scale 1.875 → 120px square -->
+  <g transform="translate(140, 106) scale(1.875)">
+    <rect width="64" height="64" rx="14" fill="#0F1411"/>
+    <path d="M16 44 L32 28 L48 36" stroke="#E8F5EE" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="16" cy="44" r="4" fill="#E8F5EE"/>
+    <circle cx="32" cy="28" r="4" fill="#E8F5EE"/>
+    <circle cx="48" cy="36" r="6" fill="#5EE2A8"/>
+  </g>
+
+  <!-- Wordmark — mark bottom: 106+120=226, gap 18px, cap-height≈32px → baseline 276 -->
+  <text x="200" y="276"
+    text-anchor="middle"
+    font-family="'Bricolage Grotesque', system-ui, sans-serif"
+    font-weight="800"
+    font-size="44"
+    letter-spacing="-2"
+    fill="#0F1411">pathwise</text>
+
+  <!-- Tagline -->
+  <text x="200" y="302"
+    text-anchor="middle"
+    font-family="system-ui, sans-serif"
+    font-weight="400"
+    font-size="13"
+    fill="#5C7066"
+    letter-spacing="0.02em">Don't know where to start? Start here.</text>
+</svg>
