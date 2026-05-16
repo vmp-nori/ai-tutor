@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+Always update STATUS.MD after you complete a task, whats been done, what needs to be done, any other important information, it should act as a running record of our project to keep track. Do not add Unnecessary information that isnt essentail to the process of building the app, like npm run and stuff like that
+
 ## Karpathy-Inspired Agent Behavior
 
 These project-scoped coding guidelines are adapted from `forrestchang/andrej-karpathy-skills`.
@@ -34,22 +36,23 @@ working until the stated goal is met or a real blocker is identified.
 This repository contains a Next.js app named `pathwise`.
 
 - `src/app/` contains App Router routes and page-level UI:
-  - `page.tsx` — landing/home (waitlist form)
+  - `page.tsx` — landing/home (waitlist form). The nav shows `Join` plus a secondary `dev` button that routes to `/sign-in`; do not reintroduce a direct dashboard shortcut here.
   - `dashboard/page.tsx` — authenticated user dashboard
   - `generate/page.tsx` + `GeneratePageClient.tsx` — skill tree generation flow. After a path is generated and saved, the client renders `SkillTreeLoader` in-place. The TopBar "+ New path" button calls an `onNewPath` callback (threaded through `SkillTreeLoader` → `SkillTreeCanvas` → `TopBar`) that resets local state back to the generate form, avoiding a stale same-URL navigation.
   - `learn/[treeId]/[nodeId]/LessonPageClient.tsx` — lesson page; fetches or returns a cached lesson via `api/lessons/generate`, renders sections, worked example, misconceptions, and diagram, and handles progress completion.
-  - `sign-in/page.tsx`, `sign-up/page.tsx` — Supabase auth pages
-  - `api/skill-tree/generate/route.ts` — streams a Bedrock `ConverseStream` response as plain text; default model is Claude Opus 4.7; can be overridden by `BEDROCK_MODEL_ID`.
-  - `api/skill-tree/save/route.ts` — validates and persists a generated schema via the `create_skill_tree_with_graph` Postgres RPC.
-  - `api/lessons/generate/route.ts` — generates a lesson for a skill node via Bedrock; default model is Claude Sonnet 4.6. Returns `skill_nodes.generated_lesson` if already cached; otherwise calls Bedrock and writes the result back. System prompt loaded from `prompts/lessongeneration.txt`.
+  - `sign-in/page.tsx`, `sign-up/page.tsx` — Supabase auth pages. `/sign-in` first shows a client-side dev password gate, then reveals the Supabase email/password sign-in form.
+  - `api/skill-tree/generate/route.ts` — requires an authenticated user, rejects prohibited course requests, then streams a Bedrock `ConverseStream` response as plain text; default model is Claude Opus 4.7; can be overridden by `BEDROCK_MODEL_ID`.
+  - `api/skill-tree/save/route.ts` — validates and persists a generated schema via the `create_skill_tree_with_graph` Postgres RPC. It rejects unsafe content and refusal-shaped placeholder roadmaps before saving.
+  - `api/lessons/generate/route.ts` — generates a lesson for a skill node via Bedrock; default model is Claude Sonnet 4.6. Returns `skill_nodes.generated_lesson` if already cached; in local development, also reads/writes `.pathwise-dev-cache/lessons.json` so saved lessons survive page reloads while iterating. Otherwise calls Bedrock and writes the result back to Supabase and the dev cache when available. Lesson system prompts are selected from `prompts/math_and_logic.txt`, `prompts/systems_and_economics.txt`, or `prompts/technical_and_code.txt` based on the node category.
   - `api/progress/complete/route.ts` — marks a node complete and advances progress to the next node.
   - `api/waitlist/route.ts` — records waitlist signups.
 - `src/components/skill-tree/` contains `SkillTreeCanvas` (main graph renderer), `SkillTreeLoader` (dynamic-import wrapper), `SkillNode`, and `SkillEdge`.
 - `src/components/ui/TopBar.tsx` — accepts optional `onNewPath` callback; renders a `<button>` instead of `<a href="/generate">` when provided, so in-page state resets work correctly.
-- `src/lib/` contains shared types and utilities.
+- `src/lib/` contains shared types and utilities, including `contentSafety.ts` for course/request safety checks used by generation and save flows.
 - `src/lib/supabase/` contains Supabase browser/server client helpers.
 - `supabase/migrations/` contains SQL migrations applied to the Supabase project. Migration `0003` adds `teaching_brief`, `zone`, `zone_color`, `difficulty_level`, `is_checkpoint`, and `position_z` columns to `skill_nodes`, and defines the `create_skill_tree_with_graph` RPC. Migration `0005` adds `teaching_plan` (JSONB) to `skill_nodes`. Migration `0006` adds `generated_lesson` (JSONB) to `skill_nodes` for lesson caching. Run any unapplied migrations via the Supabase dashboard SQL editor if `supabase db push` is unavailable.
-- `prompts/` contains system prompt text files loaded at request time: `graphgeneration.txt` (skill tree generation) and `lessongeneration.txt` (lesson generation). Edit these to change AI behavior without touching code.
+- `prompts/` contains system prompt text files loaded at request time: `graphgeneration.txt` for skill tree generation, plus `math_and_logic.txt`, `systems_and_economics.txt`, and `technical_and_code.txt` for lesson generation. Edit these to change AI behavior without touching code.
+- `.pathwise-dev-cache/` is a gitignored development-only cache. `api/lessons/generate` stores validated lesson JSON in `.pathwise-dev-cache/lessons.json` when `NODE_ENV !== "production"` and `PATHWISE_DISABLE_DEV_LESSON_CACHE` is not `1`.
 - `.agents/` contains repo-shared agent skills, commands, and MCP templates. Treat it as agent-facing project metadata.
 - Root config files include `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, and `postcss.config.mjs`.
 
@@ -95,6 +98,7 @@ Copy `.env.example` to `.env.local` for local development.
 | `AWS_ACCESS_KEY_ID` | One of* | IAM access key (alternative to bearer token) | — |
 | `AWS_SECRET_ACCESS_KEY` | One of* | IAM secret key (alternative to bearer token) | — |
 | `BEDROCK_MODEL_ID` | No | Override Bedrock model ID for all generation routes (graph default: Opus 4.7; lesson default: Sonnet 4.6) | — |
+| `PATHWISE_DISABLE_DEV_LESSON_CACHE` | No | Set to `1` to disable the development-only `.pathwise-dev-cache/lessons.json` lesson cache | — |
 | `MEM0_API_KEY` | No | Mem0 API key | — |
 | `FIRECRAWL_API_KEY` | No | Firecrawl API key | — |
 | `GITHUB_PAT_TOKEN` | No | GitHub personal access token for Codex GitHub MCP | — |

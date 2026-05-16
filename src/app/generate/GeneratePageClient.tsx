@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { SkillTreeLoader } from "@/components/skill-tree/SkillTreeLoader";
 import { TopBar, type LearningPathNavItem } from "@/components/ui/TopBar";
+import {
+  detectNsfwGenerationRefusal,
+  detectProhibitedGenerationRefusal,
+  NSFW_COURSE_ERROR,
+  PROHIBITED_COURSE_ERROR,
+} from "@/lib/contentSafety";
 
 function tryParseSubject(schema: string): string | null {
   try {
@@ -11,6 +17,33 @@ function tryParseSubject(schema: string): string | null {
   } catch {
     return null;
   }
+}
+
+function formatJsonParseError(error: unknown, json: string) {
+  if (!(error instanceof SyntaxError)) {
+    return error instanceof Error ? error.message : "Generated path could not be parsed.";
+  }
+
+  const message = error.message;
+  const positionMatch = message.match(/position\s+(\d+)/i);
+  const position = positionMatch ? Number(positionMatch[1]) : null;
+
+  if (position === null || !Number.isFinite(position)) {
+    return `Generated path was not valid JSON: ${message}`;
+  }
+
+  const excerptStart = Math.max(0, position - 80);
+  const excerptEnd = Math.min(json.length, position + 80);
+  const excerpt = json
+    .slice(excerptStart, excerptEnd)
+    .replace(/\s+/g, " ")
+    .trim();
+  const nearEnd = position >= json.length - 10;
+  const hint = nearEnd
+    ? "The response appears to have ended while a string was still open, usually because generation was cut off."
+    : "The invalid JSON is near this excerpt.";
+
+  return `Generated path was not valid JSON at character ${position}. ${hint} Nearby text: ${excerpt}`;
 }
 
 function Spinner() {
@@ -79,7 +112,18 @@ export function GeneratePageClient({ learningPaths = [] }: GeneratePageClientPro
 
       nextSchema += decoder.decode();
       nextSchema = nextSchema.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-      JSON.parse(nextSchema);
+      if (detectNsfwGenerationRefusal(nextSchema).isBlocked) {
+        throw new Error(NSFW_COURSE_ERROR);
+      }
+      if (detectProhibitedGenerationRefusal(nextSchema).isBlocked) {
+        throw new Error(PROHIBITED_COURSE_ERROR);
+      }
+
+      try {
+        JSON.parse(nextSchema);
+      } catch (parseError) {
+        throw new Error(formatJsonParseError(parseError, nextSchema));
+      }
       const saveRes = await fetch("/api/skill-tree/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

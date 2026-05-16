@@ -49,6 +49,7 @@ Finishing a lesson unlocks the next. Your progress is saved. The path is always 
 - **AI-tutored lessons** — Claude Sonnet 4.6 delivers focused lessons per concept: explanatory sections, worked example, numbered misconceptions, optional interactive diagram, and a practice prompt
 - **Persistent progress** — node states (current, available, completed) are tracked per user; lessons are cached permanently after first generation
 - **Interactive graph** — zoomable, pannable canvas with chapter rails, node detail panels, and real-time progress indicators
+- **Generation safety checks** — graph generation and save reject prohibited course requests and refusal-shaped placeholder roadmaps before they can render or persist
 
 ---
 
@@ -78,10 +79,9 @@ Finishing a lesson unlocks the next. Your progress is saved. The path is always 
 git clone https://github.com/your-org/ai-tutor
 cd ai-tutor
 npm install
-cp .env.example .env.local
 ```
 
-Edit `.env.local` with your Supabase and AWS credentials (see `.env.example` for all variables).
+Create `.env.local` with your Supabase and AWS credentials. The variables are listed below.
 
 Apply database migrations via the Supabase dashboard SQL editor, running each file in `supabase/migrations/` in order.
 
@@ -90,6 +90,31 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+The landing page exposes a `Join` waitlist button and a secondary `dev` button. `dev` opens `/sign-in`, which first shows a client-side development password gate before the Supabase sign-in form.
+
+Lesson generation uses two caches. In normal operation, generated lessons are stored in `skill_nodes.generated_lesson`. During local development only, `/api/lessons/generate` also writes validated lesson payloads to `.pathwise-dev-cache/lessons.json` and reads that file before calling Bedrock. This keeps the currently saved learning path usable across reloads even while iterating on migrations or local database state. The cache directory is gitignored and is disabled in production. Set `PATHWISE_DISABLE_DEV_LESSON_CACHE=1` to bypass the local file cache.
+
+### Environment Variables
+
+| Variable | Required | Description | Default |
+|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL | — |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon public key | — |
+| `SUPABASE_PROJECT_REF` | Yes | Supabase project ref for project-scoped MCP access | — |
+| `SUPABASE_ACCESS_TOKEN` | No | Optional Supabase access token for non-OAuth MCP clients | — |
+| `AWS_BEDROCK_REGION` | Yes | AWS region for Bedrock | `us-east-1` |
+| `AWS_BEARER_TOKEN_BEDROCK` | One of* | Amazon Bedrock API key (preferred) | — |
+| `AWS_ACCESS_KEY_ID` | One of* | IAM access key (alternative to bearer token) | — |
+| `AWS_SECRET_ACCESS_KEY` | One of* | IAM secret key (alternative to bearer token) | — |
+| `BEDROCK_MODEL_ID` | No | Override Bedrock model ID for all generation routes (graph default: Opus 4.7; lesson default: Sonnet 4.6) | — |
+| `PATHWISE_DISABLE_DEV_LESSON_CACHE` | No | Set to `1` to disable the development-only `.pathwise-dev-cache/lessons.json` lesson cache | — |
+| `MEM0_API_KEY` | No | Mem0 API key | — |
+| `FIRECRAWL_API_KEY` | No | Firecrawl API key | — |
+| `GITHUB_PAT_TOKEN` | No | GitHub personal access token for Codex GitHub MCP | — |
+| `NEXT_PUBLIC_APP_URL` | No | App base URL | `http://localhost:3000` |
+
+\* Provide either `AWS_BEARER_TOKEN_BEDROCK` **or** the `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` pair.
 
 ### Commands
 
@@ -108,10 +133,10 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/api/skill-tree/generate` | Optional | Streams a skill-tree JSON from Bedrock (Claude Opus 4.7). Accepts `{ goal, subject }`. Returns a streaming plain-text response. |
-| `POST` | `/api/skill-tree/save` | Required | Validates and persists a generated tree schema via the `create_skill_tree_with_graph` Postgres RPC. |
+| `POST` | `/api/skill-tree/generate` | Required | Streams a skill-tree JSON from Bedrock (Claude Opus 4.7). Accepts `{ goal, subject }`. Rejects prohibited course requests before model invocation. Returns a streaming plain-text response. |
+| `POST` | `/api/skill-tree/save` | Required | Validates and persists a generated tree schema via the `create_skill_tree_with_graph` Postgres RPC. Rejects unsafe content and refusal-shaped placeholder roadmaps. |
 | `DELETE` | `/api/skill-tree/[treeId]` | Required | Deletes the user's skill tree by ID. |
-| `POST` | `/api/lessons/generate` | Required | Returns a cached lesson or generates a new one via Bedrock (Claude Sonnet 4.6). Accepts `{ treeId, nodeId }`. Writes lesson back to `skill_nodes.generated_lesson`. |
+| `POST` | `/api/lessons/generate` | Required | Returns a cached lesson or generates a new one via Bedrock (Claude Sonnet 4.6). Accepts `{ treeId, nodeId }`. Reads `skill_nodes.generated_lesson` first, then the development-only `.pathwise-dev-cache/lessons.json` cache when enabled, and writes new lessons back to both caches where available. |
 | `POST` | `/api/progress/complete` | Required | Marks a node complete and advances progress to the next node. Accepts `{ treeId, nodeId }`. |
 | `POST` | `/api/waitlist` | None | Records a waitlist signup. Accepts `{ email }`. |
 

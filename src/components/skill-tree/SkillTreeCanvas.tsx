@@ -160,6 +160,10 @@ function graphToSchema(graph: GraphState) {
       teaching: teachingPlanToSchema(node.teachingPlan),
       difficulty_level: node.difficultyLevel ?? 1,
       is_checkpoint: node.isCheckpoint ?? false,
+      is_branch: node.isBranch ?? false,
+      branch_anchor_node_id: node.branchAnchorNodeId,
+      branch_group_id: node.branchGroupId,
+      branch_label: node.branchLabel,
       zone: node.zone ?? "Core",
       zone_color: node.zoneColor ?? "#6EF1E0",
       prerequisite_ids: node.prereqs,
@@ -194,6 +198,10 @@ function graphFromSchema(value: unknown, schemaTreeId?: string): GraphState {
       teachingBrief: toString(node.teaching_brief ?? node.teachingBrief, ""),
       teachingPlan: normalizeTeachingPlan(node.teaching ?? node.teachingPlan),
       subTopics: toStringArray(node.sub_topics ?? node.subTopics),
+      isBranch: node.is_branch === true || node.isBranch === true,
+      branchAnchorNodeId: toString(node.branch_anchor_node_id ?? node.branchAnchorNodeId, ""),
+      branchGroupId: toString(node.branch_group_id ?? node.branchGroupId, ""),
+      branchLabel: toString(node.branch_label ?? node.branchLabel, ""),
       coordX: toNumber(coords.x, index * 25),
       coordY: toNumber(coords.y, 0),
       status: node.status,
@@ -230,6 +238,10 @@ function graphFromSchema(value: unknown, schemaTreeId?: string): GraphState {
     isCheckpoint: node.isCheckpoint,
     zone: node.zone,
     zoneColor: node.zoneColor,
+    isBranch: node.isBranch,
+    branchAnchorNodeId: node.branchAnchorNodeId || undefined,
+    branchGroupId: node.branchGroupId || undefined,
+    branchLabel: node.branchLabel || undefined,
   }));
 
   const edges: SkillEdgeType[] = [];
@@ -325,7 +337,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
   const goalId  = nodes[nodes.length - 1]?.id;
 
   const goalNode        = nodes[nodes.length - 1];
-  const regularNodes    = nodes.slice(0, -1);
+  const graphNodes      = nodes.slice(0, -1);
+  const regularNodes    = graphNodes.filter((node) => !node.isBranch);
   const completedCount = regularNodes.filter(n => n.status === "completed").length;
   const canvasWidth = useMemo(() => {
     const rightMost = nodes.reduce((max, node) => {
@@ -870,6 +883,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
 
       <div
         ref={scrollRef}
+        data-screen-selection-disabled
         onClick={() => { if (!didCanvasPanRef.current) setSelectedNode(null); didCanvasPanRef.current = false; }}
         onPointerDown={handleCanvasPointerDown}
         style={{
@@ -975,8 +989,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
               })}
             </svg>
 
-            {/* Regular nodes */}
-            {regularNodes.map(node => (
+            {/* Regular and branch nodes */}
+            {graphNodes.map(node => (
               <SkillNode
                 key={node.id}
                 node={node}
@@ -1190,8 +1204,12 @@ function FloatingCard({ node, allNodes, left, top, flip, onClose }: FloatingCard
         )}
         {node.zone && (
           <>
-            <span style={{ color: "var(--color-text-muted)", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>Chapter</span>
-            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>{node.zone}</span>
+            <span style={{ color: "var(--color-text-muted)", fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase" as const, alignSelf: "center" }}>
+              {node.isBranch ? "Branch" : "Chapter"}
+            </span>
+            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>
+              {node.isBranch ? node.branchLabel || node.zone : node.zone}
+            </span>
           </>
         )}
       </div>

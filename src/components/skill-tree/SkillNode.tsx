@@ -33,9 +33,12 @@ export function SkillNode({
   const width = isGoal ? GOAL_W : NODE_W;
   const isCurrent = node.status === "current";
   const isDone = node.status === "completed";
+  const isBranch = node.isBranch === true;
 
   const background = isGoal
     ? "var(--color-goal)"
+    : isBranch
+    ? "color-mix(in srgb, var(--color-panel) 84%, var(--brand-sage-50, #EEF7F1))"
     : isCurrent
     ? "var(--color-node-current)"
     : isDone
@@ -46,6 +49,8 @@ export function SkillNode({
     ? "none"
     : isSelected
     ? "1px solid var(--color-border-accent)"
+    : isBranch
+    ? "1px dashed var(--brand-sage-600, #1F8755)"
     : isCurrent
     ? "1px solid var(--color-border-accent)"
     : isDone
@@ -56,6 +61,8 @@ export function SkillNode({
     ? "var(--shadow-goal)"
     : isSelected
     ? "var(--shadow-node-selected)"
+    : isBranch
+    ? "0 10px 28px rgba(15,20,17,0.06)"
     : isCurrent
     ? "var(--shadow-node-active)"
     : "var(--shadow-node)";
@@ -171,6 +178,20 @@ export function SkillNode({
                 textTransform: "uppercase" as const,
               }}>
                 Check
+              </span>
+            )}
+            {isBranch && (
+              <span style={{
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                color: "var(--brand-sage-700, #176544)",
+                background: "rgba(31,135,85,0.10)",
+                borderRadius: 999,
+                padding: "2px 7px",
+                textTransform: "uppercase" as const,
+              }}>
+                Branch
               </span>
             )}
             <span style={{ flex: 1 }} />

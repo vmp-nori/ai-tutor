@@ -19,9 +19,11 @@ build/
 .mcp.json
 .codex/config.toml
 .firecrawl/
+.pathwise-dev-cache/
 
 # vercel
 .vercel
+supabase/.temp/
 
 # typescript
 *.tsbuildinfo

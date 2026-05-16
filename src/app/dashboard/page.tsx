@@ -311,6 +311,11 @@ interface StoredNode {
   is_checkpoint?: boolean | null;
   zone?: string | null;
   zone_color?: string | null;
+  position_z?: number | null;
+  is_branch?: boolean | null;
+  branch_anchor_node_id?: string | null;
+  branch_group_id?: string | null;
+  branch_label?: string | null;
 }
 
 interface StoredEdge {
@@ -333,13 +338,21 @@ function isMissingSkillNodesMetadataError(message: string) {
     message.includes("Could not find the 'teaching_brief' column of 'skill_nodes'") ||
     message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
     message.includes("Could not find the 'category' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'is_branch' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'branch_anchor_node_id' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'branch_group_id' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'branch_label' column of 'skill_nodes'") ||
     message.includes("column skill_nodes.difficulty_level does not exist") ||
     message.includes("column skill_nodes.is_checkpoint does not exist") ||
     message.includes("column skill_nodes.zone does not exist") ||
     message.includes("column skill_nodes.zone_color does not exist") ||
     message.includes("column skill_nodes.teaching_brief does not exist") ||
     message.includes("column skill_nodes.teaching_plan does not exist") ||
-    message.includes("column skill_nodes.category does not exist")
+    message.includes("column skill_nodes.category does not exist") ||
+    message.includes("column skill_nodes.is_branch does not exist") ||
+    message.includes("column skill_nodes.branch_anchor_node_id does not exist") ||
+    message.includes("column skill_nodes.branch_group_id does not exist") ||
+    message.includes("column skill_nodes.branch_label does not exist")
   );
 }
 
@@ -392,7 +405,7 @@ async function fetchStoredNodes(
 ) {
   const richResult = await supabase
     .from("skill_nodes")
-    .select("id, tree_id, name, description, category, teaching_brief, teaching_plan, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+    .select("id, tree_id, name, description, category, teaching_brief, teaching_plan, position_x, position_y, position_z, difficulty_level, is_checkpoint, zone, zone_color, is_branch, branch_anchor_node_id, branch_group_id, branch_label")
     .eq("tree_id", treeId)
     .order("position_x", { ascending: true });
 
@@ -403,13 +416,23 @@ async function fetchStoredNodes(
   if (isMissingTeachingPlanError(richResult.error.message)) {
     const legacyTeachingResult = await supabase
       .from("skill_nodes")
-      .select("id, tree_id, name, description, category, teaching_brief, position_x, position_y, difficulty_level, is_checkpoint, zone, zone_color")
+      .select("id, tree_id, name, description, category, teaching_brief, position_x, position_y, position_z, difficulty_level, is_checkpoint, zone, zone_color, is_branch, branch_anchor_node_id, branch_group_id, branch_label")
       .eq("tree_id", treeId)
       .order("position_x", { ascending: true });
 
     if (!legacyTeachingResult.error || !isMissingSkillNodesMetadataError(legacyTeachingResult.error.message)) {
       return legacyTeachingResult;
     }
+  }
+
+  const branchAwareBaseResult = await supabase
+    .from("skill_nodes")
+    .select("id, tree_id, name, description, position_x, position_y, is_branch, branch_anchor_node_id, branch_group_id, branch_label")
+    .eq("tree_id", treeId)
+    .order("position_x", { ascending: true });
+
+  if (!branchAwareBaseResult.error || !isMissingSkillNodesMetadataError(branchAwareBaseResult.error.message)) {
+    return branchAwareBaseResult;
   }
 
   return supabase
@@ -450,6 +473,10 @@ function buildSchemaJson(
     prerequisite_ids: (prereqsByNode.get(node.id) ?? []).map(strip),
     coordinates: { x: node.position_x, y: node.position_y },
     status: statusById.get(node.id) ?? (index === 0 ? "current" : "available"),
+    is_branch: node.is_branch ?? false,
+    branch_anchor_node_id: node.branch_anchor_node_id ? strip(node.branch_anchor_node_id) : undefined,
+    branch_group_id: node.branch_group_id ?? undefined,
+    branch_label: node.branch_label ?? undefined,
   }));
 
   return JSON.stringify({ subject: tree.subject, goal: tree.goal, nodes });
@@ -462,14 +489,16 @@ function buildStoredGraph(
   progress: StoredProgress[],
 ) {
   const statusByNodeId = new Map(progress.map((item) => [item.node_id, item.status]));
+  const mainStoredNodes = storedNodes.filter((node) => !node.is_branch);
+  const branchStoredNodes = storedNodes.filter((node) => node.is_branch);
   const coordinateColumns = Array.from(
-    new Set(storedNodes.map((node) => node.position_x)),
+    new Set(mainStoredNodes.map((node) => node.position_x)),
   ).sort((a, b) => a - b);
   const xByCoordinate = new Map(
     coordinateColumns.map((coordinate, index) => [coordinate, X_START + index * X_GAP]),
   );
 
-  const nodes: SkillNode[] = storedNodes.map((node, index) => ({
+  const nodes: SkillNode[] = mainStoredNodes.map((node, index) => ({
     id: node.id,
     treeId: tree.id,
     name: node.name,
@@ -489,7 +518,69 @@ function buildStoredGraph(
     zoneColor: node.zone_color ?? undefined,
   }));
 
-  const sourceIds = new Set(storedEdges.map((edge) => edge.from_node_id));
+  const branchGroups = new Map<string, StoredNode[]>();
+  for (const node of branchStoredNodes) {
+    const key = node.branch_group_id ?? node.branch_anchor_node_id ?? node.id;
+    const group = branchGroups.get(key) ?? [];
+    group.push(node);
+    branchGroups.set(key, group);
+  }
+
+  const branchGroupIndexByAnchor = new Map<string, number>();
+  const branchNodes: SkillNode[] = [];
+  for (const group of branchGroups.values()) {
+    group.sort((left, right) => {
+      if (left.position_z !== right.position_z) return (left.position_z ?? 0) - (right.position_z ?? 0);
+      if (left.position_x !== right.position_x) return left.position_x - right.position_x;
+      return left.id.localeCompare(right.id);
+    });
+
+    const first = group[0];
+    const anchor = nodes.find((node) => node.id === first.branch_anchor_node_id);
+    const anchorX = anchor?.x ?? X_START;
+    const anchorY = anchor?.y ?? Y_BASE;
+    const anchorGroupIndex = first.branch_anchor_node_id
+      ? branchGroupIndexByAnchor.get(first.branch_anchor_node_id) ?? 0
+      : 0;
+    if (first.branch_anchor_node_id) {
+      branchGroupIndexByAnchor.set(first.branch_anchor_node_id, anchorGroupIndex + 1);
+    }
+
+    group.forEach((node, index) => {
+      branchNodes.push({
+        id: node.id,
+        treeId: tree.id,
+        name: node.name,
+        description: node.description,
+        category: node.category ?? "technical_and_code",
+        status: statusByNodeId.get(node.id) ?? "available",
+        x: anchorX + index * X_GAP,
+        y: anchorY + 148 + anchorGroupIndex * 124,
+        prereqs: storedEdges
+          .filter((edge) => edge.to_node_id === node.id)
+          .map((edge) => edge.from_node_id),
+        teachingBrief: node.teaching_brief ?? undefined,
+        teachingPlan: teachingPlan(node.teaching_plan),
+        difficultyLevel: node.difficulty_level ?? undefined,
+        isCheckpoint: node.is_checkpoint ?? undefined,
+        zone: node.zone ?? undefined,
+        zoneColor: node.zone_color ?? undefined,
+        isBranch: true,
+        branchAnchorNodeId: node.branch_anchor_node_id ?? undefined,
+        branchGroupId: node.branch_group_id ?? undefined,
+        branchLabel: node.branch_label ?? undefined,
+      });
+    });
+  }
+
+  const allGraphNodes = [...nodes, ...branchNodes];
+
+  const branchNodeIds = new Set(branchStoredNodes.map((node) => node.id));
+  const sourceIds = new Set(
+    storedEdges
+      .filter((edge) => !branchNodeIds.has(edge.to_node_id))
+      .map((edge) => edge.from_node_id),
+  );
   const terminalNodeIds = nodes
     .filter((node) => !sourceIds.has(node.id))
     .map((node) => node.id);
@@ -523,7 +614,7 @@ function buildStoredGraph(
   ];
 
   return {
-    nodes: [...nodes, goalNode],
+    nodes: [...allGraphNodes, goalNode],
     edges,
     subject: tree.subject,
   };
@@ -589,15 +680,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         const typedProgress = (progress ?? []) as StoredProgress[];
 
         const graph = buildStoredGraph(typedTree, typedNodes, typedEdges, typedProgress);
-        const schema = buildSchemaJson(typedTree, typedNodes, typedEdges, typedProgress);
-
         return (
           <SkillTreeLoader
             nodes={graph.nodes}
             edges={graph.edges}
             subject={graph.subject}
-            initialSchema={schema}
-            schemaTreeId={typedTree.id}
             learningPaths={learningPaths}
           />
         );

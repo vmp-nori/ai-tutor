@@ -27,7 +27,13 @@ function DiagramBody({ diagram }: Props) {
 
 export function DiagramRenderer({ diagram }: Props) {
   return (
-    <section style={{ margin: "26px 0 32px" }}>
+    <section
+      data-ai-context={JSON.stringify({ type: "diagram", diagram })}
+      data-ai-kind="diagram"
+      data-ai-label={diagram.title || diagram.type}
+      data-ai-text={diagram.title || diagram.type}
+      style={{ margin: "26px 0 32px" }}
+    >
       {diagram.title && (
         <div
           style={{

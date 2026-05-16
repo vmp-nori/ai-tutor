@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
+import type { GeneratedLesson } from "@/lib/types";
 import { LessonPageClient } from "./LessonPageClient";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +16,34 @@ interface StoredNode {
   id: string;
   name: string;
   description: string;
+  generated_lesson?: unknown;
 }
+
+const LESSON_SCHEMA_VERSION = 2;
+const LESSON_STYLE_VERSION = 1;
 
 function isMissingNodeMetadataError(message: string) {
   return (
     message.includes("Could not find the 'teaching_brief' column of 'skill_nodes'") ||
     message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'generated_lesson' column of 'skill_nodes'") ||
     message.includes("column skill_nodes.teaching_brief does not exist") ||
-    message.includes("column skill_nodes.teaching_plan does not exist")
+    message.includes("column skill_nodes.teaching_plan does not exist") ||
+    message.includes("column skill_nodes.generated_lesson does not exist")
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function cachedGeneratedLesson(value: unknown): GeneratedLesson | null {
+  if (!isRecord(value)) return null;
+  if (value.schemaVersion !== LESSON_SCHEMA_VERSION || value.styleVersion !== LESSON_STYLE_VERSION) return null;
+  if (!Array.isArray(value.slides) || value.slides.length === 0) return null;
+  if (typeof value.title !== "string") return null;
+
+  return value as unknown as GeneratedLesson;
 }
 
 function nodeIdCandidates(treeId: string, nodeId: string) {
@@ -52,7 +72,7 @@ async function fetchStoredNode(
   const candidates = nodeIdCandidates(treeId, nodeId);
   const richResult = await supabase
     .from("skill_nodes")
-    .select("id, name, description, teaching_brief, teaching_plan")
+    .select("id, name, description, teaching_brief, teaching_plan, generated_lesson")
     .eq("tree_id", treeId)
     .in("id", candidates);
 
@@ -120,6 +140,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
   }
 
   const storedNode = node as StoredNode;
+  const initialLesson = cachedGeneratedLesson(storedNode.generated_lesson);
 
   return (
     <LessonPageClient
@@ -130,6 +151,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
       nodeName={storedNode.name}
       nodeDescription={storedNode.description}
       dashboardHref={`/dashboard?treeId=${encodeURIComponent(treeId)}`}
+      initialLesson={initialLesson}
     />
   );
 }

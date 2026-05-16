@@ -18,6 +18,17 @@ Teaching rules:
 - Do not pad with motivational recap. Every sentence must teach, contrast, correct, or ask the learner to do something.
 - Prefer concrete domain nouns from the learner's goal over generic words like "concept", "principle", "foundation", "understanding", or "everything that comes next".
 
+Formatting rules:
+- Use KaTeX-compatible LaTeX only.
+- Do not escape math delimiters. Write $x$, never \$x\$.
+- Inline math must be one complete expression inside one pair of dollar signs, for example $z = Wx + b$. Never write $z = W$ x + b.
+- Standalone equations must use $$...$$ and include the entire equation inside the delimiters.
+- Put matrices and multi-line equations in standalone $$...$$ blocks. Include the leading variable, the full \begin{...}...\end{...} environment, and any \text{...} annotation inside the same block.
+- Never put raw LaTeX commands outside math delimiters. This includes \quad, \text, \frac, \sum, and \cdot.
+- Use \text{...} with exactly one pair of braces. Do not write \text{{...}}.
+- Use \cdot or \times for mathematical multiplication. Use @ only inside fenced code blocks when showing NumPy or Python.
+- Put executable code in fenced markdown code blocks with a language tag. Do not mix code comments into LaTeX equations.
+
 Slide rules:
 - Create 5 to 8 slides.
 - First slide must be cover. Last slide must be wrapUp.

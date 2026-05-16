@@ -1,18 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "impeccable": {
-      "source": "pbakaus/impeccable",
-      "sourceType": "github",
-      "skillPath": ".agents/skills/impeccable/SKILL.md",
-      "computedHash": "441959d529b322bd316061e60445eed64554952561617dd5d2af22eac71b34f9"
-    },
-    "firecrawl": {
-      "source": "https://www.firecrawl.dev/agent-onboarding/SKILL.md",
-      "sourceType": "url",
-      "skillPath": ".agents/skills/firecrawl/SKILL.md",
-      "computedHash": "167fd60f5d434be1ad1b2ffb1222c1efae177752942b90b27b091783392c13fa"
-    },
     "backend-patterns": {
       "source": "ecc-universal@1.10.0",
       "sourceType": "npm",
@@ -37,25 +25,29 @@
       "skillPath": ".agents/skills/cpp-coding-standards/SKILL.md",
       "computedHash": "70919980c635f66db649b7eb1e426fb2098754ed6c9db22f1a7eee0935227d35"
     },
+    "firecrawl": {
+      "source": "https://www.firecrawl.dev/agent-onboarding/SKILL.md",
+      "sourceType": "url",
+      "skillPath": ".agents/skills/firecrawl/SKILL.md",
+      "computedHash": "167fd60f5d434be1ad1b2ffb1222c1efae177752942b90b27b091783392c13fa"
+    },
     "frontend-patterns": {
       "source": "ecc-universal@1.10.0",
       "sourceType": "npm",
       "skillPath": ".agents/skills/frontend-patterns/SKILL.md",
       "computedHash": "dd04a1c02503036ee7f4d649c9b7b75d2e6954a94d6f464faedfa992701d1978"
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": "skill/SKILL.md",
+      "computedHash": "8833ba9691dd006cea03013cffa8d5aaf0835ec8179186e0188c6fc388737147"
+    },
     "java-coding-standards": {
       "source": "ecc-universal@1.10.0",
       "sourceType": "npm",
       "skillPath": ".agents/skills/java-coding-standards/SKILL.md",
       "computedHash": "687d56b0001f4588227e80e048d9d5605269f3bd7a31f6ced79b04b7379255e7"
-    }
-  },
-  "commands": {
-    "update-docs": {
-      "source": "ecc-universal@1.10.0",
-      "sourceType": "npm",
-      "commandPath": ".agents/commands/update-docs.md",
-      "computedHash": "09d8332a9e11a94b84462f7918471e1db5264312619d687496ad3ff8e8226631"
     }
   }
 }

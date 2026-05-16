@@ -25,6 +25,10 @@ export interface SkillNode {
   isCheckpoint?: boolean;
   zone?: string;
   zoneColor?: string;
+  isBranch?: boolean;
+  branchAnchorNodeId?: string;
+  branchGroupId?: string;
+  branchLabel?: string;
 }
 
 export interface SkillEdge {

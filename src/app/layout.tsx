@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
-import { ScreenSelectionOverlay } from "@/components/ui/ScreenSelectionOverlay";
+import { AIChatSidebar } from "@/components/ui/AIChatSidebar";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -17,13 +17,56 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const appUrl = "https://pathwise.cloud";
+const siteTitle = "Pathwise — Learn anything, one concept at a time";
+const siteDescription =
+  "AI-generated skill trees for any subject. Follow a clear, atomic path from foundational primitives to your goal.";
+
 export const metadata: Metadata = {
-  title: "pathwise — Learn anything, one concept at a time",
-  description:
-    "AI-generated skill trees for any subject. Follow a clear, atomic path from foundational primitives to your goal.",
+  metadataBase: new URL(appUrl),
+  applicationName: "Pathwise",
+  title: {
+    default: siteTitle,
+    template: "%s | Pathwise",
+  },
+  description: siteDescription,
+  alternates: {
+    canonical: "/",
+  },
   icons: {
-    icon: "/favicon.svg",
-    apple: "/app-icon.svg",
+    icon: [
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+      { url: "/brand/favicon.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/brand/app-icon.png", sizes: "1024x1024", type: "image/png" }],
+    shortcut: "/brand/favicon.png",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Pathwise",
+    title: siteTitle,
+    description: siteDescription,
+    images: [
+      {
+        url: "/brand/banner-twitter.png",
+        width: 1500,
+        height: 500,
+        alt: "Pathwise brand preview",
+      },
+      {
+        url: "/brand/logo-1x1-light.png",
+        width: 400,
+        height: 400,
+        alt: "Pathwise logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+    images: ["/brand/banner-twitter.png"],
   },
 };
 
@@ -66,7 +109,7 @@ export default function RootLayout({
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
-        <ScreenSelectionOverlay />
+        <AIChatSidebar />
       </body>
     </html>
   );

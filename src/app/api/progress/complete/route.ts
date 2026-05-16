@@ -11,6 +11,7 @@ interface StoredNode {
   id: string;
   name: string;
   position_x: number;
+  is_branch?: boolean | null;
 }
 
 interface StoredProgress {
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   const { data: nodes, error: nodesError } = await supabase
     .from("skill_nodes")
-    .select("id, name, position_x")
+    .select("id, name, position_x, is_branch")
     .eq("tree_id", treeId)
     .order("position_x", { ascending: true })
     .order("id", { ascending: true });
@@ -88,7 +89,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Concept was not found" }, { status: 404 });
   }
 
-  const nodeIds = orderedNodes.map((node) => node.id);
+  if (targetNode.is_branch) {
+    const now = new Date().toISOString();
+    const completeResult = await supabase
+      .from("user_node_progress")
+      .update({ status: "completed", completed_at: now })
+      .eq("user_id", user.id)
+      .eq("node_id", targetNode.id);
+
+    if (completeResult.error) {
+      return NextResponse.json({ error: completeResult.error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      treeId,
+      nodeId: targetNode.id,
+      completed: true,
+      dashboardHref: `/dashboard?treeId=${encodeURIComponent(treeId)}`,
+      nextNode: null,
+    });
+  }
+
+  const mainNodes = orderedNodes.filter((node) => !node.is_branch);
+  const nodeIds = mainNodes.map((node) => node.id);
   const { data: progress } = await supabase
     .from("user_node_progress")
     .select("node_id, status")
@@ -102,7 +125,7 @@ export async function POST(req: NextRequest) {
   );
   completedIds.add(targetNode.id);
 
-  const nextNode = orderedNodes.find((node) => !completedIds.has(node.id));
+  const nextNode = mainNodes.find((node) => !completedIds.has(node.id));
   const now = new Date().toISOString();
 
   const completeResult = await supabase
@@ -115,7 +138,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: completeResult.error.message }, { status: 500 });
   }
 
-  const incompleteIds = orderedNodes
+  const incompleteIds = mainNodes
     .filter((node) => !completedIds.has(node.id))
     .map((node) => node.id);
 

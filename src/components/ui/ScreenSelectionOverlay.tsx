@@ -14,15 +14,27 @@ interface SelectionRect {
   height: number;
 }
 
+interface StructuredContextItem {
+  kind: string;
+  label?: string;
+  text?: string;
+  data?: unknown;
+}
+
+interface StructuredSelectionContext {
+  selectedText: string;
+  slide?: {
+    number?: string;
+    title?: string;
+    kind?: string;
+  };
+  elements: StructuredContextItem[];
+}
+
 interface ScreenSelectionDetail {
   rect: SelectionRect;
   text: string;
-}
-
-interface CapturedSelection {
-  rect: SelectionRect;
-  text: string;
-  nodes: Node[];
+  context: StructuredSelectionContext;
 }
 
 interface ChatMessage {
@@ -34,14 +46,18 @@ interface ChatMessage {
 type StreamState = "idle" | "streaming" | "error";
 
 const SCREEN_SELECTION_EVENT = "pathwise:screen-selection";
+const SCREEN_SELECTION_DISABLED_SELECTOR = "[data-screen-selection-disabled]";
 const MIN_SELECTION_SIZE = 8;
-const CURSOR_HINT_OFFSET = 16;
-const CURSOR_HINT_WIDTH = 270;
-const CURSOR_HINT_HEIGHT = 42;
 const AI_WINDOW_WIDTH = 460;
 const AI_WINDOW_GAP = 12;
 const AI_WINDOW_TOP = 72;
 const AI_WINDOW_MOTION_MS = 560;
+const EXAMPLE_SELECTION_PROMPTS = [
+  { label: "Explain this further", prompt: "Explain this further." },
+  { label: "Give me an example", prompt: "Give me a concrete example based on this selection." },
+  { label: "Quiz me on this", prompt: "Quiz me on this selection." },
+  { label: "Why does this matter?", prompt: "Why does this matter for the lesson goal?" },
+];
 
 function normalizeRect(start: Point, end: Point): SelectionRect {
   const x = Math.min(start.x, end.x);
@@ -59,6 +75,10 @@ function rectsIntersect(a: SelectionRect, b: DOMRect): boolean {
   return a.x < b.right && a.x + a.width > b.left && a.y < b.bottom && a.y + a.height > b.top;
 }
 
+function elementIntersectsRect(element: Element, rect: SelectionRect): boolean {
+  return Array.from(element.getClientRects()).some((clientRect) => rectsIntersect(rect, clientRect));
+}
+
 function isIgnoredTextNode(node: Node): boolean {
   const parent = node.parentElement;
 
@@ -69,39 +89,53 @@ function isIgnoredTextNode(node: Node): boolean {
   return tag === "script" || tag === "style" || tag === "noscript";
 }
 
-function getRectForTextNodes(nodes: Node[]): SelectionRect | null {
-  const rects: DOMRect[] = [];
+function getTextSegmentsInsideRect(node: Node, rect: SelectionRect): string[] {
+  const text = node.textContent ?? "";
+  const segments: string[] = [];
+  let current = "";
 
-  for (const node of nodes) {
+  for (let index = 0; index < text.length; index += 1) {
     const range = document.createRange();
-    range.selectNodeContents(node);
-    rects.push(...Array.from(range.getClientRects()));
+    range.setStart(node, index);
+    range.setEnd(node, index + 1);
+
+    const intersects = Array.from(range.getClientRects()).some((clientRect) => rectsIntersect(rect, clientRect));
     range.detach();
+
+    if (intersects) {
+      current += text[index];
+      continue;
+    }
+
+    const normalized = current.replace(/\s+/g, " ").trim();
+    if (normalized) segments.push(normalized);
+    current = "";
   }
 
-  if (rects.length === 0) return null;
+  const normalized = current.replace(/\s+/g, " ").trim();
+  if (normalized) segments.push(normalized);
 
-  const left = Math.min(...rects.map((rect) => rect.left));
-  const top = Math.min(...rects.map((rect) => rect.top));
-  const right = Math.max(...rects.map((rect) => rect.right));
-  const bottom = Math.max(...rects.map((rect) => rect.bottom));
-
-  return {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
+  return segments;
 }
 
-function getSelectionInsideRect(rect: SelectionRect): CapturedSelection {
+function readJsonAttribute(element: Element, attribute: string): unknown {
+  const value = element.getAttribute(attribute);
+  if (!value) return undefined;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function readSelectedText(rect: SelectionRect) {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const selectedText: string[] = [];
-  const nodes: Node[] = [];
 
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    const text = node.textContent?.replace(/\s+/g, " ").trim();
+    const text = node.textContent?.trim();
 
     if (!text || isIgnoredTextNode(node)) continue;
 
@@ -112,31 +146,40 @@ function getSelectionInsideRect(rect: SelectionRect): CapturedSelection {
     range.detach();
 
     if (intersects) {
-      selectedText.push(text);
-      nodes.push(node);
+      selectedText.push(...getTextSegmentsInsideRect(node, rect));
     }
   }
 
+  return selectedText.join("\n").slice(0, 6000);
+}
+
+function readStructuredContext(rect: SelectionRect): StructuredSelectionContext {
+  const selectedText = readSelectedText(rect);
+  const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-ai-context]"))
+    .filter((element) => !element.closest("[data-screen-selection-ui]") && elementIntersectsRect(element, rect))
+    .map((element): StructuredContextItem => ({
+      kind: element.dataset.aiKind || "content",
+      label: element.dataset.aiLabel,
+      text: element.dataset.aiText || element.innerText?.replace(/\s+/g, " ").trim(),
+      data: readJsonAttribute(element, "data-ai-context"),
+    }))
+    .filter((item) => item.text || item.data);
+
+  const activeSlide = document.querySelector<HTMLElement>(".lp-slide--active");
+
   return {
-    rect,
-    text: selectedText.join("\n").slice(0, 6000),
-    nodes,
+    selectedText,
+    slide: activeSlide ? {
+      number: activeSlide.dataset.aiSlideNumber,
+      title: activeSlide.dataset.aiSlideTitle,
+      kind: activeSlide.dataset.aiSlideKind,
+    } : undefined,
+    elements,
   };
 }
 
 function messageId() {
   return globalThis.crypto?.randomUUID?.() ?? String(Date.now());
-}
-
-function getCursorHintPosition(cursorPoint: Point | null): Point {
-  if (!cursorPoint || typeof window === "undefined") {
-    return { x: 16, y: 16 };
-  }
-
-  return {
-    x: Math.max(12, Math.min(cursorPoint.x + CURSOR_HINT_OFFSET, window.innerWidth - CURSOR_HINT_WIDTH - 12)),
-    y: Math.max(12, Math.min(cursorPoint.y + CURSOR_HINT_OFFSET, window.innerHeight - CURSOR_HINT_HEIGHT - 12)),
-  };
 }
 
 async function readErrorMessage(response: Response) {
@@ -149,6 +192,15 @@ async function readErrorMessage(response: Response) {
   return response.status === 401 ? "Sign in to ask about a selection." : "The answer could not be generated.";
 }
 
+function lessonRouteParts() {
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  if (parts[0] !== "learn" || !parts[1] || !parts[2]) return null;
+  return {
+    treeId: decodeURIComponent(parts[1]),
+    nodeId: decodeURIComponent(parts[2]),
+  };
+}
+
 export function ScreenSelectionOverlay() {
   const [isActive, setIsActive] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
@@ -159,20 +211,15 @@ export function ScreenSelectionOverlay() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamState, setStreamState] = useState<StreamState>("idle");
   const [error, setError] = useState("");
-  const [cursorPoint, setCursorPoint] = useState<Point | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const selectionBoxRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const selectedTextNodesRef = useRef<Node[]>([]);
   const isDraggingRef = useRef(false);
 
   const liveRect = useMemo(() => {
     if (!dragStart || !dragEnd) return null;
     return normalizeRect(dragStart, dragEnd);
   }, [dragEnd, dragStart]);
-
-  const displayRect = liveRect ?? selection?.rect ?? null;
-  const cursorHintPosition = getCursorHintPosition(cursorPoint);
+  const selectedRect = liveRect ?? selection?.rect ?? null;
 
   const resetDrag = useCallback(() => {
     isDraggingRef.current = false;
@@ -190,32 +237,8 @@ export function ScreenSelectionOverlay() {
     setMessages([]);
     setStreamState("idle");
     setError("");
-    selectedTextNodesRef.current = [];
     resetDrag();
   }, [resetDrag]);
-
-  const realignSelectionRect = useCallback(() => {
-    const nextRect = getRectForTextNodes(selectedTextNodesRef.current);
-    if (!nextRect) return;
-
-    if (selectionBoxRef.current) {
-      selectionBoxRef.current.style.transform = `translate3d(${nextRect.x}px, ${nextRect.y}px, 0)`;
-      selectionBoxRef.current.style.width = `${nextRect.width}px`;
-      selectionBoxRef.current.style.height = `${nextRect.height}px`;
-    }
-
-    setSelection((current) => current ? { ...current, rect: nextRect } : current);
-  }, []);
-
-  useEffect(() => {
-    function handlePointerMove(event: PointerEvent) {
-      setCursorPoint({ x: event.clientX, y: event.clientY });
-    }
-
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-
-    return () => window.removeEventListener("pointermove", handlePointerMove);
-  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -225,6 +248,7 @@ export function ScreenSelectionOverlay() {
       }
 
       if (event.key !== "Alt") return;
+      if (document.querySelector(SCREEN_SELECTION_DISABLED_SELECTOR)) return;
 
       event.preventDefault();
       setIsActive(true);
@@ -269,29 +293,6 @@ export function ScreenSelectionOverlay() {
   }, [isChatOpen]);
 
   useEffect(() => {
-    if (!isChatOpen) return;
-
-    let frame = 0;
-    const startedAt = performance.now();
-
-    function trackLayoutMotion(now: number) {
-      realignSelectionRect();
-      if (now - startedAt < AI_WINDOW_MOTION_MS + 80) {
-        frame = window.requestAnimationFrame(trackLayoutMotion);
-      }
-    }
-
-    frame = window.requestAnimationFrame(trackLayoutMotion);
-
-    window.addEventListener("resize", realignSelectionRect);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", realignSelectionRect);
-    };
-  }, [isChatOpen, realignSelectionRect]);
-
-  useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
 
@@ -302,15 +303,13 @@ export function ScreenSelectionOverlay() {
     event.currentTarget.setPointerCapture(event.pointerId);
 
     const point = { x: event.clientX, y: event.clientY };
-    setCursorPoint(point);
     abortRef.current?.abort();
     abortRef.current = null;
     isDraggingRef.current = true;
-    setSelection(null);
-    selectedTextNodesRef.current = [];
-    setIsChatOpen(false);
-    setPrompt("");
-    setMessages([]);
+    if (!isChatOpen) {
+      setSelection(null);
+      setPrompt("");
+    }
     setStreamState("idle");
     setError("");
     setDragStart(point);
@@ -318,8 +317,6 @@ export function ScreenSelectionOverlay() {
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    setCursorPoint({ x: event.clientX, y: event.clientY });
-
     if (!isDraggingRef.current) return;
 
     event.preventDefault();
@@ -340,24 +337,20 @@ export function ScreenSelectionOverlay() {
       return;
     }
 
-    const capturedSelection = getSelectionInsideRect(rect);
-    selectedTextNodesRef.current = capturedSelection.nodes;
-
+    const context = readStructuredContext(rect);
     const detail: ScreenSelectionDetail = {
-      rect: capturedSelection.rect,
-      text: capturedSelection.text,
+      rect,
+      text: context.selectedText,
+      context,
     };
 
-    setSelection(detail);
     setIsActive(false);
+    setSelection(detail);
     setIsChatOpen(true);
     window.dispatchEvent(new CustomEvent<ScreenSelectionDetail>(SCREEN_SELECTION_EVENT, { detail }));
   }
 
-  async function askAboutSelection(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const question = prompt.trim();
+  async function submitQuestion(question: string) {
     if (!question || !selection || streamState === "streaming") return;
 
     const assistantId = messageId();
@@ -381,6 +374,7 @@ export function ScreenSelectionOverlay() {
         body: JSON.stringify({
           prompt: question,
           selectedText: selection.text,
+          selectedContext: selection.context,
           rect: selection.rect,
         }),
         signal: controller.signal,
@@ -418,7 +412,82 @@ export function ScreenSelectionOverlay() {
     }
   }
 
-  if (!isActive && !isChatOpen && !displayRect) return null;
+  async function submitBranch() {
+    if (!selection || streamState === "streaming") return;
+
+    const routeParts = lessonRouteParts();
+    if (!routeParts) {
+      setError("Open a lesson before starting a branch.");
+      return;
+    }
+
+    const branchPrompt = prompt.trim() || "Start a branch for the selected text.";
+    const controller = new AbortController();
+
+    abortRef.current?.abort();
+    abortRef.current = controller;
+    setPrompt("");
+    setError("");
+    setStreamState("streaming");
+    setMessages((current) => [
+      ...current,
+      { id: messageId(), role: "user", content: branchPrompt },
+      { id: messageId(), role: "assistant", content: "Creating an optional branch..." },
+    ]);
+
+    try {
+      const response = await fetch("/api/skill-tree/branch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          treeId: routeParts.treeId,
+          anchorNodeId: routeParts.nodeId,
+          prompt: branchPrompt,
+          selectedText: selection.text,
+          selectedContext: selection.context,
+          trigger: "selection",
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response));
+      }
+
+      const data = await response.json() as {
+        branchLabel?: string;
+        branchNodeIds?: string[];
+        dashboardHref?: string;
+      };
+      const count = data.branchNodeIds?.length ?? 0;
+      const href = data.dashboardHref ?? `/dashboard?treeId=${encodeURIComponent(routeParts.treeId)}`;
+      setMessages((current) => [
+        ...current.filter((message) => message.content !== "Creating an optional branch..."),
+        {
+          id: messageId(),
+          role: "assistant",
+          content: `Branch created${data.branchLabel ? `: ${data.branchLabel}` : ""}. ${count} optional concept${count === 1 ? "" : "s"} added.\n\nView it on the graph: ${href}`,
+        },
+      ]);
+      setStreamState("idle");
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === "AbortError") return;
+
+      const message = caught instanceof Error ? caught.message : "The branch could not be generated.";
+      setStreamState("error");
+      setError(message);
+      setMessages((current) => current.filter((item) => item.content !== "Creating an optional branch..."));
+    } finally {
+      abortRef.current = null;
+    }
+  }
+
+  async function askAboutSelection(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitQuestion(prompt.trim());
+  }
+
+  if (!isActive && !isChatOpen && !selectedRect) return null;
 
   return (
     <>
@@ -434,77 +503,28 @@ export function ScreenSelectionOverlay() {
             inset: 0,
             zIndex: 2147483645,
             cursor: "crosshair",
-            background: "oklch(16.8% 0.018 238 / 0.28)",
+            background: "rgba(15, 20, 17, 0.28)",
           }}
-        >
-          <div
-            aria-hidden="true"
-            style={{
-              position: "fixed",
-              left: cursorHintPosition.x,
-              top: cursorHintPosition.y,
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              padding: "8px 10px 8px 8px",
-              borderRadius: 8,
-              border: "1px solid oklch(92.2% 0.025 168 / 0.34)",
-              background: "oklch(16.8% 0.018 238 / 0.86)",
-              color: "var(--brand-sage-100)",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 0,
-              pointerEvents: "none",
-              boxShadow: "0 14px 38px oklch(16.8% 0.018 238 / 0.28)",
-            }}
-          >
-            <span
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--brand-ink)",
-                overflow: "hidden",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-mark.svg"
-                alt=""
-                width={22}
-                height={22}
-                style={{ display: "block", width: "100%", height: "100%", borderRadius: "inherit" }}
-              />
-            </span>
-            Ask about any part of the screen
-          </div>
-        </div>
+        />
       )}
 
-      {displayRect && (
+      {selectedRect && (
         <div
-          ref={selectionBoxRef}
           data-screen-selection-ui
           aria-hidden="true"
           style={{
             position: "fixed",
             left: 0,
             top: 0,
-            width: displayRect.width,
-            height: displayRect.height,
-            transform: `translate3d(${displayRect.x}px, ${displayRect.y}px, 0)`,
+            width: selectedRect.width,
+            height: selectedRect.height,
+            transform: `translate3d(${selectedRect.x}px, ${selectedRect.y}px, 0)`,
             zIndex: 2147483646,
             border: "1.5px solid var(--brand-mint)",
             background: "rgba(94, 226, 168, 0.12)",
             boxShadow: "0 0 0 1px rgba(15, 20, 17, 0.34), 0 14px 40px rgba(15, 20, 17, 0.2)",
             pointerEvents: "none",
             willChange: "transform, width, height",
-            transition: isChatOpen
-              ? "background 220ms ease-out, border-color 220ms ease-out, box-shadow 220ms ease-out"
-              : "none",
           }}
         />
       )}
@@ -519,21 +539,8 @@ export function ScreenSelectionOverlay() {
             }
 
             @keyframes pw-selection-panel-in {
-              0% {
-                opacity: 0;
-                transform: translateX(54px) scale(0.965);
-                box-shadow: 0 10px 30px oklch(16.8% 0.018 238 / 0.10), 0 0 0 1px oklch(96.8% 0.014 168 / 0.24);
-              }
-              72% {
-                opacity: 1;
-                transform: translateX(-4px) scale(1.004);
-                box-shadow: 0 30px 86px oklch(16.8% 0.018 238 / 0.30), 0 0 0 1px oklch(96.8% 0.014 168 / 0.42);
-              }
-              100% {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-                box-shadow: 0 26px 80px oklch(16.8% 0.018 238 / 0.26), 0 0 0 1px oklch(96.8% 0.014 168 / 0.38);
-              }
+              from { opacity: 0; transform: translateX(54px) scale(0.965); }
+              to { opacity: 1; transform: translateX(0) scale(1); }
             }
 
             @media (min-width: 980px) {
@@ -545,6 +552,10 @@ export function ScreenSelectionOverlay() {
 
             @media (prefers-reduced-motion: reduce) {
               [data-screen-selection-drawer] {
+                animation: none !important;
+              }
+
+              [data-selection-branch-cta]::before {
                 animation: none !important;
               }
 
@@ -566,31 +577,32 @@ export function ScreenSelectionOverlay() {
               width: `min(${AI_WINDOW_WIDTH}px, calc(100vw - ${AI_WINDOW_GAP * 2}px))`,
               display: "flex",
               flexDirection: "column",
-              overflow: "hidden",
+              overflowX: "hidden",
+              overflowY: "auto",
               border: "1px solid var(--brand-line-strong)",
               borderRadius: 18,
               background: "var(--brand-paper)",
               color: "var(--brand-ink)",
-              boxShadow: "0 26px 80px oklch(16.8% 0.018 238 / 0.26), 0 0 0 1px oklch(96.8% 0.014 168 / 0.38)",
+              boxShadow: "0 26px 80px rgba(15, 20, 17, 0.26)",
               animation: `pw-selection-panel-in ${AI_WINDOW_MOTION_MS}ms cubic-bezier(0.16, 1, 0.3, 1) both`,
             }}
           >
             <div
               style={{
-                padding: "18px 18px 16px",
+                padding: "14px 16px",
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 10,
                 borderBottom: "1px solid var(--brand-line)",
-                background: "var(--brand-sage-50)",
+                background: "var(--brand-paper)",
               }}
             >
               <div
                 aria-hidden="true"
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -603,16 +615,13 @@ export function ScreenSelectionOverlay() {
                 <img
                   src="/logo-mark.svg"
                   alt=""
-                  width={34}
-                  height={34}
+                  width={28}
+                  height={28}
                   style={{ display: "block", width: "100%", height: "100%", borderRadius: "inherit" }}
                 />
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.12 }}>Ask about this selection</div>
-                <div style={{ fontSize: 12, color: "var(--brand-ink-dim)", lineHeight: 1.4, marginTop: 3 }}>
-                  Sonnet answers with the selected screen context.
-                </div>
+                <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.12 }}>Ask</div>
               </div>
               <button
                 type="button"
@@ -636,38 +645,91 @@ export function ScreenSelectionOverlay() {
 
             <div
               style={{
-                padding: "16px 18px",
+                padding: "12px 16px 14px",
                 borderBottom: "1px solid var(--brand-line)",
-                color: "var(--brand-ink-mid)",
-                fontSize: 13,
-                lineHeight: 1.5,
-                background: "var(--brand-paper)",
+                background: "var(--brand-sage-50)",
               }}
             >
-              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--brand-ink-dim)", marginBottom: 7 }}>
-                SELECTED CONTEXT
+              <div
+                style={{
+                  color: "var(--brand-ink-mid)",
+                  fontSize: 12.5,
+                  lineHeight: 1.4,
+                }}
+              >
+                Selection active. Ask about the highlighted area, or try an example prompt.
               </div>
-              <div style={{ maxHeight: 112, overflow: "auto" }}>
-                {selection.text || "No readable text was captured. You can still ask about what you selected."}
+              <button
+                type="button"
+                data-selection-branch-cta
+                onClick={() => void submitBranch()}
+                disabled={streamState === "streaming"}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  minHeight: 42,
+                  marginTop: 10,
+                  padding: "0 13px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(31, 135, 85, 0.38)",
+                  background: streamState === "streaming" ? "var(--brand-sage-200)" : "var(--brand-mint)",
+                  color: "var(--brand-ink)",
+                  cursor: streamState === "streaming" ? "not-allowed" : "pointer",
+                  fontSize: 13,
+                  fontWeight: 850,
+                  lineHeight: 1.15,
+                  overflow: "hidden",
+                  boxShadow: "0 10px 24px rgba(31, 135, 85, 0.16)",
+                }}
+              >
+                <span style={{ position: "relative", zIndex: 1 }}>
+                  {streamState === "streaming" ? "Starting branch" : "Start a branch"}
+                </span>
+              </button>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginTop: 10,
+                }}
+              >
+                {EXAMPLE_SELECTION_PROMPTS.map((option) => (
+                  <button
+                    key={option.label}
+                    type="button"
+                    onClick={() => submitQuestion(option.prompt)}
+                    disabled={streamState === "streaming"}
+                    style={{
+                      minHeight: 30,
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid var(--brand-line-strong)",
+                      background: "var(--brand-paper)",
+                      color: "var(--brand-ink-mid)",
+                      cursor: streamState === "streaming" ? "not-allowed" : "pointer",
+                      fontSize: 12.5,
+                      fontWeight: 750,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div
               style={{
-                padding: 18,
+                padding: "14px 16px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 12,
+                gap: 10,
                 overflowY: "auto",
                 flex: 1,
                 minHeight: 0,
               }}
             >
-              {messages.length === 0 && (
-                <div style={{ color: "var(--brand-ink-dim)", fontSize: 14, lineHeight: 1.55, maxWidth: 340 }}>
-                  Ask what this means, why it matters, or how it connects to the current path.
-                </div>
-              )}
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -695,30 +757,30 @@ export function ScreenSelectionOverlay() {
               )}
             </div>
 
-            <form onSubmit={askAboutSelection} style={{ padding: 18, borderTop: "1px solid var(--brand-line)", background: "var(--brand-sage-50)" }}>
+            <form onSubmit={askAboutSelection} style={{ padding: 16, borderTop: "1px solid var(--brand-line)", background: "var(--brand-paper)" }}>
               <textarea
                 ref={inputRef}
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
-                placeholder="Ask a question about the selection..."
-                rows={4}
+                placeholder="Ask about the selection"
+                rows={3}
                 disabled={streamState === "streaming"}
                 style={{
                   width: "100%",
                   resize: "none",
                   borderRadius: 8,
                   border: "1px solid var(--brand-line-strong)",
-                  background: "var(--brand-paper)",
+                  background: "var(--brand-sage-50)",
                   color: "var(--brand-ink)",
                   padding: "11px 12px",
                   font: "inherit",
                   fontSize: 14,
                   lineHeight: 1.5,
                   outline: "none",
-                  boxShadow: "0 1px 0 oklch(16.8% 0.018 238 / 0.04)",
+                  boxShadow: "0 1px 0 rgba(15, 20, 17, 0.04)",
                 }}
               />
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
                 <button
                   type="submit"
                   disabled={!prompt.trim() || streamState === "streaming"}
@@ -740,9 +802,6 @@ export function ScreenSelectionOverlay() {
                   type="button"
                   onClick={() => {
                     setIsActive(true);
-                    setIsChatOpen(false);
-                    setSelection(null);
-                    setMessages([]);
                     setError("");
                   }}
                   disabled={streamState === "streaming"}

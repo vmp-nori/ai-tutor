@@ -59,7 +59,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
       }}
     >
       {/* Logo */}
-      <a href="/" style={{
+      <a href="/dashboard" style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 10,

@@ -6,6 +6,12 @@ import {
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  detectNsfwCourseContent,
+  detectProhibitedCourseContent,
+  NSFW_COURSE_ERROR,
+  PROHIBITED_COURSE_ERROR,
+} from "@/lib/contentSafety";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -17,6 +23,7 @@ interface GenerateRequest {
 
 const DEFAULT_MODEL = "arn:aws:bedrock:us-east-1:393459799930:inference-profile/global.anthropic.claude-sonnet-4-6";
 const DEFAULT_REGION = "us-east-1";
+const MAX_OUTPUT_TOKENS = 24_000;
 const MAX_GOAL_LENGTH = 800;
 const MAX_SUBJECT_LENGTH = 140;
 const SYSTEM_PROMPT_PATH = join(process.cwd(), "prompts", "graphgeneration.txt");
@@ -77,7 +84,7 @@ function buildBedrockCommand(goal: string, subject: string, systemPrompt: string
       },
     ],
     inferenceConfig: {
-      maxTokens: 16000,
+      maxTokens: MAX_OUTPUT_TOKENS,
       temperature: 0.35,
     },
   });
@@ -93,6 +100,15 @@ function bedrockTextStream(stream: NonNullable<ConverseStreamResponse["stream"]>
           const text = event.contentBlockDelta?.delta?.text;
           if (text) {
             controller.enqueue(encoder.encode(text));
+          }
+
+          const stopReason = event.messageStop?.stopReason;
+          if (stopReason === "max_tokens") {
+            throw new Error("Generation reached the output limit before the JSON finished. Try a narrower goal.");
+          }
+
+          if (stopReason === "malformed_model_output" || stopReason === "model_context_window_exceeded") {
+            throw new Error(`Generation stopped before valid JSON was complete: ${stopReason}`);
           }
         }
 
@@ -127,6 +143,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "goal is required" },
         { status: 400 },
+      );
+    }
+
+    const contentSafety = detectNsfwCourseContent([goal, subject]);
+    if (contentSafety.isBlocked) {
+      return NextResponse.json(
+        { error: NSFW_COURSE_ERROR },
+        { status: 422 },
+      );
+    }
+
+    const prohibitedContent = detectProhibitedCourseContent([goal, subject]);
+    if (prohibitedContent.isBlocked) {
+      return NextResponse.json(
+        { error: PROHIBITED_COURSE_ERROR },
+        { status: 422 },
       );
     }
 

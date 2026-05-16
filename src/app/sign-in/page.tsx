@@ -12,9 +12,19 @@ function callbackUrl() {
 
 function initialError() {
   if (typeof window === "undefined") return null;
-  const error = new URLSearchParams(window.location.search).get("error");
+  const searchParams = new URLSearchParams(window.location.search);
+  const error = searchParams.get("error");
   if (error === "confirmation_failed") {
     return "Email confirmation failed. Please try signing up again.";
+  }
+  return null;
+}
+
+function initialNotice() {
+  if (typeof window === "undefined") return null;
+  const verified = new URLSearchParams(window.location.search).get("verified");
+  if (verified === "1") {
+    return "Email verified. You can now sign in.";
   }
   return null;
 }
@@ -29,12 +39,14 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(initialError);
+  const [notice, setNotice] = useState<string | null>(initialNotice);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -58,7 +70,7 @@ export default function SignInPage() {
       <AuthLogo />
       <section aria-label="Sign in" style={panelStyle}>
         <h1 style={titleStyle}>Sign in</h1>
-        <p style={copyStyle}>Use your Supabase account to continue building learning paths.</p>
+        <p style={copyStyle}>Use your Pathwise account to continue building learning paths.</p>
 
         <form onSubmit={handleSubmit} style={formStyle}>
           <label style={labelStyle}>
@@ -88,13 +100,14 @@ export default function SignInPage() {
           </label>
 
           {error && <div role="alert" style={errorStyle}>{error}</div>}
+          {notice && <div role="status" style={noticeStyle}>{notice}</div>}
           {!supabaseConfigured && (
             <div role="alert" style={errorStyle}>
               Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.
             </div>
           )}
 
-          <button type="submit" disabled={loading || !supabaseConfigured} style={primaryButtonStyle}>
+          <button type="submit" disabled={loading || !supabaseConfigured} style={fullWidthButtonStyle}>
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
@@ -199,6 +212,16 @@ const errorStyle: React.CSSProperties = {
   lineHeight: 1.5,
 };
 
+const noticeStyle: React.CSSProperties = {
+  background: "color-mix(in srgb, var(--color-success) 12%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-success) 30%, transparent)",
+  borderRadius: 7,
+  padding: "10px 12px",
+  fontSize: 12.5,
+  color: "var(--color-success)",
+  lineHeight: 1.5,
+};
+
 const primaryButtonStyle: React.CSSProperties = {
   height: 42,
   background: "var(--color-button-primary)",
@@ -208,6 +231,11 @@ const primaryButtonStyle: React.CSSProperties = {
   fontSize: 13.5,
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const fullWidthButtonStyle: React.CSSProperties = {
+  ...primaryButtonStyle,
+  width: "100%",
 };
 
 const footerTextStyle: React.CSSProperties = {

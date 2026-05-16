@@ -1,4 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  collectStringValues,
+  detectNsfwCourseContent,
+  detectNsfwGenerationRefusal,
+  detectProhibitedCourseContent,
+  detectProhibitedGenerationRefusal,
+  NSFW_COURSE_ERROR,
+  PROHIBITED_COURSE_ERROR,
+} from "@/lib/contentSafety";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
 import type { TeachingPlan } from "@/lib/types";
 
@@ -363,6 +372,26 @@ export async function POST(req: NextRequest) {
 
   if (!isRecord(parsed) || !Array.isArray(parsed.nodes) || parsed.nodes.length === 0) {
     return NextResponse.json({ error: "schema must include nodes" }, { status: 400 });
+  }
+
+  const schemaTextValues = collectStringValues(parsed);
+  const schemaText = schemaTextValues.join(" ");
+  if (detectNsfwGenerationRefusal(schemaText).isBlocked) {
+    return NextResponse.json({ error: NSFW_COURSE_ERROR }, { status: 422 });
+  }
+
+  if (detectProhibitedGenerationRefusal(schemaText).isBlocked) {
+    return NextResponse.json({ error: PROHIBITED_COURSE_ERROR }, { status: 422 });
+  }
+
+  const contentSafety = detectNsfwCourseContent(schemaTextValues);
+  if (contentSafety.isBlocked) {
+    return NextResponse.json({ error: NSFW_COURSE_ERROR }, { status: 422 });
+  }
+
+  const prohibitedContent = detectProhibitedCourseContent(schemaTextValues);
+  if (prohibitedContent.isBlocked) {
+    return NextResponse.json({ error: PROHIBITED_COURSE_ERROR }, { status: 422 });
   }
 
   const treeId = crypto.randomUUID();

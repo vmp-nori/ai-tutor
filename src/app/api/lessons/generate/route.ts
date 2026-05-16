@@ -3,7 +3,7 @@ import {
   ConverseCommand,
   type ConverseCommandOutput,
 } from "@aws-sdk/client-bedrock-runtime";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, hasSupabaseConfig } from "@/lib/supabase/server";
@@ -60,6 +60,7 @@ const MAX_ID_LENGTH = 180;
 const TOOL_NAME = "submit_lesson";
 const LESSON_SCHEMA_VERSION = 2;
 const LESSON_STYLE_VERSION = 1;
+const DEV_LESSON_CACHE_PATH = join(process.cwd(), ".pathwise-dev-cache", "lessons.json");
 
 const PROMPT_PATHS: Record<string, string> = {
   math_and_logic: join(process.cwd(), "prompts", "math_and_logic.txt"),
@@ -69,6 +70,10 @@ const PROMPT_PATHS: Record<string, string> = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function useDevLessonCache() {
+  return process.env.NODE_ENV !== "production" && process.env.PATHWISE_DISABLE_DEV_LESSON_CACHE !== "1";
 }
 
 function isAwsServiceError(error: unknown): error is Error & {
@@ -165,7 +170,18 @@ Teaching plan:
 - Avoid: ${teachingPlan.avoid.length > 0 ? teachingPlan.avoid.join("; ") : "No specific detours listed."}
 - Interactive hint: ${teachingPlan.interactiveHint || "Only include a diagram if the concept genuinely benefits from one."}
 
-Submit a concise 5-8 slide lesson deck through the ${TOOL_NAME} tool. The deck must be easier to digest than a long article: one teaching move per slide, concrete examples, and diagrams only where they reduce cognitive load.`;
+Submit a concise 5-8 slide lesson deck through the ${TOOL_NAME} tool. The deck must be easier to digest than a long article: one teaching move per slide, concrete examples, and diagrams only where they reduce cognitive load.
+
+Formatting contract:
+- Use KaTeX-compatible LaTeX only.
+- Do not escape math delimiters. Write $x$, never \\$x\\$.
+- Inline math must be one complete expression inside one pair of dollar signs, for example $z = Wx + b$. Never write $z = W$ x + b.
+- Standalone equations must use $$...$$ and include the entire equation inside the delimiters.
+- Put matrices and multi-line equations in standalone $$...$$ blocks. Include the leading variable, the full \\begin{...}...\\end{...} environment, and any \\text{...} annotation inside the same block.
+- Never put raw LaTeX commands outside math delimiters. This includes \\quad, \\text, \\frac, \\sum, and \\cdot.
+- Use \\text{...} with exactly one pair of braces. Do not write \\text{{...}}.
+- Use \\cdot or \\times for mathematical multiplication. Use @ only inside fenced code blocks when showing NumPy or Python.
+- Put executable code in fenced markdown code blocks with a language tag. Do not mix code comments into LaTeX equations.`;
 }
 
 const DIAGRAM_SCHEMA = {
@@ -230,7 +246,7 @@ const LESSON_TOOL_SCHEMA = {
               eyebrow: { type: "string", description: "Short slide label, e.g. 02 · CORE IDEA." },
               heading: { type: "string" },
               lede: { type: "string" },
-              body: { type: "string", description: "Markdown explanation, under 700 characters." },
+              body: { type: "string", description: "Markdown explanation, under 700 characters. Use valid KaTeX delimiters for all formulas." },
               diagram: DIAGRAM_SCHEMA,
             },
             required: ["kind", "eyebrow", "heading", "body"],
@@ -269,7 +285,7 @@ const LESSON_TOOL_SCHEMA = {
               eyebrow: { type: "string" },
               heading: { type: "string" },
               problem: { type: "string" },
-              solution: { type: "string", description: "Step-by-step markdown, under 900 characters." },
+              solution: { type: "string", description: "Step-by-step markdown, under 900 characters. Put complete formulas inside $...$ or $$...$$ and code inside fenced code blocks." },
               diagram: DIAGRAM_SCHEMA,
             },
             required: ["kind", "eyebrow", "heading", "problem", "solution"],
@@ -669,9 +685,52 @@ function isMissingNodeMetadataError(message: string) {
   return (
     message.includes("Could not find the 'teaching_brief' column of 'skill_nodes'") ||
     message.includes("Could not find the 'teaching_plan' column of 'skill_nodes'") ||
+    message.includes("Could not find the 'generated_lesson' column of 'skill_nodes'") ||
     message.includes("column skill_nodes.teaching_brief does not exist") ||
-    message.includes("column skill_nodes.teaching_plan does not exist")
+    message.includes("column skill_nodes.teaching_plan does not exist") ||
+    message.includes("column skill_nodes.generated_lesson does not exist")
   );
+}
+
+function devLessonCacheKey(treeId: string, nodeId: string) {
+  return `${treeId}:${nodeId}`;
+}
+
+async function readDevLessonCache() {
+  if (!useDevLessonCache()) return {};
+
+  try {
+    const text = await readFile(DEV_LESSON_CACHE_PATH, "utf8");
+    const parsed = JSON.parse(text) as unknown;
+    return isRecord(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function getCachedDevLesson(treeId: string, nodeId: string, node: StoredNode) {
+  const cache = await readDevLessonCache();
+  const cached = cache[devLessonCacheKey(treeId, nodeId)] ?? cache[devLessonCacheKey(treeId, node.id)];
+  if (!isRecord(cached)) return null;
+
+  try {
+    return normalizeLesson(cached, node);
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedDevLesson(treeId: string, nodeId: string, lesson: GeneratedLesson) {
+  if (!useDevLessonCache()) return;
+
+  try {
+    const cache = await readDevLessonCache();
+    cache[devLessonCacheKey(treeId, nodeId)] = lesson;
+    await mkdir(join(process.cwd(), ".pathwise-dev-cache"), { recursive: true });
+    await writeFile(DEV_LESSON_CACHE_PATH, `${JSON.stringify(cache, null, 2)}\n`, "utf8");
+  } catch (error) {
+    console.warn("Dev lesson cache could not be written", error);
+  }
 }
 
 function nodeIdCandidates(treeId: string, nodeId: string) {
@@ -780,12 +839,20 @@ export async function POST(req: NextRequest) {
     if (isRecord(storedNode.generated_lesson)) {
       try {
         const cached = normalizeLesson(storedNode.generated_lesson, storedNode);
+        await writeCachedDevLesson(treeId, storedNode.id, cached);
         return NextResponse.json(cached, {
           headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
         });
       } catch {
         // Legacy or malformed cached lessons regenerate and are overwritten below.
       }
+    }
+
+    const devCachedLesson = await getCachedDevLesson(treeId, nodeId, storedNode);
+    if (devCachedLesson) {
+      return NextResponse.json(devCachedLesson, {
+        headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+      });
     }
 
     const { data: prerequisiteEdges } = await supabase
@@ -833,15 +900,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Lesson response did not match the slide schema" }, { status: 502 });
     }
 
-    await supabase
+    const cacheWrite = await supabase
       .from("skill_nodes")
       .update({ generated_lesson: lesson })
+      .eq("tree_id", treeId)
       .eq("id", storedNode.id);
+    if (cacheWrite.error) {
+      console.error("Generated lesson could not be cached", cacheWrite.error);
+    }
+
+    await writeCachedDevLesson(treeId, storedNode.id, lesson);
 
     return NextResponse.json(lesson, {
       headers: {
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
+        "X-Lesson-Cache": cacheWrite.error ? "write-failed" : "stored",
       },
     });
   } catch (error) {

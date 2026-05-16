@@ -41,7 +41,8 @@ export function SkillEdge({
   setPathRef,
 }: SkillEdgeProps) {
   const kind = edgeKind(fromNode, toNode);
-  const stroke = STROKE[kind];
+  const isBranchEdge = fromNode.isBranch || toNode.isBranch;
+  const stroke = isBranchEdge ? "var(--brand-sage-600, #1F8755)" : STROKE[kind];
   const { x1, y1, x2, y2 } = edgePoints(fromNode, toNode, false, toIsGoal);
   const d = adaptiveBezierPath(x1, y1, x2, y2);
 
@@ -71,9 +72,9 @@ export function SkillEdge({
         d={d}
         fill="none"
         stroke={stroke}
-        strokeWidth={WIDTH[kind]}
-        strokeDasharray={kind === "locked" ? "3 3" : undefined}
-        opacity={OPACITY[kind]}
+        strokeWidth={isBranchEdge ? 1.35 : WIDTH[kind]}
+        strokeDasharray={isBranchEdge ? "5 5" : kind === "locked" ? "3 3" : undefined}
+        opacity={isBranchEdge ? 0.78 : OPACITY[kind]}
         markerEnd={`url(#${markerId})`}
       />
     </>

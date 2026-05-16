@@ -43,7 +43,6 @@ const EMAIL_PROMPTS = [
   "marlon@gotmogged.com",
   "myxpbarislow@mommy.com",
   "matchadrinker@clairo.com",
-  "jerrylxadeeth@mpreg.com",
 ];
 
 const HERO_GOALS = [
@@ -581,7 +580,8 @@ export default function LandingPage() {
         }
 
         .lp-link,
-        .lp-nav-button {
+        .lp-nav-button,
+        .lp-dev-button {
           align-items: center;
           border-radius: 6px;
           display: inline-flex;
@@ -610,6 +610,17 @@ export default function LandingPage() {
             transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        .lp-dev-button {
+          background: var(--lp-panel);
+          border: 1px solid var(--lp-line);
+          color: var(--lp-ink);
+          padding: 0 12px;
+          transition:
+            border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+            color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+            transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
         .lp-link:hover {
           color: var(--lp-ink);
         }
@@ -620,6 +631,16 @@ export default function LandingPage() {
         }
 
         .lp-nav-button:active {
+          transform: translateY(0) scale(0.98);
+        }
+
+        .lp-dev-button:hover {
+          border-color: var(--lp-line-strong);
+          color: var(--lp-ink-soft);
+          transform: translateY(-1px);
+        }
+
+        .lp-dev-button:active {
           transform: translateY(0) scale(0.98);
         }
 
@@ -1683,7 +1704,8 @@ export default function LandingPage() {
             display: none;
           }
 
-          .lp-nav-button {
+          .lp-nav-button,
+          .lp-dev-button {
             height: 32px;
             padding: 0 12px;
           }
@@ -1814,12 +1836,12 @@ export default function LandingPage() {
           </a>
           <span className="lp-status-chip">Early access</span>
           <div className="lp-nav-actions">
-            <a className="lp-link" href="/dashboard">
-              Dashboard
-            </a>
             <button className="lp-nav-button" onClick={focusWaitlist} type="button">
               Join
             </button>
+            <a className="lp-dev-button" href="/sign-in">
+              dev
+            </a>
           </div>
         </nav>
 
