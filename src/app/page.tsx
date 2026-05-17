@@ -494,21 +494,20 @@ export default function LandingPage() {
     <>
       <style>{`
         .lp-root {
-          /* Brand hex tokens — matches pathwise Design System v1.0 */
           --lp-paper:      #E8F5EE;
           --lp-paper-deep: #D4E8DD;
-          --lp-ink:        #0F1411;
-          --lp-ink-soft:   #3D4A42;
-          --lp-muted:      #5C7066;
+          --lp-ink:        #0c081a;
+          --lp-ink-soft:   rgba(12,8,26,0.72);
+          --lp-muted:      rgba(12,8,26,0.56);
           --lp-line:       #DCE8E0;
           --lp-line-strong:#94A89E;
           --lp-green:      #1F8755;
           --lp-amber:      oklch(78% 0.153 76);
           --lp-coral:      #C44536;
           --lp-blue:       oklch(61% 0.14 246);
-          --lp-panel:      #FBFEFC;
-          --lp-dark:       #0F1411;
-          --lp-dark-line:  #1F2A23;
+          --lp-panel:      #E8F5EE;
+          --lp-dark:       #0c081a;
+          --lp-dark-line:  rgba(232,245,238,0.14);
           --lp-mint:       #5EE2A8;
           position: relative;
           min-height: 100vh;
@@ -520,13 +519,18 @@ export default function LandingPage() {
           background-size: 80px 80px;
           color: var(--lp-ink);
           color-scheme: light;
-          font-family: var(--font-display), 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+          font-family: var(--font-lumina-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+        }
+
+        .lp-root,
+        .lp-root * {
+          box-sizing: border-box;
         }
 
         .lp-root::before {
           background: radial-gradient(
             circle 520px at var(--lp-mx, -9999px) var(--lp-my, -9999px),
-            rgba(31,135,85,0.08) 0%,
+            rgba(94,226,168,0.16) 0%,
             transparent 80%
           );
           content: "";
@@ -539,14 +543,13 @@ export default function LandingPage() {
         .lp-nav {
           align-items: center;
           animation: lp-hero-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
-          background: rgba(232,245,238,0.88);
-          backdrop-filter: blur(14px);
-          border-bottom: 1px solid var(--lp-line);
+          background: transparent;
+          border-bottom: 0;
           display: flex;
           gap: 18px;
-          height: 58px;
+          height: 72px;
           left: 0;
-          padding: 0 28px;
+          padding: 0 120px;
           position: fixed;
           right: 0;
           top: 0;
@@ -554,22 +557,25 @@ export default function LandingPage() {
         }
 
         .lp-wordmark {
-          font-family: var(--font-display), 'Bricolage Grotesque', sans-serif;
+          font-family: var(--font-lumina-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
           color: var(--lp-ink);
-          font-size: 18px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
+          font-size: 19px;
+          font-weight: 700;
+          letter-spacing: -0.01em;
           line-height: 1;
           text-decoration: none;
         }
 
         .lp-status-chip {
-          border: 1px solid var(--lp-line);
-          border-radius: 4px;
-          color: var(--lp-ink-soft);
+          background: rgba(94,226,168,0.10);
+          border: 1px solid rgba(148,168,158,0.30);
+          border-radius: 999px;
+          color: var(--lp-green);
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
           font-size: 12px;
-          font-weight: 600;
-          padding: 4px 8px;
+          font-weight: 500;
+          letter-spacing: 0.02em;
+          padding: 6px 12px;
         }
 
         .lp-nav-actions {
@@ -585,26 +591,28 @@ export default function LandingPage() {
           align-items: center;
           border-radius: 6px;
           display: inline-flex;
-          font-family: inherit;
-          font-size: 13px;
-          font-weight: 700;
-          height: 34px;
+          font-family: var(--font-lumina-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          height: 40px;
           justify-content: center;
           letter-spacing: 0;
           text-decoration: none;
         }
 
         .lp-link {
-          color: var(--lp-ink-soft);
-          padding: 0 8px;
+          color: var(--lp-ink);
+          padding: 0 10px;
         }
 
         .lp-nav-button {
-          background: var(--lp-ink);
+          background: var(--lp-green);
           border: 0;
-          color: #E8F5EE;
+          border-radius: 8px;
+          box-shadow: 0 4px 14px rgba(31,135,85,0.30);
+          color: #FBFEFC;
           cursor: pointer;
-          padding: 0 14px;
+          padding: 0 20px;
           transition:
             background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
             transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -622,11 +630,11 @@ export default function LandingPage() {
         }
 
         .lp-link:hover {
-          color: var(--lp-ink);
+          opacity: 0.62;
         }
 
         .lp-nav-button:hover {
-          background: var(--lp-ink-soft);
+          filter: brightness(1.05);
           transform: translateY(-1px);
         }
 
@@ -647,14 +655,14 @@ export default function LandingPage() {
         .lp-hero {
           min-height: calc(100svh - 74px);
           overflow: hidden;
-          padding: 132px 28px 54px;
+          padding: 150px 28px 54px;
           position: relative;
         }
 
         .lp-hero::before {
           background:
-            radial-gradient(ellipse at 50% 24%, rgba(232,245,238,0.82) 0 28%, rgba(232,245,238,0.54) 48%, transparent 76%),
-            linear-gradient(180deg, rgba(232,245,238,0.76) 0 14%, transparent 68%);
+            radial-gradient(ellipse at 50% 24%, rgba(232,245,238,0.80) 0 30%, rgba(232,245,238,0.48) 50%, transparent 78%),
+            linear-gradient(180deg, rgba(232,245,238,0.58) 0 14%, transparent 68%);
           content: "";
           inset: 0;
           pointer-events: none;
@@ -677,16 +685,17 @@ export default function LandingPage() {
           align-items: center;
           display: flex;
           flex-direction: column;
-          max-width: 900px;
-          padding: 32px 0 32px;
+          max-width: min(900px, calc(100vw - 56px));
+          padding: 8px 0 32px;
           position: relative;
           isolation: isolate;
           text-align: center;
+          width: 100%;
         }
 
         .lp-hero-copy::before {
           background:
-            radial-gradient(ellipse at 50% 38%, rgba(232,245,238,0.68) 0 36%, rgba(232,245,238,0.44) 54%, transparent 76%);
+            radial-gradient(ellipse at 50% 38%, rgba(232,245,238,0.54) 0 36%, rgba(232,245,238,0.30) 54%, transparent 76%);
           content: "";
           inset: -42px -74px -30px;
           pointer-events: none;
@@ -697,34 +706,44 @@ export default function LandingPage() {
         .lp-eyebrow {
           align-items: center;
           animation: lp-eyebrow-track 820ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
-          color: var(--lp-ink-soft);
+          background: rgba(94,226,168,0.10);
+          border: 1px solid rgba(148,168,158,0.30);
+          border-radius: 999px;
+          color: var(--lp-green);
           display: inline-flex;
-          font-size: 14px;
-          font-weight: 800;
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 500;
           gap: 10px;
-          letter-spacing: 0;
-          margin: 0 auto 26px;
+          letter-spacing: 0.12em;
+          margin: 0 auto 32px;
+          max-width: 100%;
+          padding: 8px 16px;
+          text-align: center;
+          text-transform: uppercase;
         }
 
         .lp-eyebrow::before {
           animation: lp-eyebrow-mark 860ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
-          background: var(--lp-coral);
+          background: var(--lp-mint);
+          border-radius: 999px;
           content: "";
-          height: 10px;
+          height: 7px;
           transform-origin: left center;
-          width: 10px;
+          width: 7px;
         }
 
         .lp-title {
           color: var(--lp-ink);
           display: flex;
           flex-direction: column;
-          font-size: 5.8rem;
-          font-weight: 800;
-          letter-spacing: 0;
-          line-height: 0.94;
-          margin: 0 auto 24px;
-          max-width: 12ch;
+          font-family: var(--font-lumina-instrument), 'Instrument Serif', Georgia, serif;
+          font-size: clamp(48px, 8vw, 108px);
+          font-weight: 400;
+          letter-spacing: -0.01em;
+          line-height: 0.9;
+          margin: 0 auto 30px;
+          max-width: 10.8ch;
           text-wrap: balance;
         }
 
@@ -738,15 +757,17 @@ export default function LandingPage() {
 
         .lp-title span:last-child {
           animation: lp-title-right 1160ms cubic-bezier(0.16, 1, 0.3, 1) 820ms both;
+          color: var(--lp-green);
+          font-style: italic;
         }
 
         .lp-hero-text {
           animation: lp-hero-line-load 920ms cubic-bezier(0.16, 1, 0.3, 1) 1880ms both;
-          color: var(--lp-ink-soft);
-          font-size: 19px;
+          color: rgba(12,8,26,0.60);
+          font-size: 20px;
           font-weight: 400;
-          line-height: 1.55;
-          margin: 0 auto 30px;
+          line-height: 1.7;
+          margin: 0 auto 34px;
           max-width: 48ch;
           text-wrap: pretty;
         }
@@ -754,7 +775,7 @@ export default function LandingPage() {
         .lp-hero-goal {
           color: var(--lp-ink);
           display: inline-block;
-          font-weight: 750;
+          font-weight: 700;
           padding-bottom: 2px;
           position: relative;
           text-align: left;
@@ -768,7 +789,7 @@ export default function LandingPage() {
         .lp-hero-suffix {
           color: var(--lp-ink);
           display: inline-block;
-          font-weight: 850;
+          font-weight: 700;
           margin-left: 2px;
           padding: 0 2px;
         }
@@ -787,7 +808,7 @@ export default function LandingPage() {
         .lp-hero-proof {
           animation: lp-hero-rise 820ms cubic-bezier(0.16, 1, 0.3, 1) 3950ms both;
           border-top: 1px solid var(--lp-line);
-          color: var(--lp-muted);
+          color: rgba(12,8,26,0.52);
           font-size: 14px;
           line-height: 1.55;
           margin: 30px auto 0;
@@ -814,7 +835,7 @@ export default function LandingPage() {
 
         .lp-hero-bg::before {
           animation: lp-blob-a 28s ease-in-out infinite alternate;
-          background: rgba(94,226,168,0.18);
+          background: rgba(94,226,168,0.13);
           height: 700px;
           left: 50%;
           top: -160px;
@@ -824,7 +845,7 @@ export default function LandingPage() {
 
         .lp-hero-bg::after {
           animation: lp-blob-b 34s ease-in-out 5s infinite alternate;
-          background: rgba(31,135,85,0.10);
+          background: rgba(31,135,85,0.08);
           height: 520px;
           right: -60px;
           top: 40px;
@@ -975,7 +996,7 @@ export default function LandingPage() {
 
 
         .lp-form {
-          max-width: 560px;
+          max-width: min(560px, calc(100vw - 56px));
         }
 
         .lp-hero-copy .lp-form {
@@ -988,9 +1009,12 @@ export default function LandingPage() {
         .lp-label {
           color: var(--lp-muted);
           display: block;
-          font-size: 13px;
-          font-weight: 800;
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.08em;
           margin-bottom: 9px;
+          text-transform: uppercase;
         }
 
         .lp-form-row {
@@ -1001,17 +1025,17 @@ export default function LandingPage() {
         }
 
         .lp-input {
-          background: #FBFEFC;
+          background: var(--lp-paper-deep);
           border: 1px solid var(--lp-line);
-          border-radius: 8px;
+          border-radius: 10px;
           color: var(--lp-ink);
-          font: inherit;
-          font-size: 15px;
-          font-weight: 600;
-          height: 50px;
+          font-family: var(--font-lumina-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+          font-size: 16px;
+          font-weight: 400;
+          height: 56px;
           min-width: 0;
           outline: none;
-          padding: 0 16px;
+          padding: 0 24px;
           transition:
             border-color 170ms cubic-bezier(0.16, 1, 0.3, 1),
             box-shadow 170ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -1024,8 +1048,8 @@ export default function LandingPage() {
         }
 
         .lp-input:focus {
-          border-color: var(--lp-ink);
-          box-shadow: 0 0 0 3px rgba(31,135,85,0.14);
+          border-color: var(--lp-green);
+          box-shadow: 0 0 0 3px rgba(31,135,85,0.22);
           transform: translateY(-1px);
         }
 
@@ -1041,19 +1065,20 @@ export default function LandingPage() {
 
         .lp-submit {
           align-items: center;
-          background: var(--lp-ink);
+          background: var(--lp-green);
           border: 0;
-          border-radius: 8px;
-          color: #E8F5EE;
+          border-radius: 10px;
+          box-shadow: 0 12px 28px rgba(31,135,85,0.22);
+          color: #FBFEFC;
           cursor: pointer;
           display: inline-flex;
-          font: inherit;
-          font-size: 15px;
-          font-weight: 800;
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
+          font-size: 16px;
+          font-weight: 500;
           gap: 9px;
-          height: 50px;
+          height: 56px;
           justify-content: center;
-          padding: 0 20px;
+          padding: 0 32px;
           transition:
             background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
             box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -1063,8 +1088,8 @@ export default function LandingPage() {
         }
 
         .lp-submit:hover:not(:disabled) {
-          background: var(--lp-ink-soft);
-          box-shadow: 0 10px 22px rgba(15,20,17,0.18);
+          filter: brightness(1.05);
+          box-shadow: 0 14px 32px rgba(31,135,85,0.26);
           transform: translateY(-1px);
         }
 
@@ -1117,7 +1142,9 @@ export default function LandingPage() {
 
         .lp-success strong {
           display: block;
+          font-family: var(--font-lumina-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
           font-size: 17px;
+          font-weight: 700;
           line-height: 1.35;
         }
 
@@ -1145,8 +1172,8 @@ export default function LandingPage() {
         }
 
         .lp-problem {
-          background: oklch(18% 0.02 236);
-          color: oklch(96% 0.01 168);
+          background: var(--lp-ink);
+          color: #E8F5EE;
           display: grid;
           gap: clamp(46px, 6vw, 94px);
           grid-template-columns: minmax(300px, 0.7fr) minmax(0, 1fr);
@@ -1203,9 +1230,12 @@ export default function LandingPage() {
 
         .lp-section-label {
           color: var(--lp-green);
-          font-size: 13px;
-          font-weight: 800;
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.14em;
           margin: 0 0 22px;
+          text-transform: uppercase;
         }
 
         .lp-problem .lp-section-label {
@@ -1217,16 +1247,17 @@ export default function LandingPage() {
         .lp-problem h2,
         .lp-system h2,
         .lp-close h2 {
-          font-size: 4.5rem;
-          font-weight: 800;
-          letter-spacing: 0;
-          line-height: 0.94;
+          font-family: var(--font-lumina-instrument), 'Instrument Serif', Georgia, serif;
+          font-size: clamp(48px, 7vw, 88px);
+          font-weight: 400;
+          letter-spacing: -0.01em;
+          line-height: 0.95;
           margin: 0;
           text-wrap: balance;
         }
 
         .lp-problem-copy {
-          color: oklch(75% 0.021 220);
+          color: rgba(232,245,238,0.68);
           font-size: 19px;
           line-height: 1.65;
           margin: 26px 0 0;
@@ -1354,9 +1385,10 @@ export default function LandingPage() {
         }
 
         .lp-failure-row span:first-child {
-          color: var(--lp-amber);
+          color: var(--lp-mint);
+          font-family: var(--font-lumina-instrument), 'Instrument Serif', Georgia, serif;
           font-size: 28px;
-          font-weight: 800;
+          font-weight: 400;
           position: relative;
           transform: translate3d(0, var(--lp-row-number-y, 16px), 0);
           transform-origin: left center;
@@ -1364,9 +1396,10 @@ export default function LandingPage() {
         }
 
         .lp-failure-row span:last-child {
-          color: oklch(91% 0.013 168);
+          color: #E8F5EE;
+          font-family: var(--font-lumina-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
           font-size: 20px;
-          font-weight: 800;
+          font-weight: 600;
           line-height: 1.25;
           position: relative;
           z-index: 1;
@@ -1430,15 +1463,19 @@ export default function LandingPage() {
 
         .lp-system-row span {
           color: var(--lp-line-strong);
-          font-size: 13px;
-          font-weight: 800;
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
         }
 
         .lp-system-row h3 {
           color: var(--lp-ink);
+          font-family: var(--font-lumina-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
           font-size: 26px;
-          font-weight: 800;
-          line-height: 1.08;
+          font-weight: 700;
+          line-height: 1.15;
           margin: 0 0 10px;
           text-wrap: balance;
         }
@@ -1484,8 +1521,8 @@ export default function LandingPage() {
         }
 
         .lp-form.is-dark .lp-input {
-          background: #1F2A23;
-          border-color: #3D4A42;
+          background: rgba(232,245,238,0.10);
+          border-color: rgba(232,245,238,0.20);
           color: #EEF7F1;
         }
 
@@ -1494,12 +1531,12 @@ export default function LandingPage() {
         }
 
         .lp-form.is-dark .lp-submit {
-          background: var(--lp-mint);
-          color: var(--lp-dark);
+          background: var(--lp-green);
+          color: #FBFEFC;
         }
 
         .lp-form.is-dark .lp-submit:hover:not(:disabled) {
-          background: #7AEAC0;
+          filter: brightness(1.05);
           box-shadow: 0 10px 22px rgba(15,20,17,0.22);
         }
 
@@ -1514,8 +1551,9 @@ export default function LandingPage() {
           color: oklch(57% 0.018 220);
           display: flex;
           flex-wrap: wrap;
+          font-family: var(--font-lumina-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 600;
           gap: 12px;
           justify-content: space-between;
           padding: 24px max(28px, calc((100vw - 1240px) / 2));
@@ -1711,11 +1749,47 @@ export default function LandingPage() {
           }
 
           .lp-hero {
+            overflow-x: clip;
+            padding-left: 20px;
+            padding-right: 20px;
             padding-top: 92px;
+            width: 100vw;
           }
 
           .lp-hero-inner {
+            justify-content: flex-start;
             min-height: 720px;
+            max-width: 100%;
+            width: 100%;
+          }
+
+          .lp-hero-copy,
+          .lp-form,
+          .lp-hero-copy .lp-form {
+            margin-left: 0;
+            margin-right: 0;
+            max-width: 100%;
+            width: 320px;
+          }
+
+          .lp-eyebrow {
+            display: block;
+            justify-content: center;
+            line-height: 1.35;
+            max-width: calc(100vw - 56px);
+            width: fit-content;
+            white-space: normal;
+          }
+
+          .lp-eyebrow::before {
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: 0.08em;
+          }
+
+          .lp-hero-proof {
+            max-width: 100%;
+            width: 320px;
           }
 
           .lp-title {
@@ -1732,6 +1806,7 @@ export default function LandingPage() {
             display: block;
             margin: 4px auto 0;
             text-align: center;
+            white-space: normal;
           }
 
           .lp-form-row {
