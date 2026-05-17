@@ -129,10 +129,39 @@ function normalizeZoneColor(value: unknown, index: number) {
     : fallbackColors[index % fallbackColors.length];
 }
 
-function fallbackZoneName(index: number, total: number) {
+function fallbackChapterCount(total: number) {
+  return Math.min(6, Math.max(1, Math.ceil(total / 4)));
+}
+
+function fallbackChapterIndex(index: number, total: number) {
+  const chapterCount = fallbackChapterCount(total);
+  return Math.min(chapterCount - 1, Math.floor((index * chapterCount) / total));
+}
+
+function fallbackZoneName(index: number, total: number, nodes: SkillNodeType[] = []) {
+  const chapterIndex = fallbackChapterIndex(index, total);
+  const chapterNodes = nodes.filter((_, nodeIndex) => fallbackChapterIndex(nodeIndex, total) === chapterIndex);
+  const names = chapterNodes.map((node) => node.name).filter(Boolean);
+  const text = names.join(" ").toLowerCase();
+  const has = (pattern: RegExp) => pattern.test(text);
+
+  if (has(/\bpython\b/) && has(/\b(linear algebra|calculus|math|probability|statistics)\b/)) return "Python & Math Foundations";
+  if (has(/\bpython\b/)) return "Python Programming";
+  if (has(/\b(linear algebra|calculus|math|algebra)\b/)) return "Mathematical Foundations";
+  if (has(/\b(probability|statistics|statistical)\b/) && has(/\b(data|numpy|pandas)\b/)) return "Statistics & Data Tools";
+  if (has(/\b(probability|statistics|statistical)\b/)) return "Probability & Statistics";
+  if (has(/\b(numpy|pandas|dataframe|data)\b/)) return "Data Tooling";
+  if (has(/\b(neural|deep learning|backpropagation|transformer)\b/)) return "Deep Learning";
+  if (has(/\b(model|regression|classification|clustering|machine learning|ml)\b/)) return "Modeling Methods";
+  if (has(/\b(deploy|production|api|infrastructure|monitoring)\b/)) return "Production Systems";
+  if (has(/\b(project|capstone|portfolio)\b/)) return "Applied Practice";
+
+  const fallback = names[0]?.replace(/\b(Essentials|Fundamentals|Basics|Introduction)\b/gi, "").trim();
+  if (fallback) return fallback;
+
   const chapterCount = Math.min(5, Math.max(1, Math.ceil(total / 4)));
-  const chapterIndex = Math.min(chapterCount - 1, Math.floor((index * chapterCount) / total));
-  return `Chapter ${chapterIndex + 1}`;
+  const fallbackIndex = Math.min(chapterCount - 1, Math.floor((index * chapterCount) / total));
+  return `Learning Phase ${fallbackIndex + 1}`;
 }
 
 function normalizeStatus(value: unknown, hasAnyStatus: boolean, index: number): NodeStatus {
@@ -367,8 +396,8 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
 
     regularNodes.forEach((node, index) => {
       const zoneName = shouldDeriveZones
-        ? fallbackZoneName(index, regularNodes.length)
-        : node.zone?.trim() || fallbackZoneName(index, regularNodes.length);
+        ? fallbackZoneName(index, regularNodes.length, regularNodes)
+        : node.zone?.trim() || fallbackZoneName(index, regularNodes.length, regularNodes);
       const zone = zoneMap.get(zoneName) ?? {
         color: normalizeZoneColor(node.zoneColor, zoneMap.size),
         nodes: [],

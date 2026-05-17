@@ -9,6 +9,24 @@ const TREE_ID = "machine-learning-engineering-llm-mastery";
 const X_START = 96;
 const X_GAP = 304;
 const Y_BASE = 320;
+const BRANCH_VERTICAL_GAP = 148;
+const BRANCH_LANE_GAP = 124;
+const BRANCH_PADDING_X = 36;
+const NODE_W = 232;
+const NODE_H = 78;
+
+interface BranchLane {
+  side: "below" | "above";
+  lane: number;
+  y: number;
+  ranges: Array<{ left: number; right: number }>;
+}
+
+interface BranchPlacement {
+  startX: number;
+  direction: 1 | -1;
+  y: number;
+}
 
 const DEFAULT_GRAPH = {
   subject: "Machine Learning Engineering and LLM Mastery",
@@ -526,9 +544,104 @@ function buildStoredGraph(
     branchGroups.set(key, group);
   }
 
-  const branchGroupIndexByAnchor = new Map<string, number>();
+  const branchLanes: BranchLane[] = [];
   const branchNodes: SkillNode[] = [];
-  for (const group of branchGroups.values()) {
+  const placedNodesById = new Map(nodes.map((node) => [node.id, node]));
+  const sortBranchGroups = (groups: StoredNode[][]) => groups.sort((leftGroup, rightGroup) => {
+    const leftAnchor = placedNodesById.get(leftGroup[0]?.branch_anchor_node_id ?? "");
+    const rightAnchor = placedNodesById.get(rightGroup[0]?.branch_anchor_node_id ?? "");
+    const leftX = leftAnchor?.x ?? X_START;
+    const rightX = rightAnchor?.x ?? X_START;
+    if (leftX !== rightX) return leftX - rightX;
+    return (leftGroup[0]?.branch_group_id ?? leftGroup[0]?.id ?? "").localeCompare(
+      rightGroup[0]?.branch_group_id ?? rightGroup[0]?.id ?? "",
+    );
+  });
+  const sortedBranchGroups = sortBranchGroups(Array.from(branchGroups.values()));
+
+  function branchRange(startX: number, direction: 1 | -1, length: number) {
+    const endX = startX + (length - 1) * X_GAP * direction;
+    return {
+      left: Math.min(startX, endX) - BRANCH_PADDING_X,
+      right: Math.max(startX, endX) + NODE_W + BRANCH_PADDING_X,
+    };
+  }
+
+  function rangesOverlap(left: { left: number; right: number }, right: { left: number; right: number }) {
+    return left.left < right.right && right.left < left.right;
+  }
+
+  nodes.forEach((node) => {
+    const range = branchRange(node.x, 1, 1);
+    const laneRecord = branchLanes.find((item) => Math.abs(item.y - node.y) < NODE_H + 24);
+    if (laneRecord) {
+      laneRecord.ranges.push(range);
+      return;
+    }
+
+    branchLanes.push({ side: "below", lane: -1, y: node.y, ranges: [range] });
+  });
+
+  function laneY(anchorY: number, side: "below" | "above", lane: number) {
+    const distance = BRANCH_VERTICAL_GAP + lane * BRANCH_LANE_GAP;
+    return side === "below" ? anchorY + distance : anchorY - distance;
+  }
+
+  function findBranchPlacement(anchorX: number, anchorY: number, groupLength: number): BranchPlacement {
+    const rightStartX = anchorX;
+    const horizontalOptions: Array<{ startX: number; direction: 1 | -1 }> = [
+      { startX: rightStartX, direction: 1 },
+    ];
+    if (anchorX - (groupLength - 1) * X_GAP >= X_START) {
+      horizontalOptions.push({ startX: anchorX, direction: -1 });
+    } else {
+      horizontalOptions.push({ startX: X_START, direction: 1 });
+    }
+
+    for (let lane = 0; lane < sortedBranchGroups.length + 2; lane += 1) {
+      const sideOptions: Array<"below" | "above"> = laneY(anchorY, "above", lane) >= 80
+        ? ["below", "above"]
+        : ["below"];
+
+      for (const side of sideOptions) {
+        const y = laneY(anchorY, side, lane);
+        const existingLane = branchLanes.find((item) => Math.abs(item.y - y) < NODE_H + 24);
+
+        for (const option of horizontalOptions) {
+          const range = branchRange(option.startX, option.direction, groupLength);
+          const overlaps = existingLane?.ranges.some((usedRange) => rangesOverlap(range, usedRange)) ?? false;
+          if (overlaps) continue;
+
+          const laneRecord = existingLane ?? { side, lane, y, ranges: [] };
+          laneRecord.ranges.push(range);
+          if (!existingLane) branchLanes.push(laneRecord);
+
+          return {
+            startX: option.startX,
+            direction: option.direction,
+            y,
+          };
+        }
+      }
+    }
+
+    const lane = sortedBranchGroups.length + branchLanes.length;
+    const y = laneY(anchorY, "below", lane);
+    const range = branchRange(rightStartX, 1, groupLength);
+    branchLanes.push({ side: "below", lane, y, ranges: [range] });
+    return { startX: rightStartX, direction: 1, y };
+  }
+
+  const pendingBranchGroups = [...sortedBranchGroups];
+  while (pendingBranchGroups.length > 0) {
+    const nextIndex = pendingBranchGroups.findIndex((group) => {
+      const anchorId = group[0]?.branch_anchor_node_id;
+      return !anchorId || placedNodesById.has(anchorId);
+    });
+    const groupIndex = nextIndex >= 0 ? nextIndex : 0;
+    const [group] = pendingBranchGroups.splice(groupIndex, 1);
+    sortBranchGroups(pendingBranchGroups);
+
     group.sort((left, right) => {
       if (left.position_z !== right.position_z) return (left.position_z ?? 0) - (right.position_z ?? 0);
       if (left.position_x !== right.position_x) return left.position_x - right.position_x;
@@ -536,26 +649,21 @@ function buildStoredGraph(
     });
 
     const first = group[0];
-    const anchor = nodes.find((node) => node.id === first.branch_anchor_node_id);
+    const anchor = placedNodesById.get(first.branch_anchor_node_id ?? "");
     const anchorX = anchor?.x ?? X_START;
     const anchorY = anchor?.y ?? Y_BASE;
-    const anchorGroupIndex = first.branch_anchor_node_id
-      ? branchGroupIndexByAnchor.get(first.branch_anchor_node_id) ?? 0
-      : 0;
-    if (first.branch_anchor_node_id) {
-      branchGroupIndexByAnchor.set(first.branch_anchor_node_id, anchorGroupIndex + 1);
-    }
+    const placement = findBranchPlacement(anchorX, anchorY, group.length);
 
     group.forEach((node, index) => {
-      branchNodes.push({
+      const branchNode: SkillNode = {
         id: node.id,
         treeId: tree.id,
         name: node.name,
         description: node.description,
         category: node.category ?? "technical_and_code",
         status: statusByNodeId.get(node.id) ?? "available",
-        x: anchorX + index * X_GAP,
-        y: anchorY + 148 + anchorGroupIndex * 124,
+        x: placement.startX + index * X_GAP * placement.direction,
+        y: placement.y,
         prereqs: storedEdges
           .filter((edge) => edge.to_node_id === node.id)
           .map((edge) => edge.from_node_id),
@@ -569,7 +677,9 @@ function buildStoredGraph(
         branchAnchorNodeId: node.branch_anchor_node_id ?? undefined,
         branchGroupId: node.branch_group_id ?? undefined,
         branchLabel: node.branch_label ?? undefined,
-      });
+      };
+      branchNodes.push(branchNode);
+      placedNodesById.set(branchNode.id, branchNode);
     });
   }
 

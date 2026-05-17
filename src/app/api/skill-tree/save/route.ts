@@ -79,6 +79,63 @@ function cleanString(value: unknown, fallback: string, maxLength = 500) {
   return trimmed ? trimmed.slice(0, maxLength) : fallback;
 }
 
+function isPlaceholderZoneName(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === "core" ||
+    normalized === "basics" ||
+    /^chapter\s*\d+$/.test(normalized) ||
+    /^module\s*\d+$/.test(normalized) ||
+    /^phase\s*\d+$/.test(normalized)
+  );
+}
+
+function fallbackChapterCount(total: number) {
+  return Math.min(6, Math.max(1, Math.ceil(total / 4)));
+}
+
+function fallbackChapterIndex(index: number, total: number) {
+  const count = fallbackChapterCount(total);
+  return Math.min(count - 1, Math.floor((index * count) / total));
+}
+
+function titleFromConcepts(concepts: string[], fallback: string) {
+  const text = concepts.join(" ").toLowerCase();
+  const has = (pattern: RegExp) => pattern.test(text);
+
+  if (has(/\bpython\b/) && has(/\b(linear algebra|calculus|math|probability|statistics)\b/)) return "Python & Math Foundations";
+  if (has(/\bpython\b/)) return "Python Programming";
+  if (has(/\b(linear algebra|calculus|math|algebra)\b/)) return "Mathematical Foundations";
+  if (has(/\b(probability|statistics|statistical)\b/) && has(/\b(data|numpy|pandas)\b/)) return "Statistics & Data Tools";
+  if (has(/\b(probability|statistics|statistical)\b/)) return "Probability & Statistics";
+  if (has(/\b(numpy|pandas|dataframe|data)\b/)) return "Data Tooling";
+  if (has(/\b(neural|deep learning|backpropagation|transformer)\b/)) return "Deep Learning";
+  if (has(/\b(model|regression|classification|clustering|machine learning|ml)\b/)) return "Modeling Methods";
+  if (has(/\b(deploy|production|api|infrastructure|monitoring)\b/)) return "Production Systems";
+  if (has(/\b(project|capstone|portfolio)\b/)) return "Applied Practice";
+
+  return fallback;
+}
+
+function deriveZoneTitles(nodes: GeneratedNode[]) {
+  const titlesByChapter = new Map<number, string>();
+
+  nodes.forEach((_, index) => {
+    const chapterIndex = fallbackChapterIndex(index, nodes.length);
+    if (titlesByChapter.has(chapterIndex)) return;
+
+    const chapterNodes = nodes.filter((__, nodeIndex) => fallbackChapterIndex(nodeIndex, nodes.length) === chapterIndex);
+    const names = chapterNodes
+      .map((node) => cleanString(node.name, "", 80))
+      .filter(Boolean);
+    const fallback = names[0] ? names[0].replace(/\b(Essentials|Fundamentals|Basics|Introduction)\b/gi, "").trim() || names[0] : "Learning Foundations";
+    titlesByChapter.set(chapterIndex, titleFromConcepts(names, fallback));
+  });
+
+  return nodes.map((_, index) => titlesByChapter.get(fallbackChapterIndex(index, nodes.length)) ?? "Learning Foundations");
+}
+
 function cleanId(value: unknown, fallback: string) {
   return cleanString(value, fallback, 100)
     .toLowerCase()
@@ -408,6 +465,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const generatedNodes = rawNodes as Array<GeneratedNode & { category: LessonPromptCategory }>;
+  const derivedZoneTitles = deriveZoneTitles(generatedNodes);
 
   const nodeIdMap = new Map<string, string>();
   const localIds: string[] = [];
@@ -436,7 +494,10 @@ export async function POST(req: NextRequest) {
       teaching_plan: cleanTeachingPlan(node.teaching, teachingBrief, description),
       difficulty_level: Math.max(1, Math.min(10, integer(node.difficulty_level, 1))),
       is_checkpoint: node.is_checkpoint === true,
-      zone: cleanString(node.zone, "Core", 120),
+      zone: (() => {
+        const zone = cleanString(node.zone, "", 120);
+        return isPlaceholderZoneName(zone) ? derivedZoneTitles[index] : zone;
+      })(),
       zone_color: cleanString(node.zone_color, "#3B82F6", 80),
       position_x: coordinate(node.coordinates, "x", index * 20),
       position_y: coordinate(node.coordinates, "y", 0),

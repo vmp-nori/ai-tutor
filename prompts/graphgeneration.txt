@@ -28,6 +28,9 @@ Do not return a fake roadmap whose nodes are refusals, policy statements, or "I 
 
 ## ZONE AND LAYOUT RULES
 - Zones are sequential chapters. Each zone should represent a meaningful phase or overarching concept in the learning path that contains the individual skills needed.
+- Zone names must be specific chapter titles based on the concepts inside them, such as "Python Foundations", "ML Math", "Classical Models", or "Deployment Systems".
+- Never use placeholder zone names like "Chapter 1", "Chapter 2", "Module 1", "Phase 1", "Core", "Basics", or "Advanced Topics".
+- Use 3 to 6 zones for a normal path. Reuse the exact same zone string for adjacent nodes that belong in the same chapter.
 - Assign zone colors from this palette in order: #3B82F6, #10B981, #8B5CF6, #EC4899, #EF4444, #F59E0B.
 - Every node in the same zone must use the same zone_color.
 - No two zones should share the same zone_color.
