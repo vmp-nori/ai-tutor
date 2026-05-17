@@ -598,30 +598,43 @@ function buildStoredGraph(
       horizontalOptions.push({ startX: X_START, direction: 1 });
     }
 
-    for (let lane = 0; lane < sortedBranchGroups.length + 2; lane += 1) {
-      const sideOptions: Array<"below" | "above"> = laneY(anchorY, "above", lane) >= 80
-        ? ["below", "above"]
-        : ["below"];
+    const preferredSide: "above" | "below" = anchorY > Y_BASE ? "above" : "below";
+    const candidates = Array.from({ length: sortedBranchGroups.length + 2 }, (_, lane) => lane)
+      .flatMap((lane) => {
+        const sides: Array<"below" | "above"> = laneY(anchorY, "above", lane) >= 80
+          ? ["below", "above"]
+          : ["below"];
 
-      for (const side of sideOptions) {
-        const y = laneY(anchorY, side, lane);
-        const existingLane = branchLanes.find((item) => Math.abs(item.y - y) < NODE_H + 24);
+        return sides.map((side) => ({
+          lane,
+          side,
+          y: laneY(anchorY, side, lane),
+        }));
+      })
+      .sort((left, right) => {
+        const distanceDiff = Math.abs(left.y - anchorY) - Math.abs(right.y - anchorY);
+        if (distanceDiff !== 0) return distanceDiff;
+        if (left.side !== right.side) return left.side === preferredSide ? -1 : 1;
+        return left.lane - right.lane;
+      });
 
-        for (const option of horizontalOptions) {
-          const range = branchRange(option.startX, option.direction, groupLength);
-          const overlaps = existingLane?.ranges.some((usedRange) => rangesOverlap(range, usedRange)) ?? false;
-          if (overlaps) continue;
+    for (const candidate of candidates) {
+      const existingLane = branchLanes.find((item) => Math.abs(item.y - candidate.y) < NODE_H + 24);
 
-          const laneRecord = existingLane ?? { side, lane, y, ranges: [] };
-          laneRecord.ranges.push(range);
-          if (!existingLane) branchLanes.push(laneRecord);
+      for (const option of horizontalOptions) {
+        const range = branchRange(option.startX, option.direction, groupLength);
+        const overlaps = existingLane?.ranges.some((usedRange) => rangesOverlap(range, usedRange)) ?? false;
+        if (overlaps) continue;
 
-          return {
-            startX: option.startX,
-            direction: option.direction,
-            y,
-          };
-        }
+        const laneRecord = existingLane ?? { side: candidate.side, lane: candidate.lane, y: candidate.y, ranges: [] };
+        laneRecord.ranges.push(range);
+        if (!existingLane) branchLanes.push(laneRecord);
+
+        return {
+          startX: option.startX,
+          direction: option.direction,
+          y: candidate.y,
+        };
       }
     }
 
