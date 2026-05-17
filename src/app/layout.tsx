@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Cabin,
+  Instrument_Serif,
+  Inter,
+  JetBrains_Mono,
+  Manrope,
+} from "next/font/google";
 import { ScreenSelectionOverlay } from "@/components/ui/ScreenSelectionOverlay";
 import "./globals.css";
 
@@ -14,6 +21,35 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-mono-brand",
+  display: "swap",
+});
+
+const luminaManrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-lumina-manrope",
+  display: "swap",
+});
+
+const luminaCabin = Cabin({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-lumina-cabin",
+  display: "swap",
+});
+
+const luminaInstrument = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-lumina-instrument",
+  display: "swap",
+});
+
+const luminaInter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-lumina-sans",
   display: "swap",
 });
 
@@ -62,7 +98,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${bricolage.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${bricolage.variable} ${jetbrainsMono.variable} ${luminaManrope.variable} ${luminaCabin.variable} ${luminaInstrument.variable} ${luminaInter.variable}`}
+    >
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
