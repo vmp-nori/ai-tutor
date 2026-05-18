@@ -1,7 +1,5 @@
 # Repository Guidelines
 
-Always update STATUS.MD after you complete a task, whats been done, what needs to be done, any other important information, it should act as a running record of our project to keep track. Do not add Unnecessary information that isnt essentail to the process of building the app, like npm run and stuff like that
-
 ## Karpathy-Inspired Agent Behavior
 
 These project-scoped coding guidelines are adapted from `forrestchang/andrej-karpathy-skills`.

@@ -9,6 +9,7 @@ export interface LearningPathNavItem {
   id: string;
   subject: string;
   href?: string;
+  deletable?: boolean;
 }
 
 interface TopBarProps {
@@ -172,7 +173,7 @@ export function TopBar({ subject, completedCount, totalCount, onOpenJsonInput, o
               }}>
                 {path.subject}
               </a>
-              {onDeletePath && (
+              {onDeletePath && path.deletable !== false && (
                 <button
                   type="button"
                   aria-label={`Delete "${path.subject}"`}

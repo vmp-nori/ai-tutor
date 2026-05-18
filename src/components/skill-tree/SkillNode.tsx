@@ -62,10 +62,10 @@ export function SkillNode({
     : isSelected
     ? "var(--shadow-node-selected)"
     : isBranch
-    ? "0 10px 28px rgba(15,20,17,0.06)"
+    ? "0 6px 14px oklch(32% 0.04 185 / 0.045)"
     : isCurrent
     ? "var(--shadow-node-active)"
-    : "var(--shadow-node)";
+    : "0 0 0 1px color-mix(in srgb, var(--color-border-accent) 18%, transparent), 0 8px 18px oklch(32% 0.04 185 / 0.09)";
 
   const dotColor = isCurrent
     ? "var(--color-accent)"
@@ -84,18 +84,19 @@ export function SkillNode({
         position: "absolute",
         left: node.x,
         top: node.y,
-        zIndex: isGoal ? 3 : 2,
+        zIndex: isGoal ? 5 : isBranch ? 2 : 4,
         width,
         minHeight: 78,
         background,
         border,
         borderRadius: isGoal ? 10 : 8,
-        padding: isGoal ? "12px 16px" : "11px 13px",
+        padding: isGoal ? "12px 16px" : isBranch ? "10px 12px" : "12px 14px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         cursor: isGoal ? "default" : interactive ? "grab" : "default",
         boxShadow,
+        opacity: isBranch ? 0.9 : 1,
         transition: "box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1)",
         userSelect: "none",
         touchAction: "none",

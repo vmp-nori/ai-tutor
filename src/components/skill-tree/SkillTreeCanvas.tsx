@@ -368,6 +368,7 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
   const goalNode        = nodes[nodes.length - 1];
   const graphNodes      = nodes.slice(0, -1);
   const regularNodes    = graphNodes.filter((node) => !node.isBranch);
+  const currentNode = nodes.find(n => n.status === "current");
   const completedCount = regularNodes.filter(n => n.status === "completed").length;
   const canvasWidth = useMemo(() => {
     const rightMost = nodes.reduce((max, node) => {
@@ -753,13 +754,12 @@ export function SkillTreeCanvas({ nodes: initialNodes, edges: initialEdges, subj
   }, [minZoom]);
 
   useEffect(() => {
-    const cur = nodes.find(n => n.status === "current");
-    if (cur && scrollRef.current) {
+    if (currentNode && scrollRef.current) {
       const el     = scrollRef.current;
-      const target = Math.max(0, (cur.x + NODE_W / 2) * zoom - el.clientWidth / 2);
+      const target = Math.max(0, (currentNode.x + NODE_W / 2) * zoomRef.current - el.clientWidth / 2);
       el.scrollTo({ left: target, behavior: "instant" });
     }
-  }, [nodes, zoom]);
+  }, [currentNode?.id, currentNode?.x]);
 
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 

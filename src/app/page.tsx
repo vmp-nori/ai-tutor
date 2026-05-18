@@ -443,8 +443,13 @@ export default function LandingPage() {
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
+      const x = (e.clientX / Math.max(window.innerWidth, 1) - 0.5) * 2;
+      const y = (e.clientY / Math.max(window.innerHeight, 1) - 0.5) * 2;
+
       document.documentElement.style.setProperty("--lp-mx", `${e.clientX}px`);
       document.documentElement.style.setProperty("--lp-my", `${e.clientY}px`);
+      document.documentElement.style.setProperty("--lp-parallax-x", x.toFixed(3));
+      document.documentElement.style.setProperty("--lp-parallax-y", y.toFixed(3));
     }
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
@@ -741,14 +746,16 @@ export default function LandingPage() {
           font-size: clamp(48px, 8vw, 108px);
           font-weight: 400;
           letter-spacing: -0.01em;
-          line-height: 0.9;
-          margin: 0 auto 30px;
+          line-height: 0.98;
+          margin: 0 auto 24px;
           max-width: 10.8ch;
+          padding-bottom: 0.08em;
           text-wrap: balance;
         }
 
         .lp-title span {
           display: block;
+          overflow: visible;
         }
 
         .lp-title span:first-child {
@@ -759,6 +766,7 @@ export default function LandingPage() {
           animation: lp-title-right 1160ms cubic-bezier(0.16, 1, 0.3, 1) 820ms both;
           color: var(--lp-green);
           font-style: italic;
+          line-height: 1.04;
         }
 
         .lp-hero-text {
@@ -824,6 +832,88 @@ export default function LandingPage() {
           z-index: 0;
         }
 
+        .lp-graph-field {
+          height: 100%;
+          inset: -7% -5% -10%;
+          opacity: 0.54;
+          position: absolute;
+          transform:
+            translate3d(
+              calc(var(--lp-parallax-x, 0) * -14px),
+              calc(var(--lp-parallax-y, 0) * -10px),
+              0
+            );
+          transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+          width: 110%;
+        }
+
+        .lp-graph-field svg {
+          height: 100%;
+          overflow: visible;
+          width: 100%;
+        }
+
+        .lp-graph-edge {
+          fill: none;
+          stroke: rgba(31,135,85,0.22);
+          stroke-linecap: round;
+          stroke-width: 1.4;
+        }
+
+        .lp-graph-edge.is-active {
+          animation: lp-graph-trace 7.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+          stroke: rgba(31,135,85,0.58);
+          stroke-dasharray: 28 420;
+          stroke-width: 1.9;
+        }
+
+        .lp-graph-edge.is-soft {
+          stroke: rgba(12,8,26,0.12);
+          stroke-dasharray: 5 9;
+        }
+
+        .lp-graph-node {
+          fill: rgba(251,254,252,0.92);
+          stroke: rgba(148,168,158,0.62);
+          stroke-width: 1.15;
+        }
+
+        .lp-graph-node.is-current {
+          fill: rgba(94,226,168,0.18);
+          filter: drop-shadow(0 0 14px rgba(94,226,168,0.36));
+          stroke: rgba(31,135,85,0.84);
+          stroke-width: 1.7;
+        }
+
+        .lp-graph-node.is-goal {
+          fill: var(--lp-mint);
+          stroke: rgba(15,20,17,0.54);
+        }
+
+        .lp-graph-label {
+          fill: rgba(12,8,26,0.32);
+          font-family: var(--font-lumina-cabin), Cabin, ui-sans-serif, system-ui, sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .lp-graph-cluster {
+          animation: lp-graph-drift 18s ease-in-out infinite alternate;
+          transform-origin: center;
+        }
+
+        .lp-graph-cluster:nth-child(2) {
+          animation-delay: -5s;
+          animation-duration: 22s;
+        }
+
+        .lp-graph-cluster:nth-child(3) {
+          animation-delay: -9s;
+          animation-duration: 25s;
+        }
+
         .lp-hero-bg::before,
         .lp-hero-bg::after {
           border-radius: 50%;
@@ -860,6 +950,24 @@ export default function LandingPage() {
         @keyframes lp-blob-b {
           from { transform: translate3d(0px, 0px, 0) scale(1); }
           to   { transform: translate3d(-90px, 90px, 0) scale(1.22); }
+        }
+
+        @keyframes lp-graph-drift {
+          from {
+            transform: translate3d(-10px, 5px, 0);
+          }
+          to {
+            transform: translate3d(12px, -8px, 0);
+          }
+        }
+
+        @keyframes lp-graph-trace {
+          from {
+            stroke-dashoffset: 448;
+          }
+          to {
+            stroke-dashoffset: 0;
+          }
         }
 
 
@@ -1677,7 +1785,7 @@ export default function LandingPage() {
 
           .lp-hero::before {
             background:
-              radial-gradient(ellipse at 50% 24%, rgba(232,245,238,0.84) 0 28%, rgba(232,245,238,0.56) 50%, transparent 78%),
+              radial-gradient(ellipse at 50% 24%, rgba(232,245,238,0.88) 0 28%, rgba(232,245,238,0.62) 50%, transparent 78%),
               linear-gradient(180deg, rgba(232,245,238,0.76) 0 16%, transparent 74%);
           }
 
@@ -1694,6 +1802,7 @@ export default function LandingPage() {
 
           .lp-title {
             font-size: 4.2rem;
+            line-height: 1.02;
           }
 
           .lp-hero-text {
@@ -1794,7 +1903,7 @@ export default function LandingPage() {
 
           .lp-title {
             font-size: 2.3rem;
-            line-height: 1;
+            line-height: 1.04;
             max-width: 10.5ch;
           }
 
@@ -1871,6 +1980,8 @@ export default function LandingPage() {
           .lp-hero-text,
           .lp-hero-goal::after,
           .lp-hero-proof,
+          .lp-graph-cluster,
+          .lp-graph-edge.is-active,
           .lp-form,
           .lp-hero-bg::before,
           .lp-hero-bg::after,
@@ -1921,7 +2032,48 @@ export default function LandingPage() {
         </nav>
 
         <section className="lp-hero">
-          <div className="lp-hero-bg" aria-hidden="true" />
+          <div className="lp-hero-bg" aria-hidden="true">
+            <div className="lp-graph-field">
+              <svg viewBox="0 0 1440 720" preserveAspectRatio="xMidYMid slice">
+                <g className="lp-graph-cluster">
+                  <path className="lp-graph-edge is-soft" d="M78 204 C190 148 244 170 356 120" />
+                  <path className="lp-graph-edge" d="M78 204 C164 268 250 262 338 318" />
+                  <path className="lp-graph-edge is-active" d="M356 120 C454 150 500 224 598 232" />
+                  <path className="lp-graph-edge" d="M338 318 C430 286 506 294 598 232" />
+                  <path className="lp-graph-edge is-soft" d="M598 232 C710 172 790 164 900 110" />
+                  <circle className="lp-graph-node" cx="78" cy="204" r="8" />
+                  <circle className="lp-graph-node" cx="356" cy="120" r="10" />
+                  <circle className="lp-graph-node" cx="338" cy="318" r="9" />
+                  <circle className="lp-graph-node is-current" cx="598" cy="232" r="12" />
+                  <circle className="lp-graph-node" cx="900" cy="110" r="8" />
+                  <text className="lp-graph-label" x="616" y="218">current</text>
+                </g>
+                <g className="lp-graph-cluster">
+                  <path className="lp-graph-edge is-soft" d="M932 454 C1014 390 1086 394 1168 332" />
+                  <path className="lp-graph-edge" d="M824 540 C916 512 970 480 1058 502" />
+                  <path className="lp-graph-edge is-active" d="M1058 502 C1148 458 1212 446 1308 382" />
+                  <path className="lp-graph-edge" d="M1168 332 C1208 352 1256 364 1308 382" />
+                  <path className="lp-graph-edge is-soft" d="M1308 382 C1368 342 1412 304 1478 290" />
+                  <circle className="lp-graph-node" cx="824" cy="540" r="9" />
+                  <circle className="lp-graph-node" cx="932" cy="454" r="8" />
+                  <circle className="lp-graph-node" cx="1058" cy="502" r="11" />
+                  <circle className="lp-graph-node is-current" cx="1168" cy="332" r="10" />
+                  <circle className="lp-graph-node is-goal" cx="1308" cy="382" r="13" />
+                  <circle className="lp-graph-node" cx="1478" cy="290" r="7" />
+                  <text className="lp-graph-label" x="1242" y="415">goal</text>
+                </g>
+                <g className="lp-graph-cluster">
+                  <path className="lp-graph-edge" d="M-52 590 C64 526 134 526 248 466" />
+                  <path className="lp-graph-edge is-active" d="M248 466 C338 432 408 394 512 414" />
+                  <path className="lp-graph-edge is-soft" d="M512 414 C602 448 680 420 772 466" />
+                  <circle className="lp-graph-node" cx="-52" cy="590" r="9" />
+                  <circle className="lp-graph-node is-current" cx="248" cy="466" r="11" />
+                  <circle className="lp-graph-node" cx="512" cy="414" r="8" />
+                  <circle className="lp-graph-node" cx="772" cy="466" r="9" />
+                </g>
+              </svg>
+            </div>
+          </div>
           <div className="lp-hero-inner">
             <div className="lp-hero-copy">
               <p className="lp-eyebrow">Don&apos;t know where to start learning? Start here.</p>

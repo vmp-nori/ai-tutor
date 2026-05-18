@@ -6,22 +6,22 @@ import { edgePoints, adaptiveBezierPath, edgeKind } from "@/lib/utils";
 const STROKE: Record<string, string> = {
   done:   "var(--color-success)",
   active: "var(--color-border-accent)",
-  open:   "var(--color-border)",
-  locked: "var(--color-border)",
+  open:   "var(--color-border-accent)",
+  locked: "var(--color-border-accent)",
 };
 
 const WIDTH: Record<string, number> = {
-  done:   1,
-  active: 1.8,
-  open:   1,
-  locked: 1,
+  done:   1.75,
+  active: 2.2,
+  open:   1.65,
+  locked: 1.45,
 };
 
 const OPACITY: Record<string, number> = {
-  done:   0.74,
+  done:   0.82,
   active: 1,
-  open:   0.62,
-  locked: 0.48,
+  open:   0.72,
+  locked: 0.54,
 };
 
 interface SkillEdgeProps {
@@ -61,20 +61,32 @@ export function SkillEdge({
             d="M1,1 L5.5,3.5 L1,6"
             fill="none"
             stroke={stroke}
-            strokeWidth="1.2"
+            strokeWidth={isBranchEdge ? 1.1 : 1.45}
             strokeLinecap="round"
             strokeLinejoin="round"
+            opacity={isBranchEdge ? 0.68 : 0.9}
           />
         </marker>
       </defs>
+      {!isBranchEdge && (
+        <path
+          d={d}
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth={7}
+          strokeLinecap="round"
+          opacity={kind === "active" ? 0.16 : 0.09}
+        />
+      )}
       <path
         ref={setPathRef}
         d={d}
         fill="none"
         stroke={stroke}
+        strokeLinecap="round"
         strokeWidth={isBranchEdge ? 1.35 : WIDTH[kind]}
-        strokeDasharray={isBranchEdge ? "5 5" : kind === "locked" ? "3 3" : undefined}
-        opacity={isBranchEdge ? 0.78 : OPACITY[kind]}
+        strokeDasharray={isBranchEdge ? "5 5" : undefined}
+        opacity={isBranchEdge ? 0.62 : OPACITY[kind]}
         markerEnd={`url(#${markerId})`}
       />
     </>

@@ -6,14 +6,29 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 const TREE_ID = "machine-learning-engineering-llm-mastery";
+const LLM_THEORY_TREE_ID = "llm-theory-bare-graph";
+const LLM_THEORY_BRANCH_TREE_ID = "llm-theory-branchy-example";
+const LLM_THEORY_PATH = {
+  id: LLM_THEORY_TREE_ID,
+  subject: "LLM Theory",
+  href: `/dashboard?treeId=${LLM_THEORY_TREE_ID}`,
+  deletable: false,
+};
+const LLM_THEORY_BRANCH_PATH = {
+  id: LLM_THEORY_BRANCH_TREE_ID,
+  subject: "LLM Theory Branches",
+  href: `/dashboard?treeId=${LLM_THEORY_BRANCH_TREE_ID}`,
+  deletable: false,
+};
 const X_START = 96;
 const X_GAP = 304;
 const Y_BASE = 320;
-const BRANCH_VERTICAL_GAP = 148;
-const BRANCH_LANE_GAP = 124;
-const BRANCH_PADDING_X = 36;
 const NODE_W = 232;
 const NODE_H = 78;
+const BRANCH_VERTICAL_GAP = NODE_H + 24;
+const BRANCH_LANE_GAP = NODE_H + 32;
+const BRANCH_PADDING_X = 36;
+const MIN_BRANCH_Y = 32;
 
 interface BranchLane {
   side: "below" | "above";
@@ -27,6 +42,391 @@ interface BranchPlacement {
   direction: 1 | -1;
   y: number;
 }
+
+const LLM_THEORY_NODES: SkillNode[] = [
+  {
+    id: "llm_tokens_context",
+    treeId: "input-json",
+    name: "Tokens and Context",
+    description: "LLMs turn text into token IDs, embed those IDs as vectors, and use the surrounding context as the information available for prediction.",
+    category: "technical_and_code",
+    status: "current",
+    x: X_START,
+    y: Y_BASE,
+    prereqs: [],
+    difficultyLevel: 2,
+    isCheckpoint: false,
+    zone: "Representation",
+    zoneColor: "#3B82F6",
+  },
+  {
+    id: "llm_forward_pass",
+    treeId: "input-json",
+    name: "Transformer Forward Pass",
+    description: "Attention and feed-forward layers mix contextual information and produce logits: raw scores for the next token.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + X_GAP,
+    y: Y_BASE,
+    prereqs: ["llm_tokens_context"],
+    difficultyLevel: 4,
+    isCheckpoint: false,
+    zone: "Architecture",
+    zoneColor: "#10B981",
+  },
+  {
+    id: "llm_loss_functions",
+    treeId: "input-json",
+    name: "Loss Functions",
+    description: "Cross-entropy compares predicted token probabilities with the real next token, turning prediction quality into a single training signal.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 2,
+    y: Y_BASE,
+    prereqs: ["llm_forward_pass"],
+    difficultyLevel: 5,
+    isCheckpoint: true,
+    zone: "Training Signal",
+    zoneColor: "#8B5CF6",
+  },
+  {
+    id: "llm_backpropagation",
+    treeId: "input-json",
+    name: "Backpropagation",
+    description: "Backpropagation applies the chain rule through the transformer to compute how each parameter contributed to the loss.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 3,
+    y: Y_BASE,
+    prereqs: ["llm_loss_functions"],
+    difficultyLevel: 6,
+    isCheckpoint: false,
+    zone: "Credit Assignment",
+    zoneColor: "#F59E0B",
+  },
+  {
+    id: "llm_gradient_descent",
+    treeId: "input-json",
+    name: "Gradient Descent Updates",
+    description: "Optimizers use gradients to adjust model weights, gradually making the next-token predictions less wrong over many batches.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 4,
+    y: Y_BASE,
+    prereqs: ["llm_backpropagation"],
+    difficultyLevel: 6,
+    isCheckpoint: true,
+    zone: "Optimization",
+    zoneColor: "#EC4899",
+  },
+];
+
+const LLM_THEORY_EDGES: SkillEdge[] = LLM_THEORY_NODES.flatMap((node) =>
+  node.prereqs.map((fromNodeId) => ({
+    id: `edge_${fromNodeId}_${node.id}`,
+    treeId: "input-json",
+    fromNodeId,
+    toNodeId: node.id,
+  })),
+);
+
+const LLM_THEORY_BRANCH_NODES: SkillNode[] = [
+  ...LLM_THEORY_NODES,
+  {
+    id: "llm_subword_tokenization",
+    treeId: "input-json",
+    name: "Subword Tokenization",
+    description: "BPE-style tokenizers split text into reusable chunks, which shapes what the model can represent cheaply or awkwardly.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + 42,
+    y: Y_BASE + 146,
+    prereqs: ["llm_tokens_context"],
+    difficultyLevel: 3,
+    isCheckpoint: false,
+    zone: "Token Branches",
+    zoneColor: "#3B82F6",
+    isBranch: true,
+    branchAnchorNodeId: "llm_tokens_context",
+    branchGroupId: "tokens-practical",
+    branchLabel: "Input mechanics",
+  },
+  {
+    id: "llm_vocab_tradeoffs",
+    treeId: "input-json",
+    name: "Vocabulary Tradeoffs",
+    description: "Vocabulary size changes sequence length, rare-word handling, multilingual coverage, and the cost of the output layer.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + 344,
+    y: Y_BASE + 210,
+    prereqs: ["llm_subword_tokenization"],
+    difficultyLevel: 4,
+    isCheckpoint: false,
+    zone: "Token Branches",
+    zoneColor: "#3B82F6",
+    isBranch: true,
+    branchAnchorNodeId: "llm_subword_tokenization",
+    branchGroupId: "tokens-practical",
+    branchLabel: "Tokenizer consequences",
+  },
+  {
+    id: "llm_position_encodings",
+    treeId: "input-json",
+    name: "Position Encodings",
+    description: "Position information lets the transformer distinguish the same token appearing in different places in the context.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + 298,
+    y: Y_BASE - 164,
+    prereqs: ["llm_tokens_context"],
+    difficultyLevel: 4,
+    isCheckpoint: false,
+    zone: "Representation",
+    zoneColor: "#3B82F6",
+    isBranch: true,
+    branchAnchorNodeId: "llm_tokens_context",
+    branchGroupId: "position-sidequest",
+    branchLabel: "Sequence order",
+  },
+  {
+    id: "llm_attention_scores",
+    treeId: "input-json",
+    name: "Attention Scores",
+    description: "Queries and keys produce relevance scores, deciding which earlier tokens each position should read from.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP + 70,
+    y: Y_BASE - 152,
+    prereqs: ["llm_forward_pass"],
+    difficultyLevel: 5,
+    isCheckpoint: false,
+    zone: "Attention",
+    zoneColor: "#10B981",
+    isBranch: true,
+    branchAnchorNodeId: "llm_forward_pass",
+    branchGroupId: "attention-useful",
+    branchLabel: "Attention internals",
+  },
+  {
+    id: "llm_multi_head_attention",
+    treeId: "input-json",
+    name: "Multi-Head Attention",
+    description: "Multiple attention heads let the model track several relationships at once instead of betting on one similarity pattern.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + X_GAP * 2 - 24,
+    y: Y_BASE - 244,
+    prereqs: ["llm_attention_scores"],
+    difficultyLevel: 6,
+    isCheckpoint: false,
+    zone: "Attention",
+    zoneColor: "#10B981",
+    isBranch: true,
+    branchAnchorNodeId: "llm_attention_scores",
+    branchGroupId: "attention-useful",
+    branchLabel: "Attention internals",
+  },
+  {
+    id: "llm_kv_cache",
+    treeId: "input-json",
+    name: "KV Cache",
+    description: "During generation, cached keys and values avoid recomputing the whole prefix for every new token.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + X_GAP * 2 + 206,
+    y: Y_BASE - 156,
+    prereqs: ["llm_multi_head_attention"],
+    difficultyLevel: 5,
+    isCheckpoint: false,
+    zone: "Inference",
+    zoneColor: "#10B981",
+    isBranch: true,
+    branchAnchorNodeId: "llm_multi_head_attention",
+    branchGroupId: "attention-useful",
+    branchLabel: "Generation cost",
+  },
+  {
+    id: "llm_softmax_probabilities",
+    treeId: "input-json",
+    name: "Softmax Probabilities",
+    description: "Softmax turns logits into a probability distribution, making one correct next-token label comparable to all alternatives.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 2 + 48,
+    y: Y_BASE + 150,
+    prereqs: ["llm_loss_functions"],
+    difficultyLevel: 4,
+    isCheckpoint: false,
+    zone: "Loss Branches",
+    zoneColor: "#8B5CF6",
+    isBranch: true,
+    branchAnchorNodeId: "llm_loss_functions",
+    branchGroupId: "loss-practical",
+    branchLabel: "Probability layer",
+  },
+  {
+    id: "llm_perplexity",
+    treeId: "input-json",
+    name: "Perplexity",
+    description: "Perplexity repackages average cross-entropy as an intuitive measure of how uncertain the model is on held-out text.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 3 - 42,
+    y: Y_BASE + 238,
+    prereqs: ["llm_softmax_probabilities"],
+    difficultyLevel: 5,
+    isCheckpoint: false,
+    zone: "Evaluation",
+    zoneColor: "#8B5CF6",
+    isBranch: true,
+    branchAnchorNodeId: "llm_softmax_probabilities",
+    branchGroupId: "loss-practical",
+    branchLabel: "Loss reading",
+  },
+  {
+    id: "llm_batching",
+    treeId: "input-json",
+    name: "Batching and Masking",
+    description: "Training batches pack many sequences together while masks prevent padding or future tokens from contaminating the loss.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + X_GAP * 2 - 214,
+    y: Y_BASE + 248,
+    prereqs: ["llm_loss_functions"],
+    difficultyLevel: 4,
+    isCheckpoint: false,
+    zone: "Training Data",
+    zoneColor: "#8B5CF6",
+    isBranch: true,
+    branchAnchorNodeId: "llm_loss_functions",
+    branchGroupId: "batch-sidequest",
+    branchLabel: "Batch details",
+  },
+  {
+    id: "llm_chain_rule",
+    treeId: "input-json",
+    name: "Chain Rule Paths",
+    description: "Every layer receives gradients by multiplying local derivatives along the paths that connect outputs back to parameters.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 3 + 66,
+    y: Y_BASE - 160,
+    prereqs: ["llm_backpropagation"],
+    difficultyLevel: 6,
+    isCheckpoint: false,
+    zone: "Backprop Branches",
+    zoneColor: "#F59E0B",
+    isBranch: true,
+    branchAnchorNodeId: "llm_backpropagation",
+    branchGroupId: "backprop-useful",
+    branchLabel: "Gradient routing",
+  },
+  {
+    id: "llm_gradient_checkpoints",
+    treeId: "input-json",
+    name: "Activation Checkpointing",
+    description: "Checkpointing trades extra recomputation for lower memory, which matters when backpropagating through deep transformers.",
+    category: "technical_and_code",
+    status: "available",
+    x: X_START + X_GAP * 4 - 30,
+    y: Y_BASE - 252,
+    prereqs: ["llm_chain_rule"],
+    difficultyLevel: 6,
+    isCheckpoint: false,
+    zone: "Training Memory",
+    zoneColor: "#F59E0B",
+    isBranch: true,
+    branchAnchorNodeId: "llm_chain_rule",
+    branchGroupId: "backprop-useful",
+    branchLabel: "Memory tricks",
+  },
+  {
+    id: "llm_vanishing_exploding",
+    treeId: "input-json",
+    name: "Gradient Stability",
+    description: "Normalization, residual connections, and clipping keep gradients from shrinking away or exploding during long training runs.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 3 + 238,
+    y: Y_BASE + 150,
+    prereqs: ["llm_backpropagation"],
+    difficultyLevel: 6,
+    isCheckpoint: false,
+    zone: "Training Stability",
+    zoneColor: "#F59E0B",
+    isBranch: true,
+    branchAnchorNodeId: "llm_backpropagation",
+    branchGroupId: "stability-sidequest",
+    branchLabel: "Gradient health",
+  },
+  {
+    id: "llm_adamw",
+    treeId: "input-json",
+    name: "AdamW Optimizer",
+    description: "AdamW tracks moving averages of gradients and separates weight decay, making large-scale transformer training more stable.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 4 + 48,
+    y: Y_BASE + 154,
+    prereqs: ["llm_gradient_descent"],
+    difficultyLevel: 6,
+    isCheckpoint: false,
+    zone: "Optimization",
+    zoneColor: "#EC4899",
+    isBranch: true,
+    branchAnchorNodeId: "llm_gradient_descent",
+    branchGroupId: "optimizer-useful",
+    branchLabel: "Optimizer choices",
+  },
+  {
+    id: "llm_lr_schedule",
+    treeId: "input-json",
+    name: "Learning Rate Schedules",
+    description: "Warmup and decay control how aggressively weights move early, mid, and late in training.",
+    category: "math_and_logic",
+    status: "available",
+    x: X_START + X_GAP * 5 - 24,
+    y: Y_BASE + 238,
+    prereqs: ["llm_adamw"],
+    difficultyLevel: 5,
+    isCheckpoint: false,
+    zone: "Optimization",
+    zoneColor: "#EC4899",
+    isBranch: true,
+    branchAnchorNodeId: "llm_adamw",
+    branchGroupId: "optimizer-useful",
+    branchLabel: "Training knobs",
+  },
+  {
+    id: "llm_data_quality",
+    treeId: "input-json",
+    name: "Data Quality Effects",
+    description: "The loss only teaches from the data it sees, so filtering, deduplication, and mixtures strongly affect final model behavior.",
+    category: "systems_and_economics",
+    status: "available",
+    x: X_START + X_GAP * 4 + 230,
+    y: Y_BASE - 138,
+    prereqs: ["llm_gradient_descent"],
+    difficultyLevel: 5,
+    isCheckpoint: false,
+    zone: "Training Data",
+    zoneColor: "#EC4899",
+    isBranch: true,
+    branchAnchorNodeId: "llm_gradient_descent",
+    branchGroupId: "data-sidequest",
+    branchLabel: "What gets learned",
+  },
+];
+
+const LLM_THEORY_BRANCH_EDGES: SkillEdge[] = LLM_THEORY_BRANCH_NODES.flatMap((node) =>
+  node.prereqs.map((fromNodeId) => ({
+    id: `edge_${fromNodeId}_${node.id}`,
+    treeId: "input-json",
+    fromNodeId,
+    toNodeId: node.id,
+  })),
+);
 
 const DEFAULT_GRAPH = {
   subject: "Machine Learning Engineering and LLM Mastery",
@@ -587,7 +987,7 @@ function buildStoredGraph(
     return side === "below" ? anchorY + distance : anchorY - distance;
   }
 
-  function findBranchPlacement(anchorX: number, anchorY: number, groupLength: number): BranchPlacement {
+  function findBranchPlacement(anchorX: number, anchorY: number, groupLength: number, anchorIsBranch: boolean): BranchPlacement {
     const rightStartX = anchorX;
     const horizontalOptions: Array<{ startX: number; direction: 1 | -1 }> = [
       { startX: rightStartX, direction: 1 },
@@ -598,10 +998,12 @@ function buildStoredGraph(
       horizontalOptions.push({ startX: X_START, direction: 1 });
     }
 
-    const preferredSide: "above" | "below" = anchorY > Y_BASE ? "above" : "below";
+    const preferredSide: "above" | "below" = anchorIsBranch
+      ? anchorY <= Y_BASE ? "above" : "below"
+      : anchorY > Y_BASE ? "above" : "below";
     const candidates = Array.from({ length: sortedBranchGroups.length + 2 }, (_, lane) => lane)
       .flatMap((lane) => {
-        const sides: Array<"below" | "above"> = laneY(anchorY, "above", lane) >= 80
+        const sides: Array<"below" | "above"> = laneY(anchorY, "above", lane) >= MIN_BRANCH_Y
           ? ["below", "above"]
           : ["below"];
 
@@ -665,7 +1067,7 @@ function buildStoredGraph(
     const anchor = placedNodesById.get(first.branch_anchor_node_id ?? "");
     const anchorX = anchor?.x ?? X_START;
     const anchorY = anchor?.y ?? Y_BASE;
-    const placement = findBranchPlacement(anchorX, anchorY, group.length);
+    const placement = findBranchPlacement(anchorX, anchorY, group.length, anchor?.isBranch === true);
 
     group.forEach((node, index) => {
       const branchNode: SkillNode = {
@@ -760,17 +1162,36 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
-  if (!userLearningPaths || userLearningPaths.length === 0) {
-    redirect("/generate");
-  }
-
   const params = await searchParams;
   const requestedTreeId = params?.treeId;
-  const selectedTreeId = requestedTreeId ?? userLearningPaths[0]?.id;
-  const learningPaths = userLearningPaths;
+  const storedLearningPaths = userLearningPaths ?? [];
+  const selectedTreeId = requestedTreeId ?? LLM_THEORY_TREE_ID;
+  const learningPaths = [LLM_THEORY_PATH, LLM_THEORY_BRANCH_PATH, ...storedLearningPaths];
+
+  if (selectedTreeId === LLM_THEORY_TREE_ID) {
+    return (
+      <SkillTreeLoader
+        nodes={LLM_THEORY_NODES}
+        edges={LLM_THEORY_EDGES}
+        subject={LLM_THEORY_PATH.subject}
+        learningPaths={learningPaths}
+      />
+    );
+  }
+
+  if (selectedTreeId === LLM_THEORY_BRANCH_TREE_ID) {
+    return (
+      <SkillTreeLoader
+        nodes={LLM_THEORY_BRANCH_NODES}
+        edges={LLM_THEORY_BRANCH_EDGES}
+        subject={LLM_THEORY_BRANCH_PATH.subject}
+        learningPaths={learningPaths}
+      />
+    );
+  }
 
   if (selectedTreeId) {
-    const selectedTree = userLearningPaths?.find((path) => path.id === selectedTreeId);
+    const selectedTree = storedLearningPaths.find((path) => path.id === selectedTreeId);
 
     if (selectedTree) {
       const [
